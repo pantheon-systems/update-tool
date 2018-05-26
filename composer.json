@@ -1,5 +1,5 @@
 {
-    "name": "g1a/starter",
+    "name": "pantheon-systems/updatinate",
     "description": "Template project for PHP libraries.",
     "license": "MIT",
     "authors": [
@@ -8,15 +8,14 @@
             "email": "greg.1.anderson@greenknowe.org"
         }
     ],
-    "autoload":{
-        "psr-4":{
-            "CustomizeProject\\": "customize",
-            "ExampleProject\\": "src"
+    "autoload": {
+        "psr-4": {
+            "Updatinate\\": "src"
         }
     },
-    "autoload-dev":{
-        "psr-4":{
-            "ExampleProject\\": "tests/src"
+    "autoload-dev": {
+        "psr-4": {
+            "Updatinate\\": "tests/src"
         }
     },
     "require": {
@@ -35,9 +34,6 @@
         "squizlabs/php_codesniffer": "^2.8"
     },
     "scripts": {
-        "customize": [
-            "CustomizeProject\\Customizer::customize"
-        ],
         "phar:install-tools": [
             "gem install mime-types -v 2.6.2",
             "curl -LSs https://box-project.github.io/box2/installer.php | php"
@@ -59,9 +55,6 @@
             "( echo && echo 'Ensure that VERSION file contains the version to release.' && echo \"Current version: $(cat VERSION)\" && tag=$(cat VERSION) && git tag \"$tag\" && git push origin \"$tag\" )"
         ],
         "scenario": "scenarios/install",
-        "post-create-project-cmd": [
-            "@customize"
-        ],
         "post-update-cmd": [
             "create-scenario phpunit5 'phpunit/phpunit:^5.7.27' --platform-php '5.6.33'",
             "dependency-licenses"
