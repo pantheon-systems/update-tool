@@ -1,0 +1,13 @@
+cache-path: ${env.HOME}/.config/pantheon-upstream
+working-copy-path: ${env.HOME}/pantheon/update-working-copies
+github:
+  personal-auth-token:
+    path: ${cache-path}/github-token
+
+projects:
+  rpmbuild-php:
+    repo: git@github.com:pantheon-systems/rpmbuild-php.git
+    path: ${working-copy-path}/rpmbuild-php
+  php-cookbook:
+    repo: git@github.com:pantheon-cookbooks/php.git
+    path: ${working-copy-path}/php-cookbook
