@@ -72,8 +72,22 @@ class WorkingCopy implements LoggerAwareInterface
 
     public function pr($message)
     {
-        $this->execWithRedaction("hub {dir} pull-request -m '{message}'", ['dir' => "-C {$this->dir} "] + $replacements, ['dir' => ''] + $redacted);
+        $replacements = ['message' => $message];
+        $redacted = [];
+
+        //$this->execWithRedaction("hub pull-request -m '{message}'", ['dir' => "-C {$this->dir} "] + $replacements, ['dir' => ''] + $redacted);
+
+        $oldDir = getcwd();
+        chdir($this->dir);
+        exec("hub pull-request -m '$message'", $output, $status);
+        chdir($oldDir);
+
         return $this;
+    }
+
+    public function show($ref)
+    {
+        return $this->git("show $ref");
     }
 
     /**
