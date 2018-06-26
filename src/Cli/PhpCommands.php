@@ -14,14 +14,29 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     use LoggerAwareTrait;
 
     /**
+     * Report who we have authenticated as
+     *
+     * @command whoami
+     */
+    public function whoami($options = ['as' => 'default'])
+    {
+        $gitHubAPI = $this->authenticateWithGitHubAPI($options['as']);
+
+        $authenticated = $gitHubAPI->api('current_user')->show();
+        $authenticatedUser = $authenticated['login'];
+
+        $this->say("Authenticated as $authenticatedUser.");
+    }
+
+    /**
      * Given a set of available php RPMs, as specified in the rpmbuild-php
      * repository, create a PR in the php cookbook to deploy those rpms.
      *
      * @command php:cookbook:update
      */
-    public function phpCookbookUpdate()
+    public function phpCookbookUpdate($options = ['as' => 'default'])
     {
-        $token = $this->getGitHubToken();
+        $token = $this->getGitHubToken($options['as']);
 
         $rpmbuild_php_url = $this->getConfig()->get('projects.rpmbuild-php.repo');
         $rpmbuild_php_dir = $this->getConfig()->get('projects.rpmbuild-php.path');
@@ -74,6 +89,10 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }
 
         file_put_contents($php_library_src_path, $contents);
+
+        // Check for open pull requests that already contain some of these
+        // updates, or that contain earlier versions of these updates.
+        // $openPullRequests = $gitHubAPI->api('pull_request')->all('pantheon-systems', 'rpmbuild-php');
 
         // Create a pull request with the update.
         $branch = 'php-' . implode('-', array_keys($version_updates));
@@ -192,12 +211,28 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     }
 
     /**
+     * Authenticate and then return the gitHub API object.
+     */
+    protected function authenticateWithGitHubAPI($as = 'default')
+    {
+        $token = $this->getGitHubToken($as);
+
+        $gitHubAPI = new \Github\Client();
+        $gitHubAPI->authenticate($token, null, \Github\Client::AUTH_HTTP_TOKEN);
+
+        return $gitHubAPI;
+    }
+
+    /**
      * Look up the GitHub token set either via environment variable or in the
      * auth-token cache directory.
      */
-    protected function getGitHubToken()
+    protected function getGitHubToken($as = 'default')
     {
-        $github_token_cache = $this->getConfig()->get('github.personal-auth-token.path');
+        if ($as == 'default') {
+            $as = $this->getConfig()->get("github.default-user");
+        }
+        $github_token_cache = $this->getConfig()->get("github.personal-auth-token.$as.path");
         if (file_exists($github_token_cache)) {
             $token = trim(file_get_contents($github_token_cache));
             putenv("GITHUB_TOKEN=$token");

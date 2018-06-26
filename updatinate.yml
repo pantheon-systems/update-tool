@@ -1,8 +1,16 @@
 cache-path: ${env.HOME}/.config/pantheon-upstream
 working-copy-path: ${env.HOME}/pantheon/update-working-copies
 github:
+  default-user: updatinate
   personal-auth-token:
-    path: ${cache-path}/github-token
+    # This is a read-only token for pantheon-upstream
+    pantheon-upstream:
+      path: ${cache-path}/github-token
+    # This is a read/write token for pantheon-upstream
+    updatinate:
+      path: ${cache-path}/updatinate-token
+    greg:
+      path: ${env.HOME}/.github-token
 
 projects:
   rpmbuild-php:
