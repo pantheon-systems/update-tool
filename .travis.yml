@@ -40,3 +40,14 @@ before_deploy:
   - composer phar:install-tools
   - composer install --prefer-dist --no-dev --no-interaction
   - php box.phar build
+
+deploy:
+  provider: releases
+  api_key:
+    secure: fwBEg95ZsIPQpLrVhN14GrVyTrW/x4ZsfQcnBdJsQCzw9muliej9UWethPQJwAO/450QZx37Ifi8bBBqegJF1hdIT2N5z/HetxT9kNlUiocigTaQnEx7uK8lD9K+tYYxlMZL5bPK2afUFrAK+hz6RMNbx/KMrVFqkFnENgXV/v50JMRDFf2RNc+gWzoYV/W7QtVOX2Liku3fjc8ECKkt+BISmXX1CC0stSrYW9OsA6ObPNkFzEmc5FGHiF6RtQ+ZkfZKS6aJ8WBEEiXQze/NpIHKiuWSLPGDpFadQ2zPPQ8eOIevMOiDB97NyIE/zQoIi5m5U2PBSBAH+OYLpLYioX93iD4Mii1LTPeT7ygyDHxERyaCkGIPPOumi1h8gCW4h0TTJKRDd1fEHyUgnSvf0FI6izTHoa8ar53PVZMPr0ZnQGhWfcHV9sJhXwrYzeDnuqpFSWXzaGjmOuRi7RUajiLRlGgAzawlYQM1ykAqJTz2ORF81sm537VBGWWUlR/Bh+Z8sXYqIRlb2OgBTqWrQ/E69CsQvd4SyeEvrj5wZ5//4poWgA3OuIAVaZcTxgA1h0hdGGPI2sMV55aBXMd0+it1u84BxtB73yhfneeY1Pz1sP3Nzyd/hB9YVpCpV4UQ2wqfV7FIpvPMLK5+ZY8ZEmRA3aR7VjqfEZcSMBlTPgs=
+  file: updatinate.phar
+  skip_cleanup: true
+  on:
+    tags: true
+    repo: pantheon-systems/updatinate
+
