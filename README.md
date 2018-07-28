@@ -3,19 +3,9 @@
 Put a one-line description of your project here.
 
 [![Travis CI](https://travis-ci.org/pantheon-systems/updatinate.svg?branch=master)](https://travis-ci.org/pantheon-systems/updatinate)
-[![Windows CI](https://ci.appveyor.com/api/projects/status/{{PUT_APPVEYOR_STATUS_BADGE_ID_HERE}}?svg=true)](https://ci.appveyor.com/project/pantheon-systems/updatinate)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/pantheon-systems/updatinate/badge.svg?branch=master)](https://coveralls.io/github/pantheon-systems/updatinate?branch=master) 
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
-
-<!-- 
-There are two choices for LICENSE badges:
-
-1. License using shields.io (above): Can contain any text you want, and has no prerequisites, but must be manually updated if you change the license.
-2. License using poser.pugx.org (below): shows the license that Packagist.org read from your composer.json file. Must register with Packagist to use Poser.
-
-[![License](https://poser.pugx.org/pantheon-systems/updatinate/license)](https://github.com/pantheon-systems/updatinate//master/LICENSE)
--->
 
 ## Overview
 
@@ -62,17 +52,3 @@ To release a new version of the updatinate tool, run:
 This will release a stable version of whatever is indicated in the VERSION file. e.g. if VERSION contains `1.0.3-dev`, then version `1.0.3` will be tagged and released, and the VERSION file will be updated to `1.0.4-dev`. To release version `1.1.0` instead, manually edit the VERSION file to `1.1.0-dev` and then run `composer release`.
 
 The updatinate.phar file will be uploaded to GitHub on every release. Rebuild [pantheon-systems/docker-updatinator](https://github.com](pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
-
-### Services
-
-Enable those services shown below that have not already been configured:
-
-| Feature                   | Setup
-| ------------------------- | ----------------
-| Collaborative repository  | [DONE](https://github.com/pantheon-systems/updatinate)
-| Linux permutation testing | [DONE](https://travis-ci.org/pantheon-systems/updatinate)
-| Windows testing           | [Retry Appveyor CI](https://ci.appveyor.com/projects/new)
-| Static analysis           | [DONE](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/)
-| Code coverage             | [Enable Coveralls](https://coveralls.io/repos/new)
-| Package manager           | [Register with Packagist](https://packagist.org/packages/submit)
-| Dependency updates        | [Enable Dependencies.io](https://app.dependencies.io/add-project)
