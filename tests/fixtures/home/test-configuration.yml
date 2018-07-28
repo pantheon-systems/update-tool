@@ -1,0 +1,17 @@
+cache-path: ${env.FIXTURES}/cache
+working-copy-path: ${env.TESTDIR}/work
+github:
+  default-user: tester
+  personal-auth-token:
+    tester:
+      path: ${env.HOME}/.github-token
+php-net:
+  download-url: ${env.TESTDIR}/php.net/distributions/php-{version}.tar.gz
+
+projects:
+  rpmbuild-php:
+    repo: git@github.com:pantheon-fixtures/rpmbuild-php-fixture.git
+    path: ${working-copy-path}/rpmbuild-php
+  php-cookbook:
+    repo: git@github.com:pantheon-fixtures/php-cookbook-fixture.git
+    path: ${working-copy-path}/php-cookbook
