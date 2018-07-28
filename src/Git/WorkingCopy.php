@@ -31,11 +31,14 @@ class WorkingCopy implements LoggerAwareInterface
         $this->dir = $dir;
         $this->api = $api;
 
-        $this->confirmNoConflict();
+        $this->confirmCachedRepoHasCorrectRemote();
     }
 
     /**
-     * Clone the specified repository to the given URL
+     * Clone the specified repository to the given URL at the indicated
+     * directory. If the desired repository already exists there, then
+     * we will re-use it rather than re-clone the repository.
+     *
      * @param string $url
      * @param string $dir
      * @param HubphAPI|null $api
@@ -47,7 +50,8 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
-     * Clone the specified branch of the specified repository to the given URL
+     * Clone the specified branch of the specified repository to the given URL.
+     *
      * @param string $url
      * @param string $dir
      * @param string $branch
@@ -64,6 +68,7 @@ class WorkingCopy implements LoggerAwareInterface
     /**
      * Blow away the existing repository at the provided directory and
      * force-push the new empty repository to the destination URL.
+     *
      * @param string $url
      * @param string $dir
      * @param HubphAPI|null $api
@@ -156,17 +161,26 @@ class WorkingCopy implements LoggerAwareInterface
         return $remote;
     }
 
+    /**
+     * List modified files.
+     */
     public function status()
     {
         return $this->git('status --porcelain');
     }
 
+    /**
+     * Pull from the specified remote.
+     */
     public function pull($remote, $branch)
     {
         $this->git('pull {remote} {branch}', ['remote' => $remote, 'branch' => $branch]);
         return $this;
     }
 
+    /**
+     * Push the specified branch to the desired remote.
+     */
     public function push($remote, $branch, $force = false)
     {
         $flag = $force ? '--force ' : '';
@@ -174,12 +188,18 @@ class WorkingCopy implements LoggerAwareInterface
         return $this;
     }
 
+    /**
+     * Merge the specified branch into the current branch.
+     */
     public function merge($branch)
     {
         $this->git('merge {branch}', ['branch' => $branch]);
         return $this;
     }
 
+    /**
+     * Reset to the specified reference.
+     */
     public function reset($ref = '', $hard = false)
     {
         $flag = $hard ? '--hard ' : '';
@@ -196,6 +216,9 @@ class WorkingCopy implements LoggerAwareInterface
         return $this;
     }
 
+    /**
+     * Create a new branch
+     */
     public function createBranch($branch, $base = '', $force = false)
     {
         $flag = $force ? '-B' : '-b';
@@ -203,12 +226,21 @@ class WorkingCopy implements LoggerAwareInterface
         return $this;
     }
 
+    /**
+     * Stage the items at the specified path.
+     */
     public function add($itemsToAdd)
     {
         $this->git('add ' . $itemsToAdd);
         return $this;
     }
 
+    /**
+     * Commit the staged changes.
+     *
+     * @param string $message
+     * @param bool $amend
+     */
     public function commit($message, $amend = false)
     {
         $flag = $amend ? '--amend ' : '';
@@ -216,21 +248,36 @@ class WorkingCopy implements LoggerAwareInterface
         return $this;
     }
 
+    /**
+     * Ammend the top commit without altering the message.
+     */
     public function amend()
     {
         return $this->commit($this->message(), true);
     }
 
+    /**
+     * Return the commit message for the sprecified ref
+     */
     public function message($ref = 'HEAD')
     {
         return trim(implode("\n", $this->git('log --format=%B -n 1 {ref}', ['ref' => $ref])));
     }
 
+    /**
+     * Show a diff of the current modified and uncommitted files.
+     */
     public function diff()
     {
-        return trim(implode("\n", $this->gitt('diff')));
+        return trim(implode("\n", $this->git('diff')));
     }
 
+    /**
+     * Create a pull request.
+     *
+     * @param string $message
+     * @return $this
+     */
     public function pr($message)
     {
         $replacements = ['message' => $message];
@@ -244,6 +291,9 @@ class WorkingCopy implements LoggerAwareInterface
         return $this;
     }
 
+    /**
+     * Show a diff of the specified reference from the commit before it.
+     */
     public function show($ref = "HEAD")
     {
         return implode("\n", $this->git("show $ref"));
@@ -263,7 +313,7 @@ class WorkingCopy implements LoggerAwareInterface
      * If the directory exists, check its remote. Fail if there is
      * some project there that is not the requested project.
      */
-    protected function confirmNoConflict($emptyOk = false)
+    protected function confirmCachedRepoHasCorrectRemote($emptyOk = false)
     {
         if (!file_exists($this->dir)) {
             return;

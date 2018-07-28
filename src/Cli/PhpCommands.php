@@ -15,16 +15,6 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     use ConfigAwareTrait;
     use LoggerAwareTrait;
 
-    protected function preamble()
-    {
-        return $this->getConfig()->get('messages.update-to', 'Update to ');
-    }
-
-    protected function branchPrefix()
-    {
-        return $this->getConfig()->get('constants.branch-prefix', 'php-');
-    }
-
     /**
      * Given a set of available php RPMs, as specified in the rpmbuild-php
      * repository, create a PR in the php cookbook to deploy those rpms.
@@ -73,7 +63,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             ->setLogger($this->logger);
 
         // Create a commit message with all of our modified versions
-        $all_updated_versions = $this->pretty_implode(', ', ' and ', array_map(function ($v) {
+        $all_updated_versions = $this->prettyImplode(', ', ' and ', array_map(function ($v) {
             return "php-$v";
         }, array_keys($version_updates)));
         $preamble = $this->preamble();
@@ -165,13 +155,13 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         $updated_versions = [];
         foreach ($versions as $version) {
-            $next_version = $this->next_version_that_exists($version);
+            $next_version = $this->nextVersionThatExists($version);
 
             if ($next_version != $version) {
                 $this->say("$next_version is available, but we are still on version $version");
 
                 // TODO: we need to determine if there is already an open pull request that contains $next_version
-                $this->update_spec($next_version, $datecode, $work_dir);
+                $this->updateSpec($next_version, $datecode, $work_dir);
                 $updated_versions[] = $next_version;
             } else {
                 $this->say("$version is the most recent version");
@@ -183,7 +173,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             return;
         }
 
-        $all_updated_versions = $this->pretty_implode(', ', ' and ', array_map(function ($v) {
+        $all_updated_versions = $this->prettyImplode(', ', ' and ', array_map(function ($v) {
             return "php-$v";
         }, $updated_versions));
         $preamble = $this->preamble();
@@ -221,7 +211,26 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }
     }
 
-    protected function next_version($version)
+    /**
+     * The preamble is placed at the beginning of commit messages.
+     */
+    protected function preamble()
+    {
+        return $this->getConfig()->get('messages.update-to', 'Update to ');
+    }
+
+    /**
+     * The branch prefix is placed at the beginning of branch names.
+     */
+    protected function branchPrefix()
+    {
+        return $this->getConfig()->get('constants.branch-prefix', 'php-');
+    }
+
+    /**
+     * Increment the patch number of a semver version string.
+     */
+    protected function nextVersion($version)
     {
         $parts = explode('.', $version);
         $parts[count($parts) - 1]++;
@@ -229,7 +238,11 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         return implode('.', $parts);
     }
 
-    protected function version_exists($version)
+    /**
+     * Check the ftp server at php.net and see if there is a .tar.gz
+     * file available for the specified php version.
+     */
+    protected function versionExists($version)
     {
         $urlTemplate = $this->getConfig()->get('php-net.download-url');
         $url = str_replace('{version}', $version, $urlTemplate);
@@ -245,18 +258,26 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         return (strpos($output[0], '200 OK') !== false);
     }
 
-    protected function next_version_that_exists($version)
+    /**
+     * Keep incrementing the provided (patch) version; return the highest
+     * version number that has an available download file.
+     */
+    protected function nextVersionThatExists($version)
     {
         $next_version = $version;
-        $try_version = $this->next_version($version);
-        while ($this->version_exists($try_version)) {
+        $try_version = $this->nextVersion($version);
+        while ($this->versionExists($try_version)) {
             $next_version = $try_version;
-            $try_version = $this->next_version($next_version);
+            $try_version = $this->nextVersion($next_version);
         }
         return $next_version;
     }
 
-    protected function update_spec($version, $datecode, $dir)
+    /**
+     * Reach into the spec file for the rpmbuild project for php
+     * and inject the provided version and datecode.
+     */
+    protected function updateSpec($version, $datecode, $dir)
     {
         $parts = explode('.', $version);
         $major_minor = $parts[0] . '.' . $parts[1];
@@ -267,7 +288,10 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         file_put_contents($path, $spec);
     }
 
-    protected function pretty_implode($sep, $last, $items)
+    /**
+     * Like implode, but allows us to put an "and" before the last item.
+     */
+    protected function prettyImplode($sep, $last, $items)
     {
         if (count($items) < 2) {
             return implode($sep, $items);
@@ -276,6 +300,11 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         return implode($sep, $items) . $last . $last_item;
     }
 
+    /**
+     * Return a Hubph API object authenticated per the credentials
+     * indicated by the active configuration, as selected by the
+     * "as" parameter.
+     */
     protected function api($as = 'default')
     {
         $api = new HubphAPI($this->getConfig());
