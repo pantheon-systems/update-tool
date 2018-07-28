@@ -264,6 +264,11 @@ class WorkingCopy implements LoggerAwareInterface
         return trim(implode("\n", $this->git('log --format=%B -n 1 {ref}', ['ref' => $ref])));
     }
 
+    public function branch($ref = 'HEAD')
+    {
+        return trim(implode("\n", $this->git('rev-parse --abbrev-ref {ref}', ['ref' => $ref])));
+    }
+
     /**
      * Show a diff of the current modified and uncommitted files.
      */
@@ -278,16 +283,12 @@ class WorkingCopy implements LoggerAwareInterface
      * @param string $message
      * @return $this
      */
-    public function pr($message)
+    public function pr($message, $body = '', $base = 'master', $head = '')
     {
-        $replacements = ['message' => $message];
-
-        // TODO: Use HubphAPI rather than `exec hub pull-request`
-        $oldDir = getcwd();
-        chdir($this->dir);
-        exec("hub pull-request -m '$message'", $output, $status);
-        chdir($oldDir);
-
+        if (empty($head)) {
+            $head = $this->branch();
+        }
+        $this->api->prCreate($this->org(), $this->project(), $message, $body, $base, $head);
         return $this;
     }
 

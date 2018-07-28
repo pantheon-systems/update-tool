@@ -171,16 +171,16 @@
         },
         {
             "name": "g1a/hubph",
-            "version": "0.1.5",
+            "version": "0.1.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/g1a/hubph.git",
-                "reference": "9b91cfd8f2ec6fbd9fe2f38212c499d5da6b564c"
+                "reference": "436b1f15d705f0f79ff8463dc47116b848a91bb3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/g1a/hubph/zipball/9b91cfd8f2ec6fbd9fe2f38212c499d5da6b564c",
-                "reference": "9b91cfd8f2ec6fbd9fe2f38212c499d5da6b564c",
+                "url": "https://api.github.com/repos/g1a/hubph/zipball/436b1f15d705f0f79ff8463dc47116b848a91bb3",
+                "reference": "436b1f15d705f0f79ff8463dc47116b848a91bb3",
                 "shasum": ""
             },
             "require": {
@@ -221,7 +221,7 @@
                 }
             ],
             "description": "Template project for PHP libraries.",
-            "time": "2018-07-28T21:49:26+00:00"
+            "time": "2018-07-28T22:27:10+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
