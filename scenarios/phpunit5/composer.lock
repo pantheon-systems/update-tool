@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "311a9de185afea2c74ecfb4de5847cfd",
+    "content-hash": "f090721a45e8d056b338772ad17179d2",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -171,16 +171,16 @@
         },
         {
             "name": "g1a/hubph",
-            "version": "dev-master",
+            "version": "0.1.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/g1a/hubph.git",
-                "reference": "0bf34981f70f13a2f1277d735ba950df6cd2d690"
+                "reference": "9b91cfd8f2ec6fbd9fe2f38212c499d5da6b564c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/g1a/hubph/zipball/0bf34981f70f13a2f1277d735ba950df6cd2d690",
-                "reference": "0bf34981f70f13a2f1277d735ba950df6cd2d690",
+                "url": "https://api.github.com/repos/g1a/hubph/zipball/9b91cfd8f2ec6fbd9fe2f38212c499d5da6b564c",
+                "reference": "9b91cfd8f2ec6fbd9fe2f38212c499d5da6b564c",
                 "shasum": ""
             },
             "require": {
@@ -221,7 +221,7 @@
                 }
             ],
             "description": "Template project for PHP libraries.",
-            "time": "2018-07-27T02:49:38+00:00"
+            "time": "2018-07-28T21:49:26+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -3749,9 +3749,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "g1a/hubph": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
