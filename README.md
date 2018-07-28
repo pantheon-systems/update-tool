@@ -25,7 +25,7 @@ The authentication credentials you will need can be found in the [pantheon-upstr
 
 ## Automation
 
-The [pantheon-systems/updatinator](https://github.com](pantheon-systems/updatinator) project runs the automation processes in CircleCI 2.0 scripts.
+The [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinator) project runs the automation processes in CircleCI 2.0 scripts.
 
 ## Local Development
 
@@ -51,4 +51,4 @@ To release a new version of the updatinate tool, run:
 
 This will release a stable version of whatever is indicated in the VERSION file. e.g. if VERSION contains `1.0.3-dev`, then version `1.0.3` will be tagged and released, and the VERSION file will be updated to `1.0.4-dev`. To release version `1.1.0` instead, manually edit the VERSION file to `1.1.0-dev` and then run `composer release`.
 
-The updatinate.phar file will be uploaded to GitHub on every release. Rebuild [pantheon-systems/docker-updatinator](https://github.com](pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
+The updatinate.phar file will be uploaded to GitHub on every release. Rebuild [pantheon-systems/docker-updatinator](https://github.com/pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
