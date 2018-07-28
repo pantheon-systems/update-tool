@@ -17,9 +17,51 @@ There are two choices for LICENSE badges:
 [![License](https://poser.pugx.org/pantheon-systems/updatinate/license)](https://github.com/pantheon-systems/updatinate//master/LICENSE)
 -->
 
-## FINISH CUSTOMIZATION
+## Overview
 
-Follow the steps in this section to complete the customization of your new project.
+The 'updatinate' tool is a collection of update scripts to keep upstreams up-to-date.
+
+- php:rpm:update: Check for new php releases in [php.net/distributions](http://php.net/distributions) and create a pull requests in the [pantheon-systems/rpmbuild-php](https://github.com/pantheon-systems/rpmbuild-php) project as needed.
+- php:cookbook:update: After a php rpmbuild completes, this command will create a pull request in the [php cookbook](https://github.com/pantheon-cookbooks/php) to deploy the new RPMs.
+
+## Authentication
+
+There are two ways to provide authentication credentials when using the updatinate commands.
+
+- Environment variable: Define `GITHUB_TOKEN` with the apporpriate personal access token.
+- On-disk cache: See [updatinate.yml](updatinate.yml) for the location to store the personal access token. Use the `--as` option to select between different cache locations.
+
+The authentication credentials you will need can be found in the [pantheon-upstream onelogin note](https://pantheon.onelogin.com/notes/58434). 
+
+## Automation
+
+The [pantheon-systems/updatinator](https://github.com](pantheon-systems/updatinator) project runs the automation processes in CircleCI 2.0 scripts.
+
+## Local Development
+
+Clone the GitHub repository and run `composer install` to get started.
+
+### Running the tests
+
+The test suite may be run locally by way of some simple composer scripts:
+
+| Test             | Command
+| ---------------- | ---
+| Run all tests    | `composer test`
+| PHPUnit tests    | `composer unit`
+| PHP linter       | `composer lint`
+| Code style       | `composer cs`     
+| Fix style errors | `composer cbf`
+
+### Releasing
+
+To release a new version of the updatinate tool, run:
+
+- `composer release`
+
+This will release a stable version of whatever is indicated in the VERSION file. e.g. if VERSION contains `1.0.3-dev`, then version `1.0.3` will be tagged and released, and the VERSION file will be updated to `1.0.4-dev`. To release version `1.1.0` instead, manually edit the VERSION file to `1.1.0-dev` and then run `composer release`.
+
+The updatinate.phar file will be uploaded to GitHub on every release. Rebuild [pantheon-systems/docker-updatinator](https://github.com](pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
 
 ### Services
 
@@ -34,136 +76,3 @@ Enable those services shown below that have not already been configured:
 | Code coverage             | [Enable Coveralls](https://coveralls.io/repos/new)
 | Package manager           | [Register with Packagist](https://packagist.org/packages/submit)
 | Dependency updates        | [Enable Dependencies.io](https://app.dependencies.io/add-project)
-
-### Commandline Tool
-
-To customize the name of your commandline tool:
-
-- Rename the file `example` (the executable / front controller)
-- Replace any `example` or `example.phar` in [box.json.dist](/box.json.dist) and [.gitignore](/.gitignore) with the desired name for your phar
-
-### Release Script
-
-To automatically attach a .phar (or some other build result) to every GitHub release:
-
-- Run `travis setup releases` and answer the prompts. Answer "yes" to all yes/no questions.
-- Edit resulting `.travis.yml` file to include the missing `skip_cleanup:` and `tags:` directives.
-
-When you are done, the `deploy:` section should look something like this:
-
-```
-deploy:
-  provider: releases
-  api_key:
-    secure: KmKwmt...[REDACTED]...LlE=
-  file: example.phar
-  skip_cleanup: true
-  on:
-    tags: true
-    repo: pantheon-systems/updatinate
-```
-
-The `secure:` line should be filled in by `travis setup releases`.
-
-### Documentation
-
-Once you have finished setting up your project, delete this section and fill out the other sections of this README.
-
-Also look over:
-
-- [GitHub issue template](/.github/issue_template.md)
-- [GitHub pull request template](/.github/pull_request_template.md)
-- [Contributing guide](/CONTRIBUTING) (Decide about your code of conduct)
-
-## Getting Started
-
-Explain how to get a copy of this project up and running on a new user's local machine.
-
-See deployment for notes on how to deploy the project on a live system.
-
-### Prerequisites
-
-List the things that are needed to install the software and how to install them. For most PHP projects, it should usually be sufficient to run:
-
-```
-composer install
-```
-
-If you wish to build the phar for this project, install the `box` phar builder via:
-
-```
-composer phar:install-tools
-```
-
-### Installing
-
-Provide a step by step series of examples that show how to install this project.
-
-Say what the step will be. If the phar for this project is the primary output, and not a mere development utility, then perhaps the first step will be to build the phar:
-
-```
-composer phar:build
-```
-
-It may then be sufficient to install via:
-
-```
-cp example.phar /usr/local/bin
-```
-
-End with an example of getting some data out of the system or using it for a little demo.
-
-## Running the tests
-
-The test suite may be run locally by way of some simple composer scripts:
-
-| Test             | Command
-| ---------------- | ---
-| Run all tests    | `composer test`
-| PHPUnit tests    | `composer unit`
-| PHP linter       | `composer lint`
-| Code style       | `composer cs`     
-| Fix style errors | `composer cbf`
-
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system.
-
-If your project has been set up to automatically deploy its .phar with every GitHub release, then you will be able to deploy by the following procedure:
-
-- Edit the `VERSION` file to contain the version to release, and commit the change.
-- Run `composer release`
-
-## Built With
-
-List significant dependencies that developers of this project will interact with.
-
-* [Composer](https://getcomposer.org/) - Dependency Management
-* [Robo](https://robo.li/) - PHP Task Runner
-* [Symfony](https://symfony.com/) - PHP Framework
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [releases](https://github.com/pantheon-systems/updatinate/releases) page.
-
-## Authors
-
-* **Greg Anderson** - created project from template.
-
-See also the list of [contributors](https://github.com/pantheon-systems/updatinate/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
-* Thanks to PurpleBooth for the [example README template](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
