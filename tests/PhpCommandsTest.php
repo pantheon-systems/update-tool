@@ -94,6 +94,9 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         $diff = preg_replace('#  +#', ' ', $phpRpmWorkingCopy->show());
         $this->assertContains($expectedDiff, $diff);
 
+        // Make sure github API has enough time to realize the PR has been created
+        sleep(5);
+
         // Step 3: No change to available PHP versions. No action taken (PR stays open)
         $this->fixtures->setupPhpDotNetFixture($available_php_versions);
         $output = $this->executeExpectOK(['php:rpm:update']);
@@ -141,6 +144,9 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         $this->assertContains("+ '7.1.21-", $diff);
         $this->assertNotContains("+ '7.0", $diff);
         $this->assertNotContains("+ '5.6", $diff);
+
+        // Make sure github API has enough time to realize the PR has been created
+        sleep(5);
 
         // Step 6: Try to make another Cookbook update; confirm that nothing is done
         $output = $this->executeExpectOK(['php:cookbook:update']);
