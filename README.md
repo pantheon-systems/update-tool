@@ -1,6 +1,6 @@
 # Updatinate
 
-Put a one-line description of your project here.
+The Updatinate tool is responsible for detecting available software updates and creating pull requested as needed.
 
 [![Travis CI](https://travis-ci.org/pantheon-systems/updatinate.svg?branch=master)](https://travis-ci.org/pantheon-systems/updatinate)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/?branch=master)
