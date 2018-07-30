@@ -7,26 +7,13 @@ use Psr\Log\LoggerAwareTrait;
 use Robo\Contract\ConfigAwareInterface;
 use Robo\Common\ConfigAwareTrait;
 use Updatinate\Git\WorkingCopy;
+use Hubph\VersionIdentifiers;
+use Hubph\HubphAPI;
 
 class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
     use LoggerAwareTrait;
-
-    /**
-     * Report who we have authenticated as
-     *
-     * @command whoami
-     */
-    public function whoami($options = ['as' => 'default'])
-    {
-        $gitHubAPI = $this->authenticateWithGitHubAPI($options['as']);
-
-        $authenticated = $gitHubAPI->api('current_user')->show();
-        $authenticatedUser = $authenticated['login'];
-
-        $this->say("Authenticated as $authenticatedUser.");
-    }
 
     /**
      * Given a set of available php RPMs, as specified in the rpmbuild-php
@@ -36,7 +23,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      */
     public function phpCookbookUpdate($options = ['as' => 'default'])
     {
-        $token = $this->getGitHubToken($options['as']);
+        $api = $this->api($options['as']);
 
         $rpmbuild_php_url = $this->getConfig()->get('projects.rpmbuild-php.repo');
         $rpmbuild_php_dir = $this->getConfig()->get('projects.rpmbuild-php.path');
@@ -44,12 +31,12 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
         $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
 
-        $rpmbuild_php = new WorkingCopy($rpmbuild_php_url, $rpmbuild_php_dir);
+        $rpmbuild_php = WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $api);
         $rpmbuild_php
             ->setLogger($this->logger);
 
         // Look at the most recent commit on the current branch.
-        $output = $rpmbuild_php->show('HEAD');
+        $output = $rpmbuild_php->git('show HEAD');
 
         // Look for changes to both the php_version and rpm_datecode in the same file.
         $version_updates = [];
@@ -57,11 +44,9 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         foreach ($output as $line) {
             if (preg_match('#^diff #', $line)) {
                 $version = false;
-            }
-            elseif (preg_match('#\+%define php_version *([0-9.]*)#', $line, $matches)) {
+            } elseif (preg_match('#.%define php_version *([0-9.]*)#', $line, $matches)) {
                 $version = $matches[1];
-            }
-            elseif (preg_match('#\+%define rpm_datecode *([0-9]*)#', $line, $matches)) {
+            } elseif ($version && preg_match('#\+%define rpm_datecode *([0-9]*)#', $line, $matches)) {
                 $rpm_datecode = $matches[1];
                 $version_updates[$version] = "{$version}-{$rpm_datecode}";
             }
@@ -69,13 +54,28 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         // If there were no updates to php versions, then we are done.
         if (empty($version_updates)) {
-            $this->say("Nothing was updated.");
+            $this->logger->notice("Nothing was updated.");
             return;
         }
 
-        $php_cookbook = new WorkingCopy($php_cookbook_url, $php_cookbook_dir);
+        $php_cookbook = WorkingCopy::clone($php_cookbook_url, $php_cookbook_dir, $api);
         $php_cookbook
             ->setLogger($this->logger);
+
+        // Create a commit message with all of our modified versions
+        $all_updated_versions = $this->prettyImplode(', ', ' and ', array_map(function ($v) {
+            return "php-$v";
+        }, array_keys($version_updates)));
+        $preamble = $this->preamble();
+        $message = "{$preamble}{$all_updated_versions}";
+        $this->logger->notice("Commit message {message}", ['message' => $message]);
+
+        // Create a set of version ids from the commit message
+        $vids = new VersionIdentifiers();
+        $vids->setVidPattern('php-#.#.');
+        $vids->setVvalPattern('#');
+        $vids->setPreamble($preamble);
+        $vids->addVidsFromMessage($message);
 
         // Modify the php.rb source file in the php cookbook to select the php rpm that was built
         $php_library_src_path = "$php_cookbook_dir/libraries/php.rb";
@@ -90,20 +90,38 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         file_put_contents($php_library_src_path, $contents);
 
-        // Check for open pull requests that already contain some of these
-        // updates, or that contain earlier versions of these updates.
-        // $openPullRequests = $gitHubAPI->api('pull_request')->all('pantheon-systems', 'rpmbuild-php');
+        // Check to see if our modifications caused any changes
+        $output = $php_cookbook->status();
+        if (empty($output)) {
+            $this->logger->notice("Nothing was updated.");
+            return;
+        }
+
+        // Check to see if there are any open PRs that have already done this
+        // work, or that are old and need to be closed.
+        list($status, $existingPRList) = $api->prCheck($php_cookbook->projectWithOrg(), $vids);
+        if ($status) {
+            // TODO: $existingPRList might be a string or an array of PR numbers. :P Fix.
+            $this->logger->notice($existingPRList);
+            return;
+        }
 
         // Create a pull request with the update.
-        $branch = 'php-' . implode('-', array_keys($version_updates));
-        $all_updated_versions = implode(' ', array_keys($version_updates));
-        $message = "Update to PHP $all_updated_versions";
+        $branch = $this->branchPrefix() . implode('-', array_keys($version_updates));
+        $this->logger->notice('Using {branch}', ['branch' => $branch]);
+
+        // Commit, push, and make the PR
         $php_cookbook
-            ->createBranch($branch)
+            ->createBranch($branch, 'master', true)
             ->add('libraries/php.rb')
             ->commit($message)
             ->push('origin', $branch)
             ->pr($message);
+
+        // TODO: $existingPRList might be a string or an array of PR numbers. :P Fix.
+        if (is_array($existingPRList)) {
+            $api->prClose($php_cookbook->org(), $php_cookbook->project(), $existingPRList);
+        }
     }
 
     /**
@@ -113,16 +131,16 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      * @command php:rpm:update
      * @aliases php:update
      */
-    public function phpRpmUpdate()
+    public function phpRpmUpdate($options = ['as' => 'default'])
     {
-        $token = $this->getGitHubToken();
+        $api = $this->api($options['as']);
 
         $url = $this->getConfig()->get('projects.rpmbuild-php.repo');
         $work_dir = $this->getConfig()->get('projects.rpmbuild-php.path');
 
         // Ensure that a local working copy of the project has
         // been checked out and is available.
-        $rpmbuild_php = new WorkingCopy($url, $work_dir);
+        $rpmbuild_php = WorkingCopy::clone($url, $work_dir, $api);
         $rpmbuild_php
             ->setLogger($this->logger);
         $rpmbuild_php
@@ -131,39 +149,88 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         $datecode = date("Ymd");
 
+        // TODO: convert this snippet of bash from the old script to php.
+        // Purpose: finds the current php_version lines from all php.spec files.
         exec("grep '^%define php_version ' $work_dir/php*/php.spec | sed -e 's#[^ ]* *php_version *##'", $versions, $status);
 
         $updated_versions = [];
         foreach ($versions as $version) {
+            $next_version = $this->nextVersionThatExists($version);
 
-          $next_version = $this->next_version_that_exists($version);
+            if ($next_version != $version) {
+                $this->say("$next_version is available, but we are still on version $version");
 
-          if ($next_version != $version) {
-            $this->say("$next_version is available, but we are still on version $version");
-
-            // TODO: we need to determine if there is already an open pull request that contains $next_version
-            $this->update_spec($next_version, $datecode, $work_dir);
-            $updated_versions[] = $next_version;
-          }
-          else {
-            $this->say("$version is the most recent version");
-          }
+                // TODO: we need to determine if there is already an open pull request that contains $next_version
+                $this->updateSpec($next_version, $datecode, $work_dir);
+                $updated_versions[] = $next_version;
+            } else {
+                $this->say("$version is the most recent version");
+            }
         }
 
-        if (!empty($updated_versions)) {
-            $all_updated_versions = $this->pretty_implode(', ', ' and ', $updated_versions);
-            $branch = 'php-' . implode('-', $updated_versions);
-            $message = "Update to PHP $all_updated_versions";
-            $rpmbuild_php
-                ->createBranch($branch)
-                ->add('php-*')
-                ->commit($message)
-                ->push('origin', $branch)
-                ->pr($message);
+        if (empty($updated_versions)) {
+            $this->logger->notice("Nothing was updated.");
+            return;
+        }
+
+        $all_updated_versions = $this->prettyImplode(', ', ' and ', array_map(function ($v) {
+            return "php-$v";
+        }, $updated_versions));
+        $preamble = $this->preamble();
+        $message = "{$preamble}{$all_updated_versions}";
+        $this->logger->notice("Commit message {message}", ['message' => $message]);
+
+        // Create a set of version ids from the commit message
+        $vids = new VersionIdentifiers();
+        $vids->setVidPattern('php-#.#.');
+        $vids->setVvalPattern('#');
+        $vids->setPreamble($preamble);
+        $vids->addVidsFromMessage($message);
+
+        // Check to see if there are any open PRs that have already done this
+        // work, or that are old and need to be closed.
+        list($status, $existingPRList) = $api->prCheck($rpmbuild_php->projectWithOrg(), $vids);
+        if ($status) {
+            // TODO: $existingPRList might be a string or an array of PR numbers. :P Fix.
+            $this->logger->notice($existingPRList);
+            return;
+        }
+
+        $branch = $this->branchPrefix() . implode('-', $updated_versions);
+        $this->logger->notice('Using {branch}', ['branch' => $branch]);
+        $rpmbuild_php
+            ->createBranch($branch, 'master', true)
+            ->add('php-*')
+            ->commit($message)
+            ->push('origin', $branch)
+            ->pr($message);
+
+        // TODO: $existingPRList might be a string or an array of PR numbers. :P Fix.
+        if (is_array($existingPRList)) {
+            $api->prClose($rpmbuild_php->org(), $rpmbuild_php->project(), $existingPRList);
         }
     }
 
-    protected function next_version($version)
+    /**
+     * The preamble is placed at the beginning of commit messages.
+     */
+    protected function preamble()
+    {
+        return $this->getConfig()->get('messages.update-to', 'Update to ');
+    }
+
+    /**
+     * The branch prefix is placed at the beginning of branch names.
+     */
+    protected function branchPrefix()
+    {
+        return $this->getConfig()->get('constants.branch-prefix', 'php-');
+    }
+
+    /**
+     * Increment the patch number of a semver version string.
+     */
+    protected function nextVersion($version)
     {
         $parts = explode('.', $version);
         $parts[count($parts) - 1]++;
@@ -171,26 +238,46 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         return implode('.', $parts);
     }
 
-    protected function version_exists($version)
+    /**
+     * Check the ftp server at php.net and see if there is a .tar.gz
+     * file available for the specified php version.
+     */
+    protected function versionExists($version)
     {
-        $url = "http://php.net/distributions/php-$version.tar.gz";
+        $urlTemplate = $this->getConfig()->get('php-net.download-url');
+        $url = str_replace('{version}', $version, $urlTemplate);
 
+        // If the $url points to a local cache, use file_exists
+        if ((strpos($url, 'file:///') !== false) || (strpos($url, '://') === false)) {
+            return file_exists($url);
+        }
+
+        // For network urls, run `curl -I` to do just a HEAD request.
+        // -s is "silent mode".
         exec("curl -s -I $url", $output, $status);
         return (strpos($output[0], '200 OK') !== false);
     }
 
-    protected function next_version_that_exists($version)
+    /**
+     * Keep incrementing the provided (patch) version; return the highest
+     * version number that has an available download file.
+     */
+    protected function nextVersionThatExists($version)
     {
         $next_version = $version;
-        $try_version = $this->next_version($version);
-        while ($this->version_exists($try_version)) {
-                    $next_version = $try_version;
-                    $try_version = $this->next_version($next_version);
+        $try_version = $this->nextVersion($version);
+        while ($this->versionExists($try_version)) {
+            $next_version = $try_version;
+            $try_version = $this->nextVersion($next_version);
         }
         return $next_version;
     }
 
-    protected function update_spec($version, $datecode, $dir)
+    /**
+     * Reach into the spec file for the rpmbuild project for php
+     * and inject the provided version and datecode.
+     */
+    protected function updateSpec($version, $datecode, $dir)
     {
         $parts = explode('.', $version);
         $major_minor = $parts[0] . '.' . $parts[1];
@@ -201,7 +288,10 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         file_put_contents($path, $spec);
     }
 
-    protected function pretty_implode($sep, $last, $items)
+    /**
+     * Like implode, but allows us to put an "and" before the last item.
+     */
+    protected function prettyImplode($sep, $last, $items)
     {
         if (count($items) < 2) {
             return implode($sep, $items);
@@ -211,36 +301,15 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     }
 
     /**
-     * Authenticate and then return the gitHub API object.
+     * Return a Hubph API object authenticated per the credentials
+     * indicated by the active configuration, as selected by the
+     * "as" parameter.
      */
-    protected function authenticateWithGitHubAPI($as = 'default')
+    protected function api($as = 'default')
     {
-        $token = $this->getGitHubToken($as);
+        $api = new HubphAPI($this->getConfig());
+        $api->setAs($as);
 
-        $gitHubAPI = new \Github\Client();
-        $gitHubAPI->authenticate($token, null, \Github\Client::AUTH_HTTP_TOKEN);
-
-        return $gitHubAPI;
-    }
-
-    /**
-     * Look up the GitHub token set either via environment variable or in the
-     * auth-token cache directory.
-     */
-    protected function getGitHubToken($as = 'default')
-    {
-        if ($as == 'default') {
-            $as = $this->getConfig()->get("github.default-user");
-        }
-        $github_token_cache = $this->getConfig()->get("github.personal-auth-token.$as.path");
-        if (file_exists($github_token_cache)) {
-            $token = trim(file_get_contents($github_token_cache));
-            putenv("GITHUB_TOKEN=$token");
-        }
-        else {
-            $token = getenv('GITHUB_TOKEN');
-        }
-
-        return $token;
+        return $api;
     }
 }

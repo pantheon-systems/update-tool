@@ -9,8 +9,10 @@ github:
     # This is a read/write token for pantheon-upstream
     updatinate:
       path: ${cache-path}/updatinate-token
-    greg:
+    me:
       path: ${env.HOME}/.github-token
+php-net:
+  download-url: http://php.net/distributions/php-{version}.tar.gz
 
 projects:
   rpmbuild-php:
