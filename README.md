@@ -1,15 +1,23 @@
 # Updatinate
 
-The Updatinate tool is responsible for detecting available software updates and creating pull requested as needed.
+Fast and smart. Updatinate checks for available software updates and creates pull requests.
 
 [![Travis CI](https://travis-ci.org/pantheon-systems/updatinate.svg?branch=master)](https://travis-ci.org/pantheon-systems/updatinate)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/pantheon-systems/updatinate/badge.svg?branch=master)](https://coveralls.io/github/pantheon-systems/updatinate?branch=master) 
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
 
-## Overview
+<table><tr width="25%"><td><img alt="Detinator" src="docs/images/roadrunner.png"/></td><td width="75%" valign="top">
+The Updatinate tool is a lightweight collection of commands that know how to create 
+pull requests from various data sources that inform us of the most recent available
+version of certain software components on our platform. These commands are executed
+periodically via `cron`, as managed by the 
+[Updatinator](https://github.com/pantheon-systems/updatinator) tool.
+</td></tr></table>
 
-The 'updatinate' tool is a collection of update scripts to keep upstreams up-to-date.
+## Command List
+
+The following commands are available:
 
 - php:rpm:update: Check for new php releases in [php.net/distributions](http://php.net/distributions) and create a pull requests in the [pantheon-systems/rpmbuild-php](https://github.com/pantheon-systems/rpmbuild-php) project as needed.
 - php:cookbook:update: After a php rpmbuild completes, this command will create a pull request in the [php cookbook](https://github.com/pantheon-cookbooks/php) to deploy the new RPMs.
