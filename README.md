@@ -12,7 +12,7 @@ The Updatinate tool is a lightweight collection of commands that know how to cre
 pull requests from various data sources that inform us of the most recent available
 version of certain software components on our platform. These commands are executed
 periodically via `cron`, as managed by the 
-[Updatinator](https://github.com/pantheon-systems/updatinator) tool.
+<a href="https://github.com/pantheon-systems/updatinator">Updatinator</a> tool.
 </td></tr></table>
 
 ## Command List
