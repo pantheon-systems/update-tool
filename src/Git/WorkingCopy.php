@@ -9,10 +9,10 @@ use Updatinate\Util\ExecWithRedactionTrait;
 
 class WorkingCopy implements LoggerAwareInterface
 {
-    use LoggerAwareTrait;
     use ExecWithRedactionTrait;
+    use LoggerAwareTrait;
 
-    protected $url;
+    protected $remote;
     protected $dir;
     protected $api;
 
@@ -24,10 +24,8 @@ class WorkingCopy implements LoggerAwareInterface
      */
     protected function __construct($url, $dir, $branch = false, $api = null)
     {
-        if ($api) {
-            $url = $api->addTokenAuthentication($url);
-        }
-        $this->url = $url;
+        $this->remote = new Remote($url);
+        $this->remote->addAuthentication($api);
         $this->dir = $dir;
         $this->api = $api;
 
@@ -133,32 +131,24 @@ class WorkingCopy implements LoggerAwareInterface
         $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
     }
 
+    public function url()
+    {
+        return $this->remote->url();
+    }
+
     public function org()
     {
-        $projectAndOrg = $this->projectAndOrgFromUrl($this->url);
-        $parts = explode('/', $projectAndOrg);
-        return $parts[0];
+        return $this->remote->org();
     }
 
     public function project()
     {
-        $projectAndOrg = $this->projectAndOrgFromUrl($this->url);
-        $parts = explode('/', $projectAndOrg);
-        return $parts[1];
+        return $this->remote->project();
     }
 
     public function projectWithOrg()
     {
-        return $this->projectAndOrgFromUrl($this->url);
-    }
-
-    protected function projectAndOrgFromUrl($remote)
-    {
-        $remote = preg_replace('#^git@[^:]*:#', '', $remote);
-        $remote = preg_replace('#^[^:]*://[^/]*/#', '', $remote);
-        $remote = preg_replace('#\.git$#', '', $remote);
-
-        return $remote;
+        return $this->remote->projectWithOrg();
     }
 
     /**
@@ -301,16 +291,6 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
-     * Run a git function on the local working copy. Fail on error.
-     *
-     * @return string stdout
-     */
-    public function git($cmd, $replacements = [], $redacted = [])
-    {
-        return $this->execWithRedaction('git {dir}' . $cmd, ['dir' => "-C {$this->dir} "] + $replacements, ['dir' => ''] + $redacted);
-    }
-
-    /**
      * If the directory exists, check its remote. Fail if there is
      * some project there that is not the requested project.
      */
@@ -321,20 +301,21 @@ class WorkingCopy implements LoggerAwareInterface
         }
         // Check to see if the remote origin is already set to our exact url
         $currentURL = exec("git -C {$this->dir} config --get remote.origin.url", $output, $result);
-        if ($currentURL == $this->url) {
+
+        if ($currentURL == $this->url()) {
             return;
         }
         // If the API exists, try to repair the URL if the existing URL is close
         // (e.g. someone switched authentication tokens)
         if ($this->api) {
-            if (($emptyOk && empty($currentURL)) || ($this->api->addTokenAuthentication($currentURL) == $this->url)) {
-                static::setRemoteOrigin($this->url, $this->dir);
+            if (($emptyOk && empty($currentURL)) || ($this->api->addTokenAuthentication($currentURL) == $this->url())) {
+                static::setRemoteOrigin($this->url(), $this->dir);
                 return;
             }
         }
 
         // TODO: This error message is a potential credentials leak
-        throw new \Exception("Directory `{$this->dir}` exists and is a clone of `$currentURL` rather than `{$this->url}`");
+        throw new \Exception("Directory `{$this->dir}` exists and is a clone of `$currentURL` rather than `{$this->url()}`");
     }
 
     /**
@@ -347,6 +328,7 @@ class WorkingCopy implements LoggerAwareInterface
         $currentURL = exec("git -C {$dir} config --get remote.{$remote}.url");
         $gitCommand = empty($currentURL) ? 'add' : 'set-url';
         exec("git -C {$dir} remote {$gitCommand} {$remote} {$url}");
+        $this->remote = new Remote($url);
     }
 
     /**
@@ -369,6 +351,16 @@ class WorkingCopy implements LoggerAwareInterface
         $fs->mkdir(dirname($this->dir));
 
         $branchTerm = $branch ? "--branch=$branch " : '';
-        exec("git clone '{$this->url}' $branchTerm'{$this->dir}' 2>/dev/null", $output, $result);
+        exec("git clone '{$this->url()}' $branchTerm'{$this->dir}' 2>/dev/null", $output, $result);
+    }
+
+    /**
+     * Run a git function on the local working copy. Fail on error.
+     *
+     * @return string stdout
+     */
+    public function git($cmd, $replacements = [], $redacted = [])
+    {
+        return $this->execWithRedaction('git {dir}' . $cmd, ['dir' => "-C {$this->dir} "] + $replacements, ['dir' => ''] + $redacted);
     }
 }

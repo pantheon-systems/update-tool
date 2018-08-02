@@ -29,6 +29,7 @@ $appVersion = trim(file_get_contents(__DIR__ . '/VERSION'));
 $commandClasses = [
   \Hubph\Cli\HubphCommands::class,
   \Updatinate\Cli\PhpCommands::class,
+  \Updatinate\Cli\ProjectCommands::class,
 ];
 $selfUpdateRepository = 'pantheon-systems/updatinate';
 $configPrefix = 'UPDATINATE';

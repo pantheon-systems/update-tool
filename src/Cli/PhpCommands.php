@@ -10,10 +10,14 @@ use Updatinate\Git\WorkingCopy;
 use Hubph\VersionIdentifiers;
 use Hubph\HubphAPI;
 
+/**
+ * Commands used to create pull requests to update available php versions on the platform
+ */
 class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
     use LoggerAwareTrait;
+    use ApiTrait;
 
     /**
      * Given a set of available php RPMs, as specified in the rpmbuild-php
@@ -298,18 +302,5 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }
         $last_item = array_pop($items);
         return implode($sep, $items) . $last . $last_item;
-    }
-
-    /**
-     * Return a Hubph API object authenticated per the credentials
-     * indicated by the active configuration, as selected by the
-     * "as" parameter.
-     */
-    protected function api($as = 'default')
-    {
-        $api = new HubphAPI($this->getConfig());
-        $api->setAs($as);
-
-        return $api;
     }
 }
