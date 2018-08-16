@@ -32,6 +32,14 @@ class WorkingCopy implements LoggerAwareInterface
         $this->confirmCachedRepoHasCorrectRemote();
     }
 
+    public function fromDir($dir, $api = null)
+    {
+        $this->remote = Remote::fromDir($dir);
+        $this->remote->addAuthentication($api);
+        $this->dir = $dir;
+        $this->api = $api;
+    }
+
     /**
      * Clone the specified repository to the given URL at the indicated
      * directory. If the desired repository already exists there, then

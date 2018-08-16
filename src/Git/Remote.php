@@ -26,6 +26,12 @@ class Remote implements LoggerAwareInterface
         return $remote;
     }
 
+    public static function fromDir($dir, $remote = 'origin')
+    {
+        $currentURL = exec("git -C {$dir} config --get remote.{$remote}.url");
+        return new self($currentURL);
+    }
+
     public function addAuthentication($api = null)
     {
         if ($api) {

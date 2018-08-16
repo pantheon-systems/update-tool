@@ -38,6 +38,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $rpmbuild_php = WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $api);
         $rpmbuild_php
             ->setLogger($this->logger);
+        $this->logger->notice("Check out {project} to {path}.", ['project' => $rpmbuild_php->projectWithOrg(), 'path' => $rpmbuild_php_dir]);
 
         // Look at the most recent commit on the current branch.
         $output = $rpmbuild_php->git('show HEAD');
@@ -147,6 +148,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $rpmbuild_php = WorkingCopy::clone($url, $work_dir, $api);
         $rpmbuild_php
             ->setLogger($this->logger);
+        $this->logger->notice("Check out {project} to {path}.", ['project' => $rpmbuild_php->projectWithOrg(), 'path' => $work_dir]);
         $rpmbuild_php
             ->switchBranch('master')
             ->pull('origin', 'master');
