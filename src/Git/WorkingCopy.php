@@ -360,6 +360,12 @@ class WorkingCopy implements LoggerAwareInterface
 
         $branchTerm = $branch ? "--branch=$branch " : '';
         exec("git clone '{$this->url()}' $branchTerm'{$this->dir}' 2>/dev/null", $output, $result);
+
+        // Fail if we could not clone.
+        if ($result) {
+            $project = $this->projectWithOrg();
+            throw new \Exception("Could not clone $project: git failed with exit code $result");
+        }
     }
 
     /**
