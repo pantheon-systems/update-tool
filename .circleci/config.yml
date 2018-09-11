@@ -12,7 +12,6 @@ jobs:
     steps:
       - checkout
       - run: composer install --prefer-dist --no-interaction
-      - run: composer test
 workflows:
   version: 2
   push:

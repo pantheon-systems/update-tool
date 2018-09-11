@@ -30,6 +30,7 @@ $commandClasses = [
   \Hubph\Cli\HubphCommands::class,
   \Updatinate\Cli\PhpCommands::class,
   \Updatinate\Cli\ProjectCommands::class,
+  \Updatinate\Cli\CICommands::class,
 ];
 $selfUpdateRepository = 'pantheon-systems/updatinate';
 $configPrefix = 'UPDATINATE';
