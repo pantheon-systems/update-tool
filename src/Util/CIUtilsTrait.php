@@ -27,20 +27,23 @@ trait CIUtilsTrait
 
         $this->logger->notice("Cancelling Circle build.");
         $url = "https://circleci.com/api/v1.1/project/$vcs_type/$org/$project/$build_num/cancel";
-        $this->circleCIAPI([], $url, $token);
+        $status = $this->circleCIAPI([], $url, $token);
+        $this->logger->notice("Cancel Circle Build via {url} returned {status}", ['url' => $url, 'status' => $status]);
+        $url = "https://circleci.com/api/v1.1/project/$vcs_type/$org/$project/$build_num/cancel";
+        $status = $this->circleCIAPI([], $url, $token);
+        $this->logger->notice("Cancel Circle Build via {url} returned {status}", ['url' => $url, 'status' => $status]);
     }
 
     protected function circleCIAPI($data, $url, $token)
     {
         $headers = [
-            'Content-Type' => 'application/json',
-            'User-Agent' => 'pantheon/updatinate'
+            'Accept' => 'application/json',
+            'User-Agent' => 'pantheon/updatinate',
         ];
 
         $client = new \GuzzleHttp\Client();
-        $res = $client->request('POST', $url, [
+        $res = $client->request('POST', $url . "?circle-token=$token", [
             'headers' => $headers,
-            'auth' => [$token, ''],
             'json' => $data,
         ]);
         return $res->getStatusCode();
