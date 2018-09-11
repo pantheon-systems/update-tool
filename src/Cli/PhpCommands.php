@@ -35,6 +35,8 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
         $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
 
+        $php_cookbook_src = $this->getConfig()->get('projects.php-cookbook.src');
+
         $rpmbuild_php = WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $api);
         $rpmbuild_php
             ->setLogger($this->logger);
@@ -83,7 +85,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $vids->addVidsFromMessage($message);
 
         // Modify the php.rb source file in the php cookbook to select the php rpm that was built
-        $php_library_src_path = "$php_cookbook_dir/libraries/php.rb";
+        $php_library_src_path = "$php_cookbook_dir/$php_cookbook_src";
         $contents = file_get_contents($php_library_src_path);
 
         foreach ($version_updates as $version_spec) {
