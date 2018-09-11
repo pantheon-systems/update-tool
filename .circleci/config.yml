@@ -11,7 +11,7 @@ jobs:
     <<: *updatinator_container
     steps:
       - checkout
-      - run: composer install --prefer-dist --no-dev --no-interaction
+      - run: composer install --prefer-dist --no-interaction
       - run: composer test
 workflows:
   version: 2
