@@ -110,7 +110,7 @@ class Fixtures
         $workingCopy = WorkingCopy::forceReinitializeFixture($url, $dir, $fixture, $api);
 
         $allPRs = $api->allPRs($workingCopy->org() . '/' . $workingCopy->project());
-        $api->prClose($workingCopy->org(), $workingCopy->project(), $allPRs->prNumbers());
+        $api->prClose($workingCopy->org(), $workingCopy->project(), $allPRs);
 
         return $workingCopy;
     }
