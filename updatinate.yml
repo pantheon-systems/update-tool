@@ -21,5 +21,6 @@ projects:
     repo: git@github.com:pantheon-systems/rpmbuild-php.git
     path: ${working-copy-path}/rpmbuild-php
   php-cookbook:
-    repo: git@github.com:pantheon-cookbooks/php.git
-    path: ${working-copy-path}/php-cookbook
+    repo: git@github.com:pantheon-systems/infrastructure.git
+    path: ${working-copy-path}/infrastructure
+    src: pantheon-cookbooks/php/libraries/php.rb

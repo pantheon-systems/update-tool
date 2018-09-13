@@ -15,3 +15,4 @@ projects:
   php-cookbook:
     repo: git@github.com:pantheon-fixtures/php-cookbook-fixture.git
     path: ${working-copy-path}/php-cookbook
+    src: libraries/php.rb
