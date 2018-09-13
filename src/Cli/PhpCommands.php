@@ -134,7 +134,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      * @command php:rpm:update
      * @aliases php:update
      */
-    public function phpRpmUpdate($options = ['as' => 'default'])
+    public function phpRpmUpdate($options = ['as' => 'default', 'auto-merge' => true])
     {
         $api = $this->api($options['as']);
 
@@ -195,6 +195,10 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         list($status, $prs) = $api->prCheck($rpmbuild_php->projectWithOrg(), $vids);
 
         if ($status) {
+            if (!$options['auto-merge']) {
+                $this->logger->notice("There is an existing pull request for this update; nothing else to do.");
+                return;
+            }
             $message = "Automatically merging PR";
             if (getenv('CIRCLE_BUILD_URL')) {
                 $message .= " from " . getenv('CIRCLE_BUILD_URL');

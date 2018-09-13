@@ -21,7 +21,7 @@
     "require": {
         "php": ">=5.6.0",
         "consolidation/Robo": "^1.2.3",
-        "g1a/hubph": "^0.3",
+        "g1a/hubph": "^0.3.1",
         "php-http/guzzle6-adapter": "^1.1",
         "symfony/console": "^2.8|^3|^4"
     },

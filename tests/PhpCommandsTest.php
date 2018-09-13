@@ -62,7 +62,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         // Step 1: No updates available. No pull requests opened.
         $available_php_versions = $this->currentPhpVersions();
         $this->fixtures->setupPhpDotNetFixture($available_php_versions);
-        $output = $this->executeExpectOK(['php:rpm:update']);
+        $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
         $this->assertContains('5.3.29 is the most recent version', $output);
         $this->assertContains('5.5.38 is the most recent version', $output);
         $this->assertContains('5.6.37 is the most recent version', $output);
@@ -77,7 +77,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         // Step 2: Simulate a PHP 7.2 available update. Confirm that one pull request opened.
         $available_php_versions = array_merge($available_php_versions, [ $this->fixtures->next(Fixtures::PHP_72_CURRENT) ]);
         $this->fixtures->setupPhpDotNetFixture($available_php_versions);
-        $output = $this->executeExpectOK(['php:rpm:update']);
+        $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
         $this->assertContains("[notice] Executing git push origin php-$seed-7.2.9", $output);
         $output = $this->executeExpectOK(['pr:list', 'pantheon-fixtures/rpmbuild-php-fixture', '--field=title']);
         $expectedTitle = "[$seed] Update to php-7.2.9";
@@ -99,7 +99,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
 
         // Step 3: No change to available PHP versions. No action taken (PR stays open)
         $this->fixtures->setupPhpDotNetFixture($available_php_versions);
-        $output = $this->executeExpectOK(['php:rpm:update']);
+        $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
         $this->assertContains('[notice] Pull requests already exist; nothing more to do.', $output);
         $output = $this->executeExpectOK(['pr:list', 'pantheon-fixtures/rpmbuild-php-fixture', '--field=title']);
         $expectedTitle = "[$seed] Update to php-7.2.9";
@@ -112,7 +112,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         // The old 7.2 PR is closed.
         $available_php_versions = array_merge($available_php_versions, [ $this->fixtures->next(Fixtures::PHP_71_CURRENT) ]);
         $this->fixtures->setupPhpDotNetFixture($available_php_versions);
-        $output = $this->executeExpectOK(['php:rpm:update']);
+        $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
         $this->assertContains("[notice] Executing git push origin php-$seed-7.1.21-7.2.9", $output);
         $output = $this->executeExpectOK(['pr:list', 'pantheon-fixtures/rpmbuild-php-fixture', '--field=title']);
         $expectedTitle = "[$seed] Update to php-7.1.21 and php-7.2.9";
