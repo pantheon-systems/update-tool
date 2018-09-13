@@ -100,7 +100,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         // Step 3: No change to available PHP versions. No action taken (PR stays open)
         $this->fixtures->setupPhpDotNetFixture($available_php_versions);
         $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
-        $this->assertContains('[notice] Pull requests already exist; nothing more to do.', $output);
+        $this->assertContains('[notice] There is an existing pull request for this update; nothing else to do.', $output);
         $output = $this->executeExpectOK(['pr:list', 'pantheon-fixtures/rpmbuild-php-fixture', '--field=title']);
         $expectedTitle = "[$seed] Update to php-7.2.9";
         $this->assertEquals($expectedTitle, $output);
