@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "53ff5b71d84805f115085a61487c26be",
+    "content-hash": "505230a7f7453b94da1944462a4d9e68",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -576,33 +576,32 @@
         },
         {
             "name": "g1a/hubph",
-            "version": "0.1.9",
+            "version": "0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/g1a/hubph.git",
-                "reference": "4a1d24fa96db3cedfeeef42b0786871246dc52e6"
+                "reference": "f5200813619e8c610082d2f80202608c2b6f1eb4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/g1a/hubph/zipball/4a1d24fa96db3cedfeeef42b0786871246dc52e6",
-                "reference": "4a1d24fa96db3cedfeeef42b0786871246dc52e6",
+                "url": "https://api.github.com/repos/g1a/hubph/zipball/f5200813619e8c610082d2f80202608c2b6f1eb4",
+                "reference": "f5200813619e8c610082d2f80202608c2b6f1eb4",
                 "shasum": ""
             },
             "require": {
                 "consolidation/filter-via-dot-access-data": "^0.1",
+                "consolidation/robo": "^1.2.3",
                 "knplabs/github-api": "^2.7",
                 "php": ">=5.5.0",
+                "php-http/guzzle6-adapter": "^1.1",
+                "symfony/console": "^2.8|^3|^4",
                 "symfony/filesystem": "^2.8|^3|^4"
             },
             "require-dev": {
-                "consolidation/robo": "^1.2.3",
                 "g1a/composer-test-scenarios": "^2",
-                "knplabs/github-api": "^2.7",
-                "php-http/guzzle6-adapter": "^1.1",
                 "phpunit/phpunit": "^5",
                 "satooshi/php-coveralls": "^2",
-                "squizlabs/php_codesniffer": "^2.8",
-                "symfony/console": "^2.8|^3|^4"
+                "squizlabs/php_codesniffer": "^2.8"
             },
             "type": "library",
             "extra": {
@@ -626,7 +625,7 @@
                 }
             ],
             "description": "Template project for PHP libraries.",
-            "time": "2018-09-11T22:38:02+00:00"
+            "time": "2018-09-13T17:21:49+00:00"
         },
         {
             "name": "grasmash/expander",

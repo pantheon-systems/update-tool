@@ -108,8 +108,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         // work, or that are old and need to be closed.
         list($status, $existingPRList) = $api->prCheck($php_cookbook->projectWithOrg(), $vids);
         if ($status) {
-            // TODO: $existingPRList might be a string or an array of PR numbers. :P Fix.
-            $this->logger->notice($existingPRList);
+            $this->logger->notice("Pull requests already exist; nothing more to do.");
             return;
         }
 
@@ -125,7 +124,6 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             ->push('origin', $branch)
             ->pr($message);
 
-        // TODO: $existingPRList might be a string or an array of PR numbers. :P Fix.
         if (is_array($existingPRList)) {
             $api->prClose($php_cookbook->org(), $php_cookbook->project(), $existingPRList);
         }
@@ -199,8 +197,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         // work, or that are old and need to be closed.
         list($status, $existingPRList) = $api->prCheck($rpmbuild_php->projectWithOrg(), $vids);
         if ($status) {
-            // TODO: $existingPRList might be a string or an array of PR numbers. :P Fix.
-            $this->logger->notice($existingPRList);
+            $this->logger->notice("Pull requests already exist; nothing more to do.");
             return;
         }
 
@@ -213,7 +210,6 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             ->push('origin', $branch)
             ->pr($message);
 
-        // TODO: $existingPRList might be a string or an array of PR numbers. :P Fix.
         if (is_array($existingPRList)) {
             $api->prClose($rpmbuild_php->org(), $rpmbuild_php->project(), $existingPRList);
         }

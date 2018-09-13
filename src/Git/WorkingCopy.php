@@ -56,6 +56,24 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Clone the specified repository to the given URL at the indicated
+     * directory. Only clone a single commit. Since we're only interested
+     * in one commit, we'll just remove the cache if it is present.
+     *
+     * @param string $url
+     * @param string $dir
+     * @param string $branch
+     * @param HubphAPI|null $api
+     * @return WorkingCopy
+     */
+    public static function shallowClone($url, $dir, $branch, $api = null)
+    {
+        $workingCopy = new self($url, $dir, $branch, $api);
+        $workingCopy->freshClone($branch, $depth);
+        return $workingCopy;
+    }
+
+    /**
      * Clone the specified branch of the specified repository to the given URL.
      *
      * @param string $url
@@ -64,10 +82,10 @@ class WorkingCopy implements LoggerAwareInterface
      * @param HubphAPI|null $api
      * @return WorkingCopy
      */
-    public static function cloneBranch($url, $dir, $branch, $api)
+    public static function cloneBranch($url, $dir, $branch, $api, $depth = false)
     {
         $workingCopy = new self($url, $dir, $branch, $api);
-        $workingCopy->cloneIfNecessary($branch);
+        $workingCopy->cloneIfNecessary($branch, $depth);
         return $workingCopy;
     }
 
@@ -133,15 +151,51 @@ class WorkingCopy implements LoggerAwareInterface
         return $workingCopy;
     }
 
+    /**
+     * take tranforms this local working copy such that it RETAINS all of its
+     * local files (no change to any unstaged modifications or files) and
+     * TAKES OVER the repository from the provided working copy.
+     *
+     * The local repository that was formerly in place here is disposed.
+     * Any branches or commits not already pushed to the remote repository
+     * are lost. Only the working files remain. The remotes for this working
+     * copy become the remotes from the provided repository.
+     *
+     * The other working copy is disposed: its files are all removed
+     * from the filesystem.
+     */
+    public function take(WorkingCopy $rhs)
+    {
+        $fs = new Filesystem();
+
+        $ourLocalGitRepo = $this->dir() . '.git';
+        $ourLocalGitRepo = $rhs->dir() . '.git';
+
+        $fs->remove($ourLocalGitRepo);
+        $fs->rename($rhsLocalGitRepo, $ourLocalGitRepo);
+
+        $fs->remove($rhs->dir());
+    }
+
     protected static function copyFixtureOverReinitializedRepo($dir, $fixture)
     {
         $fs = new Filesystem();
         $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
     }
 
+    public function remote()
+    {
+        return $this->remote();
+    }
+
     public function url()
     {
         return $this->remote->url();
+    }
+
+    public function dir()
+    {
+        return $this->dir();
     }
 
     public function org()
@@ -342,24 +396,32 @@ class WorkingCopy implements LoggerAwareInterface
     /**
      * If the directory does not exist, then clone it.
      */
-    public function cloneIfNecessary($branch = false)
+    public function cloneIfNecessary($branch = false, $depth = false)
     {
         // If the directory exists, we have already validated that it points
         // at the correct repository.
-        if (is_dir($this->dir)) {
-            // Make sure that we are on 'master' (or the specified branch) and up-to-date.
-            $branchTerm = $branch ?: 'master';
-            exec("git -C '{$this->dir}' reset --hard 2>/dev/null", $output, $result);
-            exec("git -C '{$this->dir}' checkout $branchTerm 2>/dev/null", $output, $result);
-            exec("git -C '{$this->dir}' pull origin $branchTerm 2>/dev/null", $output, $result);
-            return;
+        if (!is_dir($this->dir)) {
+            $this->freshClone($branch, $depth);
         }
-        // Create the parents of $this->dir
+        // Make sure that we are on 'master' (or the specified branch) and up-to-date.
+        $branchTerm = $branch ?: 'master';
+        exec("git -C '{$this->dir}' reset --hard 2>/dev/null", $output, $result);
+        exec("git -C '{$this->dir}' checkout $branchTerm 2>/dev/null", $output, $result);
+        exec("git -C '{$this->dir}' pull origin $branchTerm 2>/dev/null", $output, $result);
+    }
+
+    protected function freshClone($branch = false, $depth = false)
+    {
+        // Remove $this->dir if it exists, then make sure its parents exist.
         $fs = new Filesystem();
+        if (is_dir($this->dir)) {
+            $fs->remove($this->dir);
+        }
         $fs->mkdir(dirname($this->dir));
 
         $branchTerm = $branch ? "--branch=$branch " : '';
-        exec("git clone '{$this->url()}' $branchTerm'{$this->dir}' 2>/dev/null", $output, $result);
+        $depthTerm = $depth ? "--depth=$depth " : '';
+        exec("git clone '{$this->url()}' $branchTerm$depthTerm'{$this->dir}' 2>/dev/null", $output, $result);
 
         // Fail if we could not clone.
         if ($result) {

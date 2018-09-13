@@ -119,6 +119,16 @@ class Remote implements LoggerAwareInterface
     }
 
     /**
+     * Return 'true' if the provided tag exists on this remote.
+     */
+    public function has($tag_to_check, $majorVersion = '[0-9]+')
+    {
+        $tags = $this->releases($majorVersion);
+
+        return array_key_exists($tag_to_check, $tags);
+    }
+
+    /**
      * Return a sanitized version of this remote (sans authentication string)
      */
     public function __toString()

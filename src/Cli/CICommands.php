@@ -11,7 +11,6 @@ use Updatinate\Util\CIUtilsTrait;
 use Hubph\VersionIdentifiers;
 use Hubph\HubphAPI;
 
-
 /**
  * Commands used to create pull requests to update available php versions on the platform
  */

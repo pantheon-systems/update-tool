@@ -24,3 +24,10 @@ projects:
     repo: git@github.com:pantheon-systems/infrastructure.git
     path: ${working-copy-path}/infrastructure
     src: pantheon-cookbooks/php/libraries/php.rb
+  drops-8:
+    repo: git@github.com:pantheon-systems/drops-8.git
+    upstream: drupal
+    path: ${working-copy-path}/drops-8
+  drupal:
+    repo: git://git.drupal.org/project/drupal.git
+    path: ${working-copy-path}/drupal

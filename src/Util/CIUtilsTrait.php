@@ -22,7 +22,7 @@ trait CIUtilsTrait
     protected function cancelCircleCIBuild($token, $org, $project, $build_num, $vcs_type = 'github')
     {
         if (!$token) {
-          return;
+            return;
         }
 
         $this->logger->notice("Cancelling Circle build.");
