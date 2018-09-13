@@ -206,8 +206,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             $allMerged = $api->prMerge($rpmbuild_php->org(), $rpmbuild_php->project(), $prs, $message);
             if (!$allMerged) {
                 $this->logger->warning("There is an existing pull request for this update, but its tests have not all passed yet. Waiting.");
-            }
-            else {
+            } else {
                 $this->logger->notice("There was an existing pull request for this update with passing tests; merged it.");
             }
             return;
