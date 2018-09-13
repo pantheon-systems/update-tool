@@ -106,7 +106,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         // Check to see if there are any open PRs that have already done this
         // work, or that are old and need to be closed.
-        list($status, $existingPRList) = $api->prCheck($php_cookbook->projectWithOrg(), $vids);
+        list($status, $prs) = $api->prCheck($php_cookbook->projectWithOrg(), $vids);
         if ($status) {
             $this->logger->notice("Pull requests already exist; nothing more to do.");
             return;
@@ -124,9 +124,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             ->push('origin', $branch)
             ->pr($message);
 
-        if (is_array($existingPRList)) {
-            $api->prClose($php_cookbook->org(), $php_cookbook->project(), $existingPRList);
-        }
+        $api->prClose($php_cookbook->org(), $php_cookbook->project(), $prs);
     }
 
     /**
@@ -166,7 +164,6 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             if ($next_version != $version) {
                 $this->say("$next_version is available, but we are still on version $version");
 
-                // TODO: we need to determine if there is already an open pull request that contains $next_version
                 $this->updateSpec($next_version, $datecode, $work_dir);
                 $updated_versions[] = $next_version;
             } else {
@@ -195,12 +192,24 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         // Check to see if there are any open PRs that have already done this
         // work, or that are old and need to be closed.
-        list($status, $existingPRList) = $api->prCheck($rpmbuild_php->projectWithOrg(), $vids);
+        list($status, $prs) = $api->prCheck($rpmbuild_php->projectWithOrg(), $vids);
+
         if ($status) {
-            $this->logger->notice("Pull requests already exist; nothing more to do.");
+            $message = "Automatically merging PR";
+            if (getenv('CIRCLE_BUILD_URL')) {
+                $message .= " from " . getenv('CIRCLE_BUILD_URL');
+            }
+            $allMerged = $api->prMerge($rpmbuild_php->org(), $rpmbuild_php->project(), $prs, $message);
+            if (!$allMerged) {
+                $this->logger->warning("There is an existing pull request for this update, but its tests have not all passed yet. Waiting.");
+            }
+            else {
+                $this->logger->notice("There was an existing pull request for this update with passing tests; merged it.");
+            }
             return;
         }
 
+        // Create a new pull request
         $branch = $this->branchPrefix() . implode('-', $updated_versions);
         $this->logger->notice('Using {branch}', ['branch' => $branch]);
         $rpmbuild_php
@@ -210,9 +219,8 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             ->push('origin', $branch)
             ->pr($message);
 
-        if (is_array($existingPRList)) {
-            $api->prClose($rpmbuild_php->org(), $rpmbuild_php->project(), $existingPRList);
-        }
+        // These PRs may be closed now.
+        $api->prClose($rpmbuild_php->org(), $rpmbuild_php->project(), $prs);
     }
 
     /**

@@ -94,7 +94,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Check to see if there are any open PRs that have already done this
         // work, or that are old and need to be closed.
-        list($status, $existingPRList) = $api->prCheck($remote_repo->projectWithOrg(), $vids);
+        list($status, $prs) = $api->prCheck($remote_repo->projectWithOrg(), $vids);
+        $existingPRList = $prs->prNumbers();
         if ($status) {
             $this->logger->notice("Pull request already exists for available update; nothing more to do.");
             return;
