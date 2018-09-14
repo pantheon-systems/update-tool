@@ -13,6 +13,7 @@ class WorkingCopy implements LoggerAwareInterface
     use LoggerAwareTrait;
 
     protected $remote;
+    protected $remote_fork;
     protected $dir;
     protected $api;
 
@@ -38,6 +39,26 @@ class WorkingCopy implements LoggerAwareInterface
         $this->remote->addAuthentication($api);
         $this->dir = $dir;
         $this->api = $api;
+    }
+
+    /**
+     * addFork will set a secondary remote on this repository.
+     * The purpose of having a fork remote is if the primary repository
+     * is read-only. If a fork is set, then any branches pushed
+     * will go to the fork; any pull request created will still be
+     * set on the primary repository, but will refer to the branch on
+     * the fork.
+     */
+    public function addFork($fork_url)
+    {
+        if (empty($fork_url)) {
+            return $this;
+        }
+        $this->fork = new Remote($fork_url);
+        $this->fork->addAuthentication($this->api);
+        $php_cookbook->addRemote($this->fork->url(), 'fork');
+
+        return $this;
     }
 
     /**
@@ -236,8 +257,14 @@ class WorkingCopy implements LoggerAwareInterface
     /**
      * Push the specified branch to the desired remote.
      */
-    public function push($remote, $branch, $force = false)
+    public function push($remote = '', $branch = '', $force = false)
     {
+        if (empty($remote)) {
+            $remote = isset($this->fork) ? 'fork' : 'origin';
+        }
+        if (empty($branch)) {
+            $branch = $this->branch();
+        }
         $flag = $force ? '--force ' : '';
         $this->git('push {flag}{remote} {branch}', ['remote' => $remote, 'branch' => $branch, 'flag' => $flag]);
         return $this;
@@ -338,12 +365,13 @@ class WorkingCopy implements LoggerAwareInterface
      * @param string $message
      * @return $this
      */
-    public function pr($message, $body = '', $base = 'master', $head = '', $forked_org = '')
+    public function pr($message, $body = '', $base = 'master', $head = '')
     {
         if (empty($head)) {
             $head = $this->branch();
         }
-        if (!empty($forked_org)) {
+        if (isset($this->fork)) {
+            $forked_org = $this->fork->org();
             $head = "$forked_org:$head";
         }
         $this->api->prCreate($this->org(), $this->project(), $message, $body, $base, $head);
