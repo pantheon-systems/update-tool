@@ -116,7 +116,7 @@ class WorkingCopy implements LoggerAwareInterface
             exec("git -C {$dir} init", $output, $status);
             exec("git -C {$dir} add -A", $output, $status);
             exec("git -C {$dir} commit -m 'Initial fixture data'", $output, $status);
-            static::setRemoteOrigin($auth_url, $dir);
+            static::setRemoteUrl($auth_url, $dir);
             exec("git -C {$dir} push --force origin master");
         }
 
@@ -183,14 +183,17 @@ class WorkingCopy implements LoggerAwareInterface
         $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
     }
 
-    public function remote()
+    public function remote($remote_name = '')
     {
-        return $this->remote();
+        if (empty($remote_name) || ($remote_name == 'origin')) {
+            return $this->remote;
+        }
+        return Remote::fromDir($this->dir, $remote_name);
     }
 
-    public function url()
+    public function url($remote_name = '')
     {
-        return $this->remote->url();
+        return $this->remote($remote_name)->url();
     }
 
     public function dir()
@@ -198,19 +201,19 @@ class WorkingCopy implements LoggerAwareInterface
         return $this->dir();
     }
 
-    public function org()
+    public function org($remote_name = '')
     {
-        return $this->remote->org();
+        return $this->remote($remote_name)->org();
     }
 
-    public function project()
+    public function project($remote_name = '')
     {
-        return $this->remote->project();
+        return $this->remote($remote_name)->project();
     }
 
-    public function projectWithOrg()
+    public function projectWithOrg($remote_name = '')
     {
-        return $this->remote->projectWithOrg();
+        return $this->remote($remote_name)->projectWithOrg();
     }
 
     /**
@@ -335,10 +338,13 @@ class WorkingCopy implements LoggerAwareInterface
      * @param string $message
      * @return $this
      */
-    public function pr($message, $body = '', $base = 'master', $head = '')
+    public function pr($message, $body = '', $base = 'master', $head = '', $forked_org = '')
     {
         if (empty($head)) {
             $head = $this->branch();
+        }
+        if (!empty($forked_org)) {
+            $head = "$forked_org:$head";
         }
         $this->api->prCreate($this->org(), $this->project(), $message, $body, $base, $head);
         return $this;
@@ -350,6 +356,14 @@ class WorkingCopy implements LoggerAwareInterface
     public function show($ref = "HEAD")
     {
         return implode("\n", $this->git("show $ref"));
+    }
+
+    /**
+     * Add a remote (or change the URL to an existing remote)
+     */
+    public function addRemote($url, $remote)
+    {
+        return static::setRemoteUrl($url, $this->dir, $remote);
     }
 
     /**
@@ -371,7 +385,7 @@ class WorkingCopy implements LoggerAwareInterface
         // (e.g. someone switched authentication tokens)
         if ($this->api) {
             if (($emptyOk && empty($currentURL)) || ($this->api->addTokenAuthentication($currentURL) == $this->url())) {
-                static::setRemoteOrigin($this->url(), $this->dir);
+                static::setRemoteUrl($this->url(), $this->dir);
                 return;
             }
         }
@@ -384,13 +398,18 @@ class WorkingCopy implements LoggerAwareInterface
      * Set the remote origin to the provided url
      * @param string $url
      * @param string $dir
+     * @param string $remote
      */
-    protected static function setRemoteOrigin($url, $dir, $remote = 'origin')
+    protected static function setRemoteUrl($url, $dir, $remote = 'origin')
     {
-        $currentURL = exec("git -C {$dir} config --get remote.{$remote}.url");
-        $gitCommand = empty($currentURL) ? 'add' : 'set-url';
-        exec("git -C {$dir} remote {$gitCommand} {$remote} {$url}");
-        $this->remote = new Remote($url);
+        if (is_dir($dir)) {
+            $currentURL = exec("git -C {$dir} config --get remote.{$remote}.url");
+            $gitCommand = empty($currentURL) ? 'add' : 'set-url';
+            exec("git -C {$dir} remote {$gitCommand} {$remote} {$url}");
+        }
+        $remote = new Remote($url);
+
+        return $remote;
     }
 
     /**

@@ -11,6 +11,9 @@ github:
     # This is a read/write token for pantheon-upstream
     updatinate:
       path: ${cache-path}/updatinate-token
+    # This is a read-only token for pantheon-circleci
+    pantheon-circleci:
+      path: ${cache-path}/pantheon-circleci-token
     me:
       path: ${env.HOME}/.github-token
 php-net:
@@ -24,6 +27,7 @@ projects:
     repo: git@github.com:pantheon-systems/infrastructure.git
     path: ${working-copy-path}/infrastructure
     src: pantheon-cookbooks/php/libraries/php.rb
+    fork: git@github.com:pantheon-circleci/infrastructure.git
   drops-8:
     repo: git@github.com:pantheon-systems/drops-8.git
     upstream: drupal

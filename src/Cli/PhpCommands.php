@@ -35,6 +35,8 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
         $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
 
+        $php_cookbook_fork = $this->getConfig()->get('projects.php-cookbook.fork', '');
+
         $php_cookbook_src = $this->getConfig()->get('projects.php-cookbook.src');
 
         $rpmbuild_php = WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $api);
@@ -116,13 +118,20 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $branch = $this->branchPrefix() . implode('-', array_keys($version_updates));
         $this->logger->notice('Using {branch}', ['branch' => $branch]);
 
+        $target_remote = 'origin';
+        if (!empty($php_cookbook_fork)) {
+            $target_remote = 'fork';
+            $fork_remote = $php_cookbook->addRemote($php_cookbook_fork, $target_remote);
+        }
+
         // Commit, push, and make the PR
+        $pr_body = '';
         $php_cookbook
             ->createBranch($branch, 'master', true)
-            ->add('libraries/php.rb')
+            ->add($php_cookbook_src)
             ->commit($message)
-            ->push('origin', $branch)
-            ->pr($message);
+            ->push($target_remote, $branch)
+            ->pr($message, $pr_body, 'master', '', $fork_remote->org());
 
         $api->prClose($php_cookbook->org(), $php_cookbook->project(), $prs);
     }
