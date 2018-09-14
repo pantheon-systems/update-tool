@@ -35,6 +35,8 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
         $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
 
+        $php_cookbook_fork = $this->getConfig()->get('projects.php-cookbook.fork', '');
+
         $php_cookbook_src = $this->getConfig()->get('projects.php-cookbook.src');
 
         $rpmbuild_php = WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $api);
@@ -67,6 +69,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         $php_cookbook = WorkingCopy::clone($php_cookbook_url, $php_cookbook_dir, $api);
         $php_cookbook
+            ->addFork($php_cookbook_fork)
             ->setLogger($this->logger);
 
         // Create a commit message with all of our modified versions
@@ -119,11 +122,12 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         // Commit, push, and make the PR
         $php_cookbook
             ->createBranch($branch, 'master', true)
-            ->add('libraries/php.rb')
+            ->add($php_cookbook_src)
             ->commit($message)
-            ->push('origin', $branch)
+            ->push()
             ->pr($message);
 
+        // These PRs may be closed now, as they are replaced by the new PR.
         $api->prClose($php_cookbook->org(), $php_cookbook->project(), $prs);
     }
 
@@ -139,12 +143,14 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $api = $this->api($options['as']);
 
         $url = $this->getConfig()->get('projects.rpmbuild-php.repo');
+        $fork = $this->getConfig()->get('projects.rpmbuild-php.fork', '');
         $work_dir = $this->getConfig()->get('projects.rpmbuild-php.path');
 
         // Ensure that a local working copy of the project has
         // been checked out and is available.
         $rpmbuild_php = WorkingCopy::clone($url, $work_dir, $api);
         $rpmbuild_php
+            ->addFork($fork)
             ->setLogger($this->logger);
         $this->logger->notice("Check out {project} to {path}.", ['project' => $rpmbuild_php->projectWithOrg(), 'path' => $work_dir]);
         $rpmbuild_php
@@ -219,10 +225,10 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             ->createBranch($branch, 'master', true)
             ->add('php-*')
             ->commit($message)
-            ->push('origin', $branch)
+            ->push()
             ->pr($message);
 
-        // These PRs may be closed now.
+        // These PRs may be closed now, as they are replaced by the new PR.
         $api->prClose($rpmbuild_php->org(), $rpmbuild_php->project(), $prs);
     }
 
