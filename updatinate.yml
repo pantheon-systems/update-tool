@@ -30,8 +30,36 @@ projects:
     fork: git@github.com:pantheon-circleci/infrastructure.git
   drops-8:
     repo: git@github.com:pantheon-systems/drops-8.git
-    upstream: drupal
     path: ${working-copy-path}/drops-8
+    main-branch: default
+    upstream:
+      project: drupal
+      major: 8
+      update-method: SingleCommit
+      update-parameters:
+        platform-additions:
+          - .circleci
+          - .drush-lock-update
+          - .gitignore
+          - pantheon.upstream.yml
+          - drush/example.drushrc.php
+          - sites/default/config/.htaccess
+          - sites/default/config/README.txt
+          - sites/default/default.services.pantheon.preproduction.yml
+          - sites/default/settings.pantheon.php
+          - sites/default/settings.php
+  drops-7:
+    repo: git@github.com:pantheon-systems/drops-7.git
+    path: ${working-copy-path}/drops-7
+    main-branch: default
+    upstream:
+      project: drupal
+      major: 7
+      update-method: MergeUpstreamBranch
   drupal:
     repo: git://git.drupal.org/project/drupal.git
     path: ${working-copy-path}/drupal
+    release-node:
+#      url: https://www.drupal.org/project/drupal
+#      pattern: '"(https://www.drupal.org/project/drupal/releases/{major}[0-9.]*)"'
+      template: 'https://www.drupal.org/project/drupal/releases/{version}'

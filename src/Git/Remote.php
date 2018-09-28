@@ -110,6 +110,8 @@ class Remote implements LoggerAwareInterface
 
     /**
      * Return the latest release in the specified major version series
+     *
+     * TODO: allow for beta or RC builds (by request via a second parameter)
      */
     public function latest($majorVersion = '[0-9]+')
     {

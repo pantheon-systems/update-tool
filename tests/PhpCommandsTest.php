@@ -2,25 +2,20 @@
 
 namespace Updatinate;
 
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class PhpCommandsTest extends TestCase implements CommandTesterInterface
+class PhpCommandsTest extends CommandsTestBase
 {
-    use CommandTesterTrait;
-
-    /** @var Fixtures */
-    protected $fixtures;
-
     public function __construct()
     {
+        parent::__construct();
+
         $commandClasses = [
             \Updatinate\Cli\PhpCommands::class,
             \Updatinate\Cli\TestUtilCommands::class,
             \Hubph\Cli\HubphCommands::class,
         ];
 
-        $this->fixtures = new Fixtures();
         $this->setupCommandTester('TestFixtureApp', '1.0.1', $commandClasses, $this->fixtures->configurationFile());
     }
 
@@ -30,24 +25,12 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
     public function setUp()
     {
         // reinitialize / force-push rpmbuild-php-fixture and php-cookbook-fixture repositories
-        $this->fixtures->forceReinitializeFixtures();
+        $this->fixtures->forceReinitializeProjectFixtures();
     }
 
     public function tearDown()
     {
         $this->fixtures->cleanup();
-    }
-
-    public function currentPhpVersions()
-    {
-        return [
-            Fixtures::PHP_53_CURRENT,
-            Fixtures::PHP_55_CURRENT,
-            Fixtures::PHP_56_CURRENT,
-            Fixtures::PHP_70_CURRENT,
-            Fixtures::PHP_71_CURRENT,
-            Fixtures::PHP_72_CURRENT
-        ];
     }
 
     /**
@@ -152,25 +135,4 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         $output = $this->executeExpectOK(['php:cookbook:update']);
         $this->assertContains('[notice] Pull requests already exist; nothing more to do.', $output);
     }
-
-    public function assertCommand($expectedOutput, $expectedStatus, $variable_args)
-    {
-        // Create our argv array and run the command
-        $argv = $this->argv(func_get_args());
-        print "\n=========================\n";
-        print implode(' ', $argv);
-        print "\n=========================\n";
-        list($actualOutput, $statusCode) = $this->execute($argv, $this->commandClasses, $this->fixtures->configurationFile());
-
-        // Confirm that our output and status code match expectations
-        if (empty($expectedOutput)) {
-            $this->assertEquals('', $actualOutput);
-        } else {
-            foreach ((array)$expectedOutput as $expected) {
-                $this->assertContains($expected, $actualOutput);
-            }
-        }
-        $this->assertEquals($expectedStatus, $statusCode);
-    }
-
 }

@@ -5,6 +5,7 @@ namespace Updatinate;
 use Symfony\Component\Filesystem\Filesystem;
 use Hubph\HubphAPI;
 use Updatinate\Git\WorkingCopy;
+use Updatinate\Git\Remote;
 
 class Fixtures
 {
@@ -86,7 +87,18 @@ class Fixtures
         return WorkingCopy::clone($php_cookbook_url, $php_cookbook_dir, $this->api());
     }
 
-    public function forceReinitializeFixtures($as = 'default')
+    public function forceReinitializeProjectFixtures($remote_name, $as = 'default')
+    {
+        $api = $this->api($as);
+
+        $remote_url = $this->getConfig()->get("projects.$remote_name.repo");
+        $remote_repo = Remote::create($remote_url, $api);
+
+        $allPRs = $api->allPRs($remote_repo->org() . '/' . $remote_repo->project());
+        $api->prClose($remote_repo->org(), $remote_repo->project(), $allPRs);
+    }
+
+    public function forceReinitializePhpFixtures($as = 'default')
     {
         $api = $this->api($as);
 
@@ -113,6 +125,11 @@ class Fixtures
         $api->prClose($workingCopy->org(), $workingCopy->project(), $allPRs);
 
         return $workingCopy;
+    }
+
+    public function activityLogPath()
+    {
+        $rpmbuild_php_url = $this->getConfig()->get('log.path');
     }
 
     /**

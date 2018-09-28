@@ -13,9 +13,11 @@ class WorkingCopy implements LoggerAwareInterface
     use LoggerAwareTrait;
 
     protected $remote;
-    protected $remote_fork;
+    protected $fork;
     protected $dir;
     protected $api;
+
+    const FORCE_MERGE_COMMIT = 0x01;
 
     /**
      * WorkingCopy constructor
@@ -52,13 +54,25 @@ class WorkingCopy implements LoggerAwareInterface
     public function addFork($fork_url)
     {
         if (empty($fork_url)) {
+            $this->fork = null;
             return $this;
         }
         $this->fork = new Remote($fork_url);
         $this->fork->addAuthentication($this->api);
-        $php_cookbook->addRemote($this->fork->url(), 'fork');
 
         return $this;
+    }
+
+    /**
+     * forkUrl returns the URL of the forked repository that should
+     * be used for creating any pull requests.
+     */
+    public function forkUrl()
+    {
+        if (!$this->fork) {
+            return null;
+        }
+        return $this->fork->url();
     }
 
     /**
@@ -87,7 +101,7 @@ class WorkingCopy implements LoggerAwareInterface
      * @param HubphAPI|null $api
      * @return WorkingCopy
      */
-    public static function shallowClone($url, $dir, $branch, $api = null)
+    public static function shallowClone($url, $dir, $branch, $depth = 1, $api = null)
     {
         $workingCopy = new self($url, $dir, $branch, $api);
         $workingCopy->freshClone($branch, $depth);
@@ -189,13 +203,24 @@ class WorkingCopy implements LoggerAwareInterface
     {
         $fs = new Filesystem();
 
-        $ourLocalGitRepo = $this->dir() . '.git';
-        $ourLocalGitRepo = $rhs->dir() . '.git';
+        $ourLocalGitRepo = $this->dir() . '/.git';
+        $rhsLocalGitRepo = $rhs->dir() . '/.git';
 
         $fs->remove($ourLocalGitRepo);
         $fs->rename($rhsLocalGitRepo, $ourLocalGitRepo);
 
-        $fs->remove($rhs->dir());
+        $this->remote = $rhs->remote();
+        $this->addFork($rhs->forkUrl());
+    }
+
+    /**
+     * remove will delete all of the local working files managed by this
+     * object, including the '.git' directory. This method should be called
+     * if the local working copy is corrupted or otherwise becomes unusable.
+     */
+    public function remove()
+    {
+        $fs->remove($this->dir());
     }
 
     protected static function copyFixtureOverReinitializedRepo($dir, $fixture)
@@ -219,7 +244,7 @@ class WorkingCopy implements LoggerAwareInterface
 
     public function dir()
     {
-        return $this->dir();
+        return $this->dir;
     }
 
     public function org($remote_name = '')
@@ -273,9 +298,14 @@ class WorkingCopy implements LoggerAwareInterface
     /**
      * Merge the specified branch into the current branch.
      */
-    public function merge($branch)
+    public function merge($branch, $modes = 0)
     {
-        $this->git('merge {branch}', ['branch' => $branch]);
+        $flags = '';
+        if ($modes & static::FORCE_MERGE_COMMIT) {
+            $flags .= ' --no-ff';
+        }
+
+        $this->git('merge{flags} {branch}', ['branch' => $branch, 'flags' => $flags]);
         return $this;
     }
 
@@ -289,10 +319,18 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
-     * Ensure we are on the correct branch. Update to the
-     * latest HEAD from origin.
+     * switchBranch is a synonym for 'checkout'
      */
     public function switchBranch($branch)
+    {
+        $this->git('checkout {branch}', ['branch' => $branch]);
+        return $this;
+    }
+
+    /**
+     * Switch to the specified branch. Use 'createBranch' to create a new branch.
+     */
+    public function checkout($branch)
     {
         $this->git('checkout {branch}', ['branch' => $branch]);
         return $this;
@@ -372,8 +410,13 @@ class WorkingCopy implements LoggerAwareInterface
         }
         if (isset($this->fork)) {
             $forked_org = $this->fork->org();
+        }
+        if (!empty($forked_org)) {
             $head = "$forked_org:$head";
         }
+
+        $this->logger->notice('Create pull request for {org_project} using {head} from {base}', ['org_project' => $this->projectWithOrg(), 'head' => $head, 'base' => $base]);
+
         $this->api->prCreate($this->org(), $this->project(), $message, $body, $base, $head);
         return $this;
     }

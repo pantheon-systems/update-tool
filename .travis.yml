@@ -39,7 +39,7 @@ after_success:
 before_deploy:
   - composer phar:install-tools
   - composer install --prefer-dist --no-dev --no-interaction
-  - php box.phar build
+  - composer phar:build
 
 deploy:
   provider: releases
