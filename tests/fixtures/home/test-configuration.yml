@@ -8,7 +8,7 @@ github:
     tester:
       path: ${env.HOME}/.github-token
 php-net:
-  download-url: ${env.TESTDIR}/php.net/distributions/php-{version}.tar.gz
+  download-url: ${env.PHPDOTNETFIXTURE}/distributions/php-{version}.tar.gz
 
 projects:
   rpmbuild-php:

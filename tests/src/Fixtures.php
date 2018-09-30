@@ -10,6 +10,7 @@ use Updatinate\Git\Remote;
 class Fixtures
 {
     protected $testDir;
+    protected $phpDotNetDir;
     protected $tmpDirs = [];
     protected $prevEnvs = [];
     protected $config;
@@ -225,6 +226,7 @@ class Fixtures
             'TESTHOME' => $this->homeDir(),
             'TESTDIR' => $this->testDir(),
             'FIXTURES' => $this->fixturesDir(),
+            'PHPDOTNETFIXTURE' => $this->phpDotNetDir(),
 
             // These override messages.update-to and constants.branch-prefix,
             // respectively, and allow us to inject unique values to differentiate
@@ -276,7 +278,10 @@ class Fixtures
 
     public function phpDotNetDir()
     {
-        return $this->testDir() . '/php.net';
+        if (!$this->phpDotNetDir) {
+            $this->phpDotNetDir = $this->mktmpdir() . '/php.net';
+        }
+        return $this->phpDotNetDir;
     }
 
     public function setupPhpDotNetFixture($availablePhpVersions)
