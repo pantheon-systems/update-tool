@@ -119,13 +119,82 @@ class Fixtures
 
     protected function forceReinitialize($url, $dir, $fixture, $api)
     {
-        $workingCopy = WorkingCopy::forceReinitializeFixture($url, $dir, $fixture, $api);
+        $workingCopy = static::forceReinitializeFixture($url, $dir, $fixture, $api);
 
         $allPRs = $api->allPRs($workingCopy->org() . '/' . $workingCopy->project());
         $api->prClose($workingCopy->org(), $workingCopy->project(), $allPRs);
 
         return $workingCopy;
     }
+
+    /**
+     * Blow away the existing repository at the provided directory and
+     * force-push the new empty repository to the destination URL.
+     *
+     * @param string $url
+     * @param string $dir
+     * @param HubphAPI|null $api
+     * @return WorkingCopy
+     */
+    public static function forceReinitializeFixture($url, $dir, $fixture, $api)
+    {
+        $fs = new Filesystem();
+
+        // Make extra-sure that no one accidentally calls the tests on a non-fixture repo
+        if (strpos($url, 'fixture') === false) {
+            throw new \Exception('WorkingCopy::forceReinitializeFixture requires url to contain the string "fixture" to avoid accidental deletion of non-fixture repositories.');
+        }
+
+        // TODO: check to see if the fixture repository has never been initialized
+
+        if (false) {
+            $auth_url = $api->addTokenAuthentication($url);
+
+            static::copyFixtureOverReinitializedRepo($dir, $fixture);
+            exec("git -C {$dir} init", $output, $status);
+            exec("git -C {$dir} add -A", $output, $status);
+            exec("git -C {$dir} commit -m 'Initial fixture data'", $output, $status);
+            static::setRemoteUrl($auth_url, $dir);
+            exec("git -C {$dir} push --force origin master");
+        }
+
+        $workingCopy = WorkingCopy::clone($url, $dir, $api);
+
+        // Find the first commit and re-initialize
+        $topCommit = $workingCopy->git('rev-list HEAD');
+        $topCommit = $topCommit[0];
+        $firstCommit = $workingCopy->git('rev-list --max-parents=0 HEAD');
+        $firstCommit = $firstCommit[0];
+        $workingCopy->reset($firstCommit, true);
+
+        // TODO: Not quite working yet; overwrites .git directory even
+        // without 'delete' => true
+        if (false) {
+            // Check to see if the fixtures changed
+            // n.b. if we add 'delete' => true then our .git directory
+            // disappears, which breaks everything. Without it, we risk
+            // retaining deleted assets.
+            $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
+            static::copyFixtureOverReinitializedRepo($dir, $fixture);
+            $hasModifications = $workingCopy->status();
+
+            if (!empty($hasModifications)) {
+                $workingCopy->add('.');
+                $workingCopy->amend();
+            }
+        }
+
+        $workingCopy->push('origin', 'master', true);
+
+        return $workingCopy;
+    }
+
+    protected static function copyFixtureOverReinitializedRepo($dir, $fixture)
+    {
+        $fs = new Filesystem();
+        $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
+    }
+
 
     public function activityLogPath()
     {

@@ -19,11 +19,9 @@ class MergeUpstreamBranch implements UpdateMethodInterface, LoggerAwareInterface
 
     public function update(WorkingCopy $project, WorkingCopy $upstream, array $parameters)
     {
-
     }
 
     public function complete(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
     {
-
     }
 }

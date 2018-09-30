@@ -59,8 +59,7 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $fs->mkdir(dirname($dest));
         if (is_dir($src)) {
             $fs->mirror($src, $dest);
-        }
-        else {
+        } else {
             $fs->copy($src, $dest);
         }
     }
