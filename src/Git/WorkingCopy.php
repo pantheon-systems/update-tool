@@ -220,6 +220,7 @@ class WorkingCopy implements LoggerAwareInterface
      */
     public function remove()
     {
+        $fs = new Filesystem();
         $fs->remove($this->dir());
     }
 

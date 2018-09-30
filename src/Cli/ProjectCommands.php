@@ -140,7 +140,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         list($status, $prs) = $api->prCheck($remote_repo->projectWithOrg(), $vids);
         $existingPRList = $prs->prNumbers();
         if ($status) {
-            $this->logger->notice("Pull request already exists for available update; nothing more to do.");
+            $this->logger->notice("Pull request already exists for available update {latest}; nothing more to do.", ['latest' => $latest]);
             return;
         }
 
@@ -193,10 +193,15 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $updater->setLogger($this->logger);
         $updated_project = $updater->update($project_working_copy, $upstream_working_copy, $update_parameters);
 
-        // TODO: existing script checks the final version of the project
-        // and aborts if it is not $latest
+        // Confirm that the updated version of the code is now equal to $latest
+        $version_info = new VersionTool();
+        $info = $version_info->info($updated_project->dir());
+        $updated_version = $info->$version;
+        if ($updated_version != $latest) {
+            throw new \Exception("Update failed. We expected that the updated version of the project should be $latest, but instead it is $updated_version.");
+        }
 
-        // Look up some body text to give folks instructions on what to
+        // TODO: Look up some body text to give folks instructions on what to
         // do with these updates.
         $body = '';
 
