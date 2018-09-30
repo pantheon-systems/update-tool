@@ -71,6 +71,6 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'drops-8']);
-        $this->assertContains('[notice] Pull requests already exist; nothing more to do.', $output);
+        $this->assertContains('[notice] Pull request already exists for available update 8.6.0; nothing more to do.', $output);
     }
 }
