@@ -411,8 +411,6 @@ class WorkingCopy implements LoggerAwareInterface
         }
         if (isset($this->fork)) {
             $forked_org = $this->fork->org();
-        }
-        if (!empty($forked_org)) {
             $head = "$forked_org:$head";
         }
 
