@@ -13,6 +13,7 @@ use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
 use Updatinate\Util\ReleaseNode;
 
 use Updatinate\Git\Remote;
+use VersionTool\VersionTool;
 
 /**
  * Commands used to manipulate projects directly with git
@@ -196,7 +197,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Confirm that the updated version of the code is now equal to $latest
         $version_info = new VersionTool();
         $info = $version_info->info($updated_project->dir());
-        $updated_version = $info->$version;
+        $updated_version = $info->version();
         if ($updated_version != $latest) {
             throw new \Exception("Update failed. We expected that the updated version of the project should be $latest, but instead it is $updated_version.");
         }

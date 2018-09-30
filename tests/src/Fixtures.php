@@ -129,7 +129,7 @@ class Fixtures
 
     public function activityLogPath()
     {
-        $rpmbuild_php_url = $this->getConfig()->get('log.path');
+        return $this->getConfig()->get('log.path');
     }
 
     /**
