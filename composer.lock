@@ -453,27 +453,27 @@
         },
         {
             "name": "consolidation/version-tool",
-            "version": "0.1.4",
+            "version": "0.1.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/consolidation/version-tool.git",
-                "reference": "531349bf1d5eb7d56442037a84645bd8832bfae2"
+                "reference": "422d26a87130825f0e27275a21e52c9f2bc9fd95"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/consolidation/version-tool/zipball/531349bf1d5eb7d56442037a84645bd8832bfae2",
-                "reference": "531349bf1d5eb7d56442037a84645bd8832bfae2",
+                "url": "https://api.github.com/repos/consolidation/version-tool/zipball/422d26a87130825f0e27275a21e52c9f2bc9fd95",
+                "reference": "422d26a87130825f0e27275a21e52c9f2bc9fd95",
                 "shasum": ""
             },
             "require": {
                 "php": ">=7.1"
             },
             "require-dev": {
-                "consolidation/robo": "^1.2.3",
+                "consolidation/robo": "^1.3",
                 "g1a/composer-test-scenarios": "^2",
                 "knplabs/github-api": "^2.7",
                 "php-http/guzzle6-adapter": "^1.1",
-                "phpunit/phpunit": "^5",
+                "phpunit/phpunit": "^6",
                 "satooshi/php-coveralls": "^2",
                 "squizlabs/php_codesniffer": "^2.8"
             },
@@ -499,7 +499,7 @@
                 }
             ],
             "description": "Template project for PHP libraries.",
-            "time": "2018-09-30T07:36:12+00:00"
+            "time": "2018-09-30T08:04:04+00:00"
         },
         {
             "name": "container-interop/container-interop",

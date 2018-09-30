@@ -25,7 +25,7 @@ class PhpCommandsTest extends CommandsTestBase
     public function setUp()
     {
         // reinitialize / force-push rpmbuild-php-fixture and php-cookbook-fixture repositories
-        $this->fixtures->forceReinitializeProjectFixtures();
+        $this->fixtures->forceReinitializePhpFixtures();
     }
 
     public function tearDown()
