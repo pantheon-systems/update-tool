@@ -210,7 +210,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $updated_project
             ->add('.')
             ->commit($message)
-            ->push()
+            ->forcePush()
             ->pr($message, $body, $main_branch);
 
         // These PRs may be closed now, as they are replaced by the new PR.

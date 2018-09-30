@@ -229,6 +229,14 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Force-push the branch
+     */
+    public function forcePush($remote = '', $branch = '')
+    {
+        return $this->push($remote, $branch, true);
+    }
+
+    /**
      * Merge the specified branch into the current branch.
      */
     public function merge($branch, $modes = 0)
