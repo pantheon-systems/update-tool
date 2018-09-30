@@ -224,6 +224,7 @@ class Fixtures
         $envs = [
             'TESTHOME' => $this->homeDir(),
             'TESTDIR' => $this->testDir(),
+            'FIXTURES' => $this->fixturesDir(),
 
             // These override messages.update-to and constants.branch-prefix,
             // respectively, and allow us to inject unique values to differentiate
