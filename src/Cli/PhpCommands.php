@@ -167,6 +167,9 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $updated_versions = [];
         foreach ($versions as $version) {
             $next_version = $this->nextVersionThatExists($version);
+            if (!$next_version) {
+                throw new \Exception("Could not find current php $version on php downloads server. Check configuration and network.");
+            }
 
             if ($next_version != $version) {
                 $this->say("$next_version is available, but we are still on version $version");
@@ -286,6 +289,10 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      */
     protected function nextVersionThatExists($version)
     {
+        // Return 'false' if the -current- version cannot be found on the ftp server.
+        if (!$this->versionExists($version)) {
+            return false;
+        }
         $next_version = $version;
         $try_version = $this->nextVersion($version);
         while ($this->versionExists($try_version)) {
