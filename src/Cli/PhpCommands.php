@@ -169,6 +169,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             $next_version = $this->nextVersionThatExists($version);
             if (!$next_version) {
                 $urlTemplate = $this->getConfig()->get('php-net.download-url');
+                print "checked $urlTemplate for something after $version\n";
                 throw new \Exception("Could not find current php $version on php downloads server. Using url: $urlTemplate. Check configuration and network.");
             }
 

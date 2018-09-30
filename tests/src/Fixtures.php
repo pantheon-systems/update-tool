@@ -293,6 +293,7 @@ class Fixtures
         foreach ($availablePhpVersions as $phpVersion) {
             $phpDownloadFixture = "{$baseDir}/php-{$phpVersion}.tar.gz";
             file_put_contents($phpDownloadFixture, '');
+            print "Write fixture: $phpDownloadFixture\n";
         }
     }
 
