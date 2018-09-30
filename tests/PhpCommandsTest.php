@@ -30,13 +30,13 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
     /**
      * Prepare to test our commandfile
      */
-    public function setUpForClass()
+    public function setUp()
     {
         // reinitialize / force-push rpmbuild-php-fixture and php-cookbook-fixture repositories
         $this->fixtures()->forceReinitializePhpFixtures();
     }
 
-    public function tearDownForClass()
+    public function tearDown()
     {
         $this->fixtures()->cleanup();
     }
