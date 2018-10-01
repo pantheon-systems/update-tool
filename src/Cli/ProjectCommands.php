@@ -147,7 +147,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
 
-        $branch = "update-$latest";
+        $branch = "updatex-$latest";
 
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
