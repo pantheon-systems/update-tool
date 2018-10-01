@@ -32,9 +32,8 @@ class ProjectCommandsTest extends CommandsTestBase
 
         @unlink($this->fixtures()->activityLogPath());
 
-        // TODO: Should we clone / reset our fixtures?
-        // This just closes the PRs in the specified repository.
-        // $this->fixtures()->forceReinitializeProjectFixtures('drops-8');
+        // Closes any leftover PRs in the fixture repository.
+        $this->fixtures()->forceReinitializeProjectFixtures('drops-8');
     }
 
     public function tearDown()
