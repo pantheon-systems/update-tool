@@ -74,7 +74,8 @@ class WorkingCopy implements LoggerAwareInterface
             '',
             '',
             true,
-            $forked_org);
+            $forked_org
+        );
 
         // 'git_url' => 'git://github.com/org/project.git',
         // 'ssh_url' => 'git@github.com:org/project.git',
