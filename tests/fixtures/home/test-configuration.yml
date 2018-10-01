@@ -1,12 +1,14 @@
 cache-path: ${env.FIXTURES}/cache
 working-copy-path: ${env.TESTDIR}/work
+log:
+  path: ${working-copy-path}/pr.log
 github:
   default-user: tester
   personal-auth-token:
     tester:
       path: ${env.HOME}/.github-token
 php-net:
-  download-url: ${env.TESTDIR}/php.net/distributions/php-{version}.tar.gz
+  download-url: ${env.PHPDOTNETFIXTURE}/distributions/php-{version}.tar.gz
 
 projects:
   rpmbuild-php:
@@ -16,3 +18,17 @@ projects:
     repo: git@github.com:pantheon-fixtures/php-cookbook-fixture.git
     path: ${working-copy-path}/php-cookbook
     src: libraries/php.rb
+  drops-8:
+    repo: git@github.com:pantheon-fixtures/drops-8-fixture.git
+    path: ${working-copy-path}/drops-8
+#    fork: git@github.com:pantheon-fixtures/drops-8-fork-${nonce}.git
+    main-branch: default
+    upstream:
+      project: drupal
+      major: 8
+      update-method: SingleCommit
+  drupal:
+    repo: git@github.com:pantheon-fixtures/drupal-8-fixture.git
+    path: ${working-copy-path}/drupal
+    release-node:
+      template: 'https://www.drupal.org/project/drupal/releases/{version}'

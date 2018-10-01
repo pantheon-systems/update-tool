@@ -5,10 +5,14 @@ namespace Updatinate;
 use Symfony\Component\Filesystem\Filesystem;
 use Hubph\HubphAPI;
 use Updatinate\Git\WorkingCopy;
+use Updatinate\Git\Remote;
+use Consolidation\Config\Util\EnvConfig;
 
 class Fixtures
 {
     protected $testDir;
+    protected $phpDotNetDir;
+    protected $forkedRepos = [];
     protected $tmpDirs = [];
     protected $prevEnvs = [];
     protected $config;
@@ -37,7 +41,13 @@ class Fixtures
     public function cleanup()
     {
         $this->putEnvs($this->prevEnvs);
-        return;
+
+        // Delete all of our scratch forked repositories
+        foreach ($this->forkedRepos as $fork) {
+            $fork->deleteFork();
+        }
+
+        // Remove all of our temporary directories
         $fs = new Filesystem();
         foreach ($this->tmpDirs as $tmpDir) {
             $fs->remove($tmpDir);
@@ -58,7 +68,12 @@ class Fixtures
     public function getConfig()
     {
         if (!$this->config) {
-            $this->config = \Robo\Robo::createConfiguration((array)$this->configurationFile());
+            $this->config = new \Robo\Config\Config();
+            $this->config->set('nonce', $this->seed());
+            \Robo\Robo::loadConfiguration((array)$this->configurationFile(), $this->config);
+
+            $envConfig = new EnvConfig('SUTCONFIG');
+            $this->config->addContext('env', $envConfig);
         }
         return $this->config;
     }
@@ -86,7 +101,18 @@ class Fixtures
         return WorkingCopy::clone($php_cookbook_url, $php_cookbook_dir, $this->api());
     }
 
-    public function forceReinitializeFixtures($as = 'default')
+    public function forceReinitializeProjectFixtures($remote_name, $as = 'default')
+    {
+        $api = $this->api($as);
+
+        $remote_url = $this->getConfig()->get("projects.$remote_name.repo");
+        $remote_repo = Remote::create($remote_url, $api);
+
+        $allPRs = $api->allPRs($remote_repo->org() . '/' . $remote_repo->project());
+        $api->prClose($remote_repo->org(), $remote_repo->project(), $allPRs);
+    }
+
+    public function forceReinitializePhpFixtures($as = 'default')
     {
         $api = $this->api($as);
 
@@ -107,12 +133,112 @@ class Fixtures
 
     protected function forceReinitialize($url, $dir, $fixture, $api)
     {
-        $workingCopy = WorkingCopy::forceReinitializeFixture($url, $dir, $fixture, $api);
+        $workingCopy = static::forceReinitializeFixture($url, $dir, $fixture, $api);
 
         $allPRs = $api->allPRs($workingCopy->org() . '/' . $workingCopy->project());
         $api->prClose($workingCopy->org(), $workingCopy->project(), $allPRs);
 
         return $workingCopy;
+    }
+
+    public function forkTestRepo($remote_name, $as = 'default')
+    {
+        $api = $this->api($as);
+        $url = $this->getConfig()->get("projects.$remote_name.repo");
+        $path = $this->getConfig()->get("projects.$remote_name.path");
+        $fork_url = $this->getConfig()->get("projects.$remote_name.fork");
+        $main_branch = $this->getConfig()->get("projects.$remote_name.main-branch", 'master');
+
+        $original = WorkingCopy::clone($url, $path, $api);
+        if (!$fork_url) {
+            return $original;
+        }
+
+        $forkProjectWithOrg = Remote::projectWithOrgFromUrl($fork_url);
+        $forked_project_name = basename($forkProjectWithOrg);
+        $forked_project_org = dirname($forkProjectWithOrg);
+
+        $original->createFork($forked_project_name, $forked_project_org, $main_branch);
+
+        // Remember that we forked this repo so that we can clean it up
+        // when we're done.
+        $this->forkedRepos[] = $original;
+
+        return $original;
+    }
+
+    /**
+     * Blow away the existing repository at the provided directory and
+     * force-push the new empty repository to the destination URL.
+     *
+     * @param string $url
+     * @param string $dir
+     * @param HubphAPI|null $api
+     * @return WorkingCopy
+     */
+    public static function forceReinitializeFixture($url, $dir, $fixture, $api)
+    {
+        $fs = new Filesystem();
+
+        // Make extra-sure that no one accidentally calls the tests on a non-fixture repo
+        if (strpos($url, 'fixture') === false) {
+            throw new \Exception('WorkingCopy::forceReinitializeFixture requires url to contain the string "fixture" to avoid accidental deletion of non-fixture repositories.');
+        }
+
+        // TODO: check to see if the fixture repository has never been initialized
+
+        if (false) {
+            $auth_url = $api->addTokenAuthentication($url);
+
+            static::copyFixtureOverReinitializedRepo($dir, $fixture);
+            exec("git -C {$dir} init", $output, $status);
+            exec("git -C {$dir} add -A", $output, $status);
+            exec("git -C {$dir} commit -m 'Initial fixture data'", $output, $status);
+            static::setRemoteUrl($auth_url, $dir);
+            exec("git -C {$dir} push --force origin master");
+        }
+
+        $workingCopy = WorkingCopy::clone($url, $dir, $api);
+
+        // Find the first commit and re-initialize
+        $topCommit = $workingCopy->git('rev-list HEAD');
+        $topCommit = $topCommit[0];
+        $firstCommit = $workingCopy->git('rev-list --max-parents=0 HEAD');
+        $firstCommit = $firstCommit[0];
+        $workingCopy->reset($firstCommit, true);
+
+        // TODO: Not quite working yet; overwrites .git directory even
+        // without 'delete' => true
+        if (false) {
+            // Check to see if the fixtures changed
+            // n.b. if we add 'delete' => true then our .git directory
+            // disappears, which breaks everything. Without it, we risk
+            // retaining deleted assets.
+            $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
+            static::copyFixtureOverReinitializedRepo($dir, $fixture);
+            $hasModifications = $workingCopy->status();
+
+            if (!empty($hasModifications)) {
+                $workingCopy->add('.');
+                $workingCopy->amend();
+            }
+        }
+
+        $workingCopy->push('origin', 'master', true);
+
+        return $workingCopy;
+    }
+
+    protected static function copyFixtureOverReinitializedRepo($dir, $fixture)
+    {
+        $fs = new Filesystem();
+        $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
+    }
+
+
+    public function activityLogPath()
+    {
+        return $this->getConfig()->get('log.path');
     }
 
     /**
@@ -138,6 +264,8 @@ class Fixtures
         $envs = [
             'TESTHOME' => $this->homeDir(),
             'TESTDIR' => $this->testDir(),
+            'FIXTURES' => $this->fixturesDir(),
+            'PHPDOTNETFIXTURE' => $this->phpDotNetDir(),
 
             // These override messages.update-to and constants.branch-prefix,
             // respectively, and allow us to inject unique values to differentiate
@@ -189,7 +317,10 @@ class Fixtures
 
     public function phpDotNetDir()
     {
-        return $this->testDir() . '/php.net';
+        if (!$this->phpDotNetDir) {
+            $this->phpDotNetDir = $this->mktmpdir() . '/php.net';
+        }
+        return $this->phpDotNetDir;
     }
 
     public function setupPhpDotNetFixture($availablePhpVersions)

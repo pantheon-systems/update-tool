@@ -39,13 +39,15 @@ class Remote implements LoggerAwareInterface
         }
     }
 
-    // https://{$token}:x-oauth-basic@github.com/{$projectWithOrg}.git";
-    // git@github.com:{$projectWithOrg}.git
-
     public function projectWithOrg()
     {
-        $remote = $this->remote;
+        return static::projectWithOrgFromUrl($this->remote);
+    }
 
+    // https://{$token}:x-oauth-basic@github.com/{$projectWithOrg}.git";
+    // git@github.com:{$projectWithOrg}.git
+    public static function projectWithOrgFromUrl($remote)
+    {
         $remote = preg_replace('#^git@[^:]*:#', '', $remote);
         $remote = preg_replace('#^[^:]*://[^/]*/#', '', $remote);
         $remote = preg_replace('#\.git$#', '', $remote);
@@ -110,6 +112,8 @@ class Remote implements LoggerAwareInterface
 
     /**
      * Return the latest release in the specified major version series
+     *
+     * TODO: allow for beta or RC builds (by request via a second parameter)
      */
     public function latest($majorVersion = '[0-9]+')
     {

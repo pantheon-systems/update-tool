@@ -1,25 +1,5 @@
 {
-  "alias": "updatinate.phar",
-  "chmod": "0755",
-  "compactors": [],
-  "directories": ["src"],
-  "files": ["updatinate", "README.md", "VERSION"],
-  "finder": [
-    {
-      "name": "*.php",
-      "exclude": [
-        "test",
-        "tests",
-        "Test",
-        "Tests",
-        "Tester"
-      ],
-      "in": "vendor"
-    }
-  ],
-  "git-commit": "git-commit",
-  "git-version": "git-version",
-  "output": "updatinate.phar",
   "main": "updatinate",
-  "stub": true
+  "output": "updatinate.phar",
+  "files": ["updatinate", "VERSION"]
 }

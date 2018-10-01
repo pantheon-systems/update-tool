@@ -21,6 +21,7 @@
     "require": {
         "php": ">=5.6.0",
         "consolidation/Robo": "^1.2.3",
+        "consolidation/version-tool": "^0.1.0",
         "g1a/hubph": "^0.3.1",
         "php-http/guzzle6-adapter": "^1.1",
         "symfony/console": "^2.8|^3|^4"
@@ -33,10 +34,11 @@
     },
     "scripts": {
         "phar:install-tools": [
-            "gem install mime-types -v 2.6.2",
-            "curl -LSs https://box-project.github.io/box2/installer.php | php"
+            "mkdir -p tools",
+            "curl -L https://github.com/humbug/box/releases/download/3.0.0/box.phar -o tools/box",
+            "chmod +x tools/box"
         ],
-        "phar:build": "box build",
+        "phar:build": "env PATH=tools:$PATH box compile",
         "cs": "phpcs --standard=PSR2 -n src",
         "cbf": "phpcbf --standard=PSR2 -n src",
         "unit": "phpunit --colors=always",

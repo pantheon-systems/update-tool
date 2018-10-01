@@ -12,16 +12,19 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
     /** @var Fixtures */
     protected $fixtures;
 
-    public function __construct()
+    public function fixtures()
     {
-        $commandClasses = [
-            \Updatinate\Cli\PhpCommands::class,
-            \Updatinate\Cli\TestUtilCommands::class,
-            \Hubph\Cli\HubphCommands::class,
-        ];
+        if (!$this->fixtures) {
+            $commandClasses = [
+                \Updatinate\Cli\PhpCommands::class,
+                \Updatinate\Cli\TestUtilCommands::class,
+                \Hubph\Cli\HubphCommands::class,
+            ];
 
-        $this->fixtures = new Fixtures();
-        $this->setupCommandTester('TestFixtureApp', '1.0.1', $commandClasses, $this->fixtures->configurationFile());
+            $this->fixtures = new Fixtures();
+            $this->setupCommandTester('TestFixtureApp', '1.0.1', $commandClasses, $this->fixtures()->configurationFile());
+        }
+        return $this->fixtures;
     }
 
     /**
@@ -30,12 +33,12 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
     public function setUp()
     {
         // reinitialize / force-push rpmbuild-php-fixture and php-cookbook-fixture repositories
-        $this->fixtures->forceReinitializeFixtures();
+        $this->fixtures()->forceReinitializePhpFixtures();
     }
 
     public function tearDown()
     {
-        $this->fixtures->cleanup();
+        $this->fixtures()->cleanup();
     }
 
     public function currentPhpVersions()
@@ -55,13 +58,13 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
      */
     public function testPhpCommands()
     {
-        $phpRpmWorkingCopy = $this->fixtures->phpRpmWorkingCopy();
-        $phpCookbookWorkingCopy = $this->fixtures->phpCookbookWorkingCopy();
-        $seed = $this->fixtures->seed();
+        $phpRpmWorkingCopy = $this->fixtures()->phpRpmWorkingCopy();
+        $phpCookbookWorkingCopy = $this->fixtures()->phpCookbookWorkingCopy();
+        $seed = $this->fixtures()->seed();
 
         // Step 1: No updates available. No pull requests opened.
         $available_php_versions = $this->currentPhpVersions();
-        $this->fixtures->setupPhpDotNetFixture($available_php_versions);
+        $this->fixtures()->setupPhpDotNetFixture($available_php_versions);
         $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
         $this->assertContains('5.3.29 is the most recent version', $output);
         $this->assertContains('5.5.38 is the most recent version', $output);
@@ -75,8 +78,8 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         $this->assertEquals('Initial fixture data', $message);
 
         // Step 2: Simulate a PHP 7.2 available update. Confirm that one pull request opened.
-        $available_php_versions = array_merge($available_php_versions, [ $this->fixtures->next(Fixtures::PHP_72_CURRENT) ]);
-        $this->fixtures->setupPhpDotNetFixture($available_php_versions);
+        $available_php_versions = array_merge($available_php_versions, [ $this->fixtures()->next(Fixtures::PHP_72_CURRENT) ]);
+        $this->fixtures()->setupPhpDotNetFixture($available_php_versions);
         $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
         $this->assertContains("[notice] Executing git push origin php-$seed-7.2.9", $output);
         $output = $this->executeExpectOK(['pr:list', 'pantheon-fixtures/rpmbuild-php-fixture', '--field=title']);
@@ -98,7 +101,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         sleep(5);
 
         // Step 3: No change to available PHP versions. No action taken (PR stays open)
-        $this->fixtures->setupPhpDotNetFixture($available_php_versions);
+        $this->fixtures()->setupPhpDotNetFixture($available_php_versions);
         $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
         $this->assertContains('[notice] There is an existing pull request for this update; nothing else to do.', $output);
         $output = $this->executeExpectOK(['pr:list', 'pantheon-fixtures/rpmbuild-php-fixture', '--field=title']);
@@ -110,8 +113,8 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         // Step 4: Now there are updates available for both 7.1 and 7.2.
         // A new PR is opened with the 7.1 and 7.2 change.
         // The old 7.2 PR is closed.
-        $available_php_versions = array_merge($available_php_versions, [ $this->fixtures->next(Fixtures::PHP_71_CURRENT) ]);
-        $this->fixtures->setupPhpDotNetFixture($available_php_versions);
+        $available_php_versions = array_merge($available_php_versions, [ $this->fixtures()->next(Fixtures::PHP_71_CURRENT) ]);
+        $this->fixtures()->setupPhpDotNetFixture($available_php_versions);
         $output = $this->executeExpectOK(['php:rpm:update', '--no-auto-merge']);
         $this->assertContains("[notice] Executing git push origin php-$seed-7.1.21-7.2.9", $output);
         $output = $this->executeExpectOK(['pr:list', 'pantheon-fixtures/rpmbuild-php-fixture', '--field=title']);
@@ -160,7 +163,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         print "\n=========================\n";
         print implode(' ', $argv);
         print "\n=========================\n";
-        list($actualOutput, $statusCode) = $this->execute($argv, $this->commandClasses, $this->fixtures->configurationFile());
+        list($actualOutput, $statusCode) = $this->execute($argv, $this->commandClasses, $this->fixtures()->configurationFile());
 
         // Confirm that our output and status code match expectations
         if (empty($expectedOutput)) {

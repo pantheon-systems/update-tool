@@ -13,9 +13,11 @@ class WorkingCopy implements LoggerAwareInterface
     use LoggerAwareTrait;
 
     protected $remote;
-    protected $remote_fork;
+    protected $fork;
     protected $dir;
     protected $api;
+
+    const FORCE_MERGE_COMMIT = 0x01;
 
     /**
      * WorkingCopy constructor
@@ -52,13 +54,67 @@ class WorkingCopy implements LoggerAwareInterface
     public function addFork($fork_url)
     {
         if (empty($fork_url)) {
+            $this->fork = null;
             return $this;
         }
         $this->fork = new Remote($fork_url);
         $this->fork->addAuthentication($this->api);
-        $php_cookbook->addRemote($this->fork->url(), 'fork');
 
         return $this;
+    }
+
+    /**
+     * createFork creates a new secondary repository copied from
+     * the current repository, and sets it up as a fork per 'addFork'.
+     */
+    public function createFork($forked_project_name, $forked_org = '', $branch = '')
+    {
+        $result = $this->api->gitHubAPI()->api('repo')->create(
+            $forked_project_name,
+            '',
+            '',
+            true,
+            $forked_org
+        );
+
+        // 'git_url' => 'git://github.com/org/project.git',
+        // 'ssh_url' => 'git@github.com:org/project.git',
+
+        $fork_url = $result['ssh_url'];
+        $result = $this->addFork($fork_url);
+
+        $this->push('fork', $branch);
+
+        return $result;
+    }
+
+    public function deleteFork()
+    {
+        if (!$this->fork) {
+            return;
+        }
+
+        $this->api->gitHubAPI()->api('repo')->remove($this->fork->org(), $this->fork->project());
+    }
+
+    /**
+     * forkUrl returns the URL of the forked repository that should
+     * be used for creating any pull requests.
+     */
+    public function forkUrl()
+    {
+        if (!$this->fork) {
+            return null;
+        }
+        return $this->fork->url();
+    }
+
+    public function forkProjectWithOrg()
+    {
+        if (!$this->fork) {
+            return null;
+        }
+        return $this->fork->projectWithOrg();
     }
 
     /**
@@ -87,7 +143,7 @@ class WorkingCopy implements LoggerAwareInterface
      * @param HubphAPI|null $api
      * @return WorkingCopy
      */
-    public static function shallowClone($url, $dir, $branch, $api = null)
+    public static function shallowClone($url, $dir, $branch, $depth = 1, $api = null)
     {
         $workingCopy = new self($url, $dir, $branch, $api);
         $workingCopy->freshClone($branch, $depth);
@@ -111,68 +167,6 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
-     * Blow away the existing repository at the provided directory and
-     * force-push the new empty repository to the destination URL.
-     *
-     * @param string $url
-     * @param string $dir
-     * @param HubphAPI|null $api
-     * @return WorkingCopy
-     */
-    public static function forceReinitializeFixture($url, $dir, $fixture, $api)
-    {
-        $fs = new Filesystem();
-
-        // Make extra-sure that no one accidentally calls the tests on a non-fixture repo
-        if (strpos($url, 'fixture') === false) {
-            throw new \Exception('WorkingCopy::forceReinitializeFixture requires url to contain the string "fixture" to avoid accidental deletion of non-fixture repositories.');
-        }
-
-        // TODO: check to see if the fixture repository has never been initialized
-
-        if (false) {
-            $auth_url = $api->addTokenAuthentication($url);
-
-            static::copyFixtureOverReinitializedRepo($dir, $fixture);
-            exec("git -C {$dir} init", $output, $status);
-            exec("git -C {$dir} add -A", $output, $status);
-            exec("git -C {$dir} commit -m 'Initial fixture data'", $output, $status);
-            static::setRemoteUrl($auth_url, $dir);
-            exec("git -C {$dir} push --force origin master");
-        }
-
-        $workingCopy = static::clone($url, $dir, $api);
-
-        // Find the first commit and re-initialize
-        $topCommit = $workingCopy->git('rev-list HEAD');
-        $topCommit = $topCommit[0];
-        $firstCommit = $workingCopy->git('rev-list --max-parents=0 HEAD');
-        $firstCommit = $firstCommit[0];
-        $workingCopy->reset($firstCommit, true);
-
-        // TODO: Not quite working yet; overwrites .git directory even
-        // without 'delete' => true
-        if (false) {
-            // Check to see if the fixtures changed
-            // n.b. if we add 'delete' => true then our .git directory
-            // disappears, which breaks everything. Without it, we risk
-            // retaining deleted assets.
-            $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
-            static::copyFixtureOverReinitializedRepo($dir, $fixture);
-            $hasModifications = $workingCopy->status();
-
-            if (!empty($hasModifications)) {
-                $workingCopy->add('.');
-                $workingCopy->amend();
-            }
-        }
-
-        $workingCopy->push('origin', 'master', true);
-
-        return $workingCopy;
-    }
-
-    /**
      * take tranforms this local working copy such that it RETAINS all of its
      * local files (no change to any unstaged modifications or files) and
      * TAKES OVER the repository from the provided working copy.
@@ -189,19 +183,25 @@ class WorkingCopy implements LoggerAwareInterface
     {
         $fs = new Filesystem();
 
-        $ourLocalGitRepo = $this->dir() . '.git';
-        $ourLocalGitRepo = $rhs->dir() . '.git';
+        $ourLocalGitRepo = $this->dir() . '/.git';
+        $rhsLocalGitRepo = $rhs->dir() . '/.git';
 
         $fs->remove($ourLocalGitRepo);
         $fs->rename($rhsLocalGitRepo, $ourLocalGitRepo);
 
-        $fs->remove($rhs->dir());
+        $this->remote = $rhs->remote();
+        $this->addFork($rhs->forkUrl());
     }
 
-    protected static function copyFixtureOverReinitializedRepo($dir, $fixture)
+    /**
+     * remove will delete all of the local working files managed by this
+     * object, including the '.git' directory. This method should be called
+     * if the local working copy is corrupted or otherwise becomes unusable.
+     */
+    public function remove()
     {
         $fs = new Filesystem();
-        $fs->mirror($fixture, $dir, null, ['override' => true, 'delete' => true]);
+        $fs->remove($this->dir());
     }
 
     public function remote($remote_name = '')
@@ -219,7 +219,7 @@ class WorkingCopy implements LoggerAwareInterface
 
     public function dir()
     {
-        return $this->dir();
+        return $this->dir;
     }
 
     public function org($remote_name = '')
@@ -271,11 +271,24 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Force-push the branch
+     */
+    public function forcePush($remote = '', $branch = '')
+    {
+        return $this->push($remote, $branch, true);
+    }
+
+    /**
      * Merge the specified branch into the current branch.
      */
-    public function merge($branch)
+    public function merge($branch, $modes = 0)
     {
-        $this->git('merge {branch}', ['branch' => $branch]);
+        $flags = '';
+        if ($modes & static::FORCE_MERGE_COMMIT) {
+            $flags .= ' --no-ff';
+        }
+
+        $this->git('merge{flags} {branch}', ['branch' => $branch, 'flags' => $flags]);
         return $this;
     }
 
@@ -289,10 +302,18 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
-     * Ensure we are on the correct branch. Update to the
-     * latest HEAD from origin.
+     * switchBranch is a synonym for 'checkout'
      */
     public function switchBranch($branch)
+    {
+        $this->git('checkout {branch}', ['branch' => $branch]);
+        return $this;
+    }
+
+    /**
+     * Switch to the specified branch. Use 'createBranch' to create a new branch.
+     */
+    public function checkout($branch)
     {
         $this->git('checkout {branch}', ['branch' => $branch]);
         return $this;
@@ -374,6 +395,9 @@ class WorkingCopy implements LoggerAwareInterface
             $forked_org = $this->fork->org();
             $head = "$forked_org:$head";
         }
+
+        $this->logger->notice('Create pull request for {org_project} using {head} from {base}', ['org_project' => $this->projectWithOrg(), 'head' => $head, 'base' => $base]);
+
         $this->api->prCreate($this->org(), $this->project(), $message, $body, $base, $head);
         return $this;
     }
