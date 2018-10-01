@@ -41,13 +41,12 @@ class Fixtures
     public function cleanup()
     {
         $this->putEnvs($this->prevEnvs);
-        return;
-/*
+
         // Delete all of our scratch forked repositories
         foreach ($this->forkedRepos as $fork) {
             $fork->deleteFork();
         }
-*/
+
         // Remove all of our temporary directories
         $fs = new Filesystem();
         foreach ($this->tmpDirs as $tmpDir) {
