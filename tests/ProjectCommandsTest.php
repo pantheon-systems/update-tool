@@ -6,17 +6,14 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 class ProjectCommandsTest extends CommandsTestBase
 {
-    public function __construct()
+    use CommandTesterTrait;
+
+    /** @var Fixtures */
+    protected $fixtures;
+
+    public function fixtures()
     {
-        parent::__construct();
-
-        $commandClasses = [
-            \Updatinate\Cli\ProjectCommands::class,
-            \Updatinate\Cli\TestUtilCommands::class,
-            \Hubph\Cli\HubphCommands::class,
-        ];
-
-        $this->setupCommandTester('TestFixtureApp', '1.0.1', $commandClasses, $this->fixtures->configurationFile());
+        return $this->fixtures;
     }
 
     /**
@@ -24,16 +21,25 @@ class ProjectCommandsTest extends CommandsTestBase
      */
     public function setUp()
     {
-        @unlink($this->fixtures->activityLogPath());
+        $commandClasses = [
+            \Updatinate\Cli\ProjectCommands::class,
+            \Updatinate\Cli\TestUtilCommands::class,
+            \Hubph\Cli\HubphCommands::class,
+        ];
+
+        $this->fixtures = new Fixtures();
+        $this->setupCommandTester('TestFixtureApp', '1.0.1', $commandClasses, $this->fixtures->configurationFile());
+
+        @unlink($this->fixtures()->activityLogPath());
 
         // TODO: Should we clone / reset our fixtures?
         // This just closes the PRs in the specified repository.
-        $this->fixtures->forceReinitializeProjectFixtures('drops-8');
+        // $this->fixtures()->forceReinitializeProjectFixtures('drops-8');
     }
 
     public function tearDown()
     {
-        $this->fixtures->cleanup();
+        $this->fixtures()->cleanup();
     }
 
     /**
@@ -41,6 +47,9 @@ class ProjectCommandsTest extends CommandsTestBase
      */
     public function testProjectCommands()
     {
+        // Create a fork
+        $drops8_repo = $this->fixtures()->forkTestRepo('drops-8');
+
         // Verify the latest releast in our drops-8 and drupal fixtures.
         $output = $this->executeExpectOK(['project:latest', 'drops-8']);
         $this->assertEquals('8.5.6', $output);
@@ -64,7 +73,7 @@ class ProjectCommandsTest extends CommandsTestBase
         $this->assertContains('Updating drops-8 from 8.5.6 to 8.6.0', $output);
 
         // Ensure that the PR that was created is logged
-        $this->assertFileExists($this->fixtures->activityLogPath());
+        $this->assertFileExists($this->fixtures()->activityLogPath());
 
         // Make sure github API has enough time to realize the PR has been created
         sleep(5);

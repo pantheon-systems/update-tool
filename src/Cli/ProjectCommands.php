@@ -151,6 +151,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
+        $project_fork = $this->getConfig()->get("projects.$remote.fork");
 
         $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
@@ -159,7 +160,13 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $project_working_copy = WorkingCopy::clone($project_url, $project_dir, $api);
         $project_working_copy
+            ->addFork($project_fork)
             ->setLogger($this->logger);
+
+        $fork_url = $project_working_copy->forkUrl();
+        if ($fork_url) {
+            $this->logger->notice("Pull requests will be made in forked repository {fork}", ['fork' => $fork_url]);
+        }
 
         // Clone the upstream. Check out just $latest
         $upstream_working_copy = WorkingCopy::shallowClone($upstream_url, $upstream_dir, $latest, 1, $api);

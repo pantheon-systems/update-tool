@@ -6,11 +6,13 @@ use Symfony\Component\Filesystem\Filesystem;
 use Hubph\HubphAPI;
 use Updatinate\Git\WorkingCopy;
 use Updatinate\Git\Remote;
+use Consolidation\Config\Util\EnvConfig;
 
 class Fixtures
 {
     protected $testDir;
     protected $phpDotNetDir;
+    protected $forkedRepos = [];
     protected $tmpDirs = [];
     protected $prevEnvs = [];
     protected $config;
@@ -40,6 +42,13 @@ class Fixtures
     {
         $this->putEnvs($this->prevEnvs);
         return;
+/*
+        // Delete all of our scratch forked repositories
+        foreach ($this->forkedRepos as $fork) {
+            $fork->deleteFork();
+        }
+*/
+        // Remove all of our temporary directories
         $fs = new Filesystem();
         foreach ($this->tmpDirs as $tmpDir) {
             $fs->remove($tmpDir);
@@ -60,7 +69,12 @@ class Fixtures
     public function getConfig()
     {
         if (!$this->config) {
-            $this->config = \Robo\Robo::createConfiguration((array)$this->configurationFile());
+            $this->config = new \Robo\Config\Config();
+            $this->config->set('nonce', $this->seed());
+            \Robo\Robo::loadConfiguration((array)$this->configurationFile(), $this->config);
+
+            $envConfig = new EnvConfig('SUTCONFIG');
+            $this->config->addContext('env', $envConfig);
         }
         return $this->config;
     }
@@ -126,6 +140,30 @@ class Fixtures
         $api->prClose($workingCopy->org(), $workingCopy->project(), $allPRs);
 
         return $workingCopy;
+    }
+
+    public function forkTestRepo($remote_name, $as = 'default')
+    {
+        $api = $this->api($as);
+        $url = $this->getConfig()->get("projects.$remote_name.repo");
+        $path = $this->getConfig()->get("projects.$remote_name.path");
+        $fork_url = $this->getConfig()->get("projects.$remote_name.fork");
+        if (!$fork_url) {
+            throw new \Exception('No fork url set up in configuration of ' . $remote_name);
+        }
+
+        $forkProjectWithOrg = Remote::projectWithOrgFromUrl($fork_url);
+        $forked_project_name = basename($forkProjectWithOrg);
+        $forked_project_org = dirname($forkProjectWithOrg);
+
+        $original = WorkingCopy::clone($url, $path, $api);
+        $original->createFork($forked_project_name, $forked_project_org);
+
+        // Remember that we forked this repo so that we can clean it up
+        // when we're done.
+        $this->forkedRepos[] = $original;
+
+        return $original;
     }
 
     /**
@@ -293,7 +331,6 @@ class Fixtures
         foreach ($availablePhpVersions as $phpVersion) {
             $phpDownloadFixture = "{$baseDir}/php-{$phpVersion}.tar.gz";
             file_put_contents($phpDownloadFixture, '');
-            print "Write fixture: $phpDownloadFixture\n";
         }
     }
 

@@ -64,6 +64,35 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * createFork creates a new secondary repository copied from
+     * the current repository, and sets it up as a fork per 'addFork'.
+     */
+    public function createFork($forked_project_name, $forked_org = '')
+    {
+        $result = $this->api->gitHubAPI()->api('repo')->create(
+            $forked_project_name,
+            '',
+            '',
+            true,
+            $forked_org);
+
+        // 'git_url' => 'git://github.com/org/project.git',
+        // 'ssh_url' => 'git@github.com:org/project.git',
+
+        $fork_url = $result['ssh_url'];
+        return $this->addFork($fork_url);
+    }
+
+    public function deleteFork()
+    {
+        if (!$this->fork) {
+            return;
+        }
+
+        $this->api->gitHubAPI()->api('repo')->remove($this->fork->org(), $this->fork->project());
+    }
+
+    /**
      * forkUrl returns the URL of the forked repository that should
      * be used for creating any pull requests.
      */
@@ -73,6 +102,14 @@ class WorkingCopy implements LoggerAwareInterface
             return null;
         }
         return $this->fork->url();
+    }
+
+    public function forkProjectWithOrg()
+    {
+        if (!$this->fork) {
+            return null;
+        }
+        return $this->fork->projectWithOrg();
     }
 
     /**
