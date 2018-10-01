@@ -150,15 +150,15 @@ class Fixtures
         $fork_url = $this->getConfig()->get("projects.$remote_name.fork");
         $main_branch = $this->getConfig()->get("projects.$remote_name.main-branch", 'master');
 
+        $original = WorkingCopy::clone($url, $path, $api);
         if (!$fork_url) {
-            throw new \Exception('No fork url set up in configuration of ' . $remote_name);
+            return $original;
         }
 
         $forkProjectWithOrg = Remote::projectWithOrgFromUrl($fork_url);
         $forked_project_name = basename($forkProjectWithOrg);
         $forked_project_org = dirname($forkProjectWithOrg);
 
-        $original = WorkingCopy::clone($url, $path, $api);
         $original->createFork($forked_project_name, $forked_project_org, $main_branch);
 
         // Remember that we forked this repo so that we can clean it up
