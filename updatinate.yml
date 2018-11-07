@@ -48,6 +48,10 @@ projects:
           - sites/default/default.services.pantheon.preproduction.yml
           - sites/default/settings.pantheon.php
           - sites/default/settings.php
+      update-filters:
+        -
+          filter: FixupDrupal8
+
   drops-7:
     repo: git@github.com:pantheon-systems/drops-7.git
     path: ${working-copy-path}/drops-7

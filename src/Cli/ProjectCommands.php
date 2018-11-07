@@ -193,7 +193,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Find an update method and run it
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
         $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
-        $updater = $this->getUpdater($update_method, $update_parameters);
+        $updater = $this->getUpdater($update_method, $api);
         if (empty($updater)) {
             throw new \Exception('Project cannot be updated; it is missing an update method.');
         }
