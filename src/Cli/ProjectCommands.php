@@ -11,6 +11,7 @@ use Hubph\VersionIdentifiers;
 use Hubph\HubphAPI;
 use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
 use Updatinate\Util\ReleaseNode;
+use Consolidation\Config\Util\Interpolator;
 
 use Updatinate\Git\Remote;
 use VersionTool\VersionTool;
@@ -109,13 +110,17 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_repo = $this->createRemote($upstream, $api);
 
         // Determine the major version of the upstream repo
+        $version_pattern = $this->getConfig()->get("projects.$remote.upstream.version-pattern", '#.#.#');
+        $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
         $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
         $current = $remote_repo->latest($major);
         $major = preg_replace('#\..*#', '', $major);
 
+        $this->logger->notice("Check latest version for {upstream}.", ['upstream' => $upstream]);
+
         // Determine the latest version in the same major series in the upstream
         // TODO: existing script allows 'latest' to be taken from beta / RC / nightly builds.
-        $latest = $upstream_repo->latest($major);
+        $latest = $upstream_repo->latest($major, $tag_prefix);
 
         // Exit with no action and no error if already up-to-date
         if (($current == $latest) || ($remote_repo->has($latest))) {
@@ -123,17 +128,23 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             return;
         }
 
+        $this->logger->notice("Latest version of {upstream} is {latest}.", ['upstream' => $upstream, 'latest' => $latest]);
+
         // Create a commit message.
         $upstream_label = ucfirst($upstream);
-        $message = 'Update to ' . $upstream_label . ' ' . $latest . '.';
+        $message = $this->getConfig()->get("projects.$remote.upstream.update-message", 'Update to ' . $upstream_label . ' ' . $latest . '.');
+        $message = str_replace('{version}', $latest, $message);
 
         // If we can find a release node, then add the "more information" blerb.
-        list($failure_message, $releaseNode) = $releaseNode->get($this->getConfig(), $remote);
+        list($failure_message, $releaseNode) = $releaseNode->get($this->getConfig(), $remote, $major);
         if (strstr($releaseNode, $latest) !== false) {
             $message .= " For more information, see $releaseNode";
         }
 
+        $this->logger->notice("Update message: {msg}", ['msg' => $message]);
+
         $vids = new VersionIdentifiers();
+        $vids->setVvalPattern($version_pattern);
         $vids->addVidsFromMessage($message);
 
         // Check to see if there are any open PRs that have already done this
@@ -158,7 +169,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
 
-        $project_working_copy = WorkingCopy::clone($project_url, $project_dir, $api);
+        $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
         $project_working_copy
             ->addFork($project_fork)
             ->setLogger($this->logger);
@@ -169,21 +180,20 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         // Clone the upstream. Check out just $latest
-        $upstream_working_copy = WorkingCopy::shallowClone($upstream_url, $upstream_dir, $latest, 1, $api);
+        $upstream_working_copy = WorkingCopy::shallowClone($upstream_url, $upstream_dir, "$tag_prefix$latest", 1, $api);
         $upstream_working_copy
             ->setLogger($this->logger);
 
         // Run 'composer install' if necessary
         $this->composerInstall($upstream_working_copy->dir());
 
-        // TODO: existing script verifies the Drupal version of the upstream working copy here.
-        // We need to make an external library to determine framework and look
-        // up version strings in order to do this, as we do not want to have
-        // to know how to call Drush or wp-cli et.al.
-
-        // Create a new branch to make the update on
-        $project_working_copy
-            ->createBranch($branch, $main_branch, true);
+        // Confirm that the local working copy of the upstream has checked out $latest
+        $version_info = new VersionTool();
+        $info = $version_info->info($upstream_working_copy->dir());
+        $upstream_version = $info->version();
+        if ($upstream_version != $latest) {
+            throw new \Exception("Update failed. We expected that the local working copy of the upstream project should be $latest, but instead it is $upstream_version.");
+        }
 
         // TODO: Existing drops-8 script pre-tags scaffolding files if possible
         // We should probably do this in a separate command.
@@ -193,28 +203,41 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Find an update method and run it
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
         $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
-        $updater = $this->getUpdater($update_method, $update_parameters);
+        $updater = $this->getUpdater($update_method, $api);
         if (empty($updater)) {
             throw new \Exception('Project cannot be updated; it is missing an update method.');
         }
         $updater->setApi($api);
         $updater->setLogger($this->logger);
+
         $updated_project = $updater->update($project_working_copy, $upstream_working_copy, $update_parameters);
 
         // Confirm that the updated version of the code is now equal to $latest
-        $version_info = new VersionTool();
         $info = $version_info->info($updated_project->dir());
         $updated_version = $info->version();
         if ($updated_version != $latest) {
             throw new \Exception("Update failed. We expected that the updated version of the project should be $latest, but instead it is $updated_version.");
         }
 
-        // TODO: Look up some body text to give folks instructions on what to
-        // do with these updates.
-        $body = '';
+        // Give folks instructions on what to do with this update.
+        $replacements = [
+            'branch' => $branch,
+            'main-branch' => $main_branch,
+            'commit-message' => $message,
+            'project' => $remote,
+            'upstream' => $upstream_label,
+            'project-url' => $project_url,
+            'upstream-url' => $upstream_url,
+            'original-version' => $current,
+            'update-version' => $latest,
+        ];
+        $instructions = $this->getConfig()->get("projects.$remote.pr.instructions");
+        $interpolator = new Interpolator();
+        $body = $interpolator->mustInterpolate($replacements, $instructions);
 
         // Commit, push, and make the PR
         $updated_project
+            ->createBranch($branch, $main_branch, true)
             ->add('.')
             ->commit($message)
             ->forcePush()

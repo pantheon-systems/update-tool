@@ -48,14 +48,79 @@ projects:
           - sites/default/default.services.pantheon.preproduction.yml
           - sites/default/settings.pantheon.php
           - sites/default/settings.php
+      update-filters:
+        -
+          filter: FixupDrupal8
+    pr:
+      instructions: |
+        Update from Drupal {{original-version}} to Drupal {{update-version}}.
+
+        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-8), and then visit the test site and confirm that the correct version of Drupal was, in fact, installed and tested.
+
+        Optionally, you may also create your own test site:
+
+          - Create a new Drupal 8 site on Pantheon.
+          - When site creation is finished, visit dashboard.
+          - Switch to "git" mode.
+          - Clone your site locally.
+          - Apply the files from this PR on top of your local checkout.
+            - git remote add {{project}} {{project-url}}
+            - git fetch {{project}}
+            - git merge {{project}}/{{branch}}
+          - Push your files back up to Pantheon.
+          - Switch back to sftp mode.
+          - Visit your site and step through the installation process.
   drops-7:
     repo: git@github.com:pantheon-systems/drops-7.git
     path: ${working-copy-path}/drops-7
     main-branch: default
     upstream:
+      project: pressflow7
+      major: 7
+      version-pattern: '#.#'
+      tag-prefix: 'pressflow-'
+      update-message: Update to Drupal {version}.
+      update-method: SingleCommit
+      update-parameters:
+        platform-additions:
+          - .circleci
+          - .drush-lock-update
+          - .gitignore
+          - pantheon.upstream.yml
+          - misc/healthchecks/
+          - profiles/pantheon/
+          - modules/pantheon/
+        platform-patches:
+          - https://raw.githubusercontent.com/pantheon-systems/drops-7/patches/drops-7-pantheon.patch
+    pr:
+      instructions: |
+        Update from Drupal {{original-version}} to Drupal {{update-version}}.
+
+        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-7), and then visit the test site and confirm that the correct version of Drupal was, in fact, installed and tested.
+
+        Optionally, you may also create your own test site:
+
+          - Create a new Drupal 8 site on Pantheon.
+          - When site creation is finished, visit dashboard.
+          - Switch to "git" mode.
+          - Clone your site locally.
+          - Apply the files from this PR on top of your local checkout.
+            - git remote add {{project}} {{project-url}}
+            - git fetch {{project}}
+            - git merge {{project}}/{{branch}}
+          - Push your files back up to Pantheon.
+          - Switch back to sftp mode.
+          - Visit your site and step through the installation process.
+  pressflow7:
+    repo: git@github.com:pressflow/7.git
+    path: ${working-copy-path}/pressflow7
+    upstream:
       project: drupal
       major: 7
+      version-pattern: '#.#'
       update-method: MergeUpstreamBranch
+    release-node:
+      template: 'https://www.drupal.org/project/drupal/releases/{version}'
   drupal:
     repo: git://git.drupal.org/project/drupal.git
     path: ${working-copy-path}/drupal
