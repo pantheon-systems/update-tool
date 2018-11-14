@@ -61,9 +61,9 @@ class ReleaseNode
      * @param string $remote Name of the remote project to fetch the release node for
      * @return [string, string] Failure message (empty for success), release node page URL
      */
-    public function get(ConfigInterface $config, $remote)
+    public function get(ConfigInterface $config, $remote, $major = '[0-9]')
     {
-        list($release_node_template, $release_node_url, $release_node_pattern) = $this->info($config, $remote);
+        list($release_node_template, $release_node_url, $release_node_pattern) = $this->info($config, $remote, $major);
 
         if (empty($release_node_template) && empty($release_node_url)) {
             return ['The specified project does not exist, or does not define information on how to obtain the release node.', ''];
@@ -86,6 +86,9 @@ class ReleaseNode
 
     protected function info($config, $remote, $major = '[0-9]')
     {
+        // Get the tag prefix for our upstream before switching '$remote'.
+        $tag_prefix = $config->get("projects.$remote.upstream.tag-prefix", '');
+
         if (!$config->has("projects.$remote.release-node.url") && $config->has("projects.$remote.upstream.project")) {
             $remote = $config->get("projects.$remote.upstream.project");
             $major = $config->get("projects.$remote.upstream.major", $major);
@@ -98,7 +101,7 @@ class ReleaseNode
 
         if (!empty($release_node_template)) {
             $remote_repo = $this->createRemote($config, $remote);
-            $latest = $remote_repo->latest($major);
+            $latest = $remote_repo->latest($major, $tag_prefix);
             $release_node_template = str_replace('{version}', $latest, $release_node_template);
         }
 
