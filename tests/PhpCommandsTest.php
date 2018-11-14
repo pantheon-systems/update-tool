@@ -54,15 +54,6 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
     }
 
     /**
-     * Sanity-check: who are we authenticated as
-     */
-    public function testWhoami()
-    {
-        $output = $this->executeExpectOK(['whoami']);
-        $this->assertContains('Authenticated as pantheon-ci-bot', $output);
-    }
-
-    /**
      * Test our php update commands.
      */
     public function testPhpCommands()
