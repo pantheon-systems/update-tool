@@ -77,7 +77,7 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $patchPath = "$tmpDir/" . basename($patch);
         file_put_contents($patchPath, $patchContents);
 
-        $this->execWithRedaction('patch -Np1 --directory={dst} --input={patch}', ['patch' => $patchPath, 'dst' => $dst], ['patch' => basename($patchPath), 'dst' => basename($dst)]);
+        $this->execWithRedaction('patch -Np1 --no-backup-if-mismatch --directory={dst} --input={patch}', ['patch' => $patchPath, 'dst' => $dst], ['patch' => basename($patchPath), 'dst' => basename($dst)]);
     }
 
     protected function copyFileOrDirectory($src, $dest)
