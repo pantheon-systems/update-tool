@@ -32,10 +32,8 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     protected $adminPw;
     protected $adminEmail;
 
-    public function configure(ConfigInterface $config, $project, $version)
+    public function configure(ConfigInterface $config, $project)
     {
-        $this->version = $version;
-
         $this->dbuser = $config->get("fixtures.mysql.user", 'root');
         $this->dbpw = $config->get("fixtures.mysql.pw", '');
         $this->dbname = $config->get("fixtures.wp.dbname", 'updatinate-wp-db');
@@ -46,7 +44,15 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $this->adminEmail = $config->get("fixtures.wp.admin-email", 'bot@pantheon.io');
     }
 
-    public function update(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
+    public function findLatestVersion($major, $tag_prefix)
+    {
+        $version = $major; // TODO: look up most recent version
+        $this->version = $version;
+
+        return $version;
+    }
+
+    public function update(WorkingCopy $originalProject, array $parameters)
     {
         $path = $originalProject->dir();
 
@@ -74,7 +80,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         return $originalProject;
     }
 
-    public function complete(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
+    public function complete(array $parameters)
     {
     }
 

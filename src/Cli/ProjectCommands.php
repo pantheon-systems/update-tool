@@ -109,7 +109,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
 
         $remote_repo = $this->createRemote($remote, $api);
-        $upstream_repo = $this->createRemote($upstream, $api);
 
         // Determine the major version of the upstream repo
         $version_pattern = $this->getConfig()->get("projects.$remote.upstream.version-pattern", '#.#.#');
@@ -118,15 +117,29 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $current = $remote_repo->latest($major);
         $major = preg_replace('#\..*#', '', $major);
 
+        // Find an update method and create an updater
+        $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
+        $updater = $this->getUpdater($update_method, $api);
+        if (empty($updater)) {
+            throw new \Exception('Project cannot be updated; it is missing an update method.');
+        }
+        $updater->setApi($api);
+        $updater->setLogger($this->logger);
+
+        // Allow the updator to configure itself prior to the update.
+        $updater->configure($this->getConfig(), $remote);
+
         $this->logger->notice("Check latest version for {upstream}.", ['upstream' => $upstream]);
 
         // Determine the latest version in the same major series in the upstream
         // TODO: existing script allows 'latest' to be taken from beta / RC / nightly builds.
-        $latest = $upstream_repo->latest($major, $tag_prefix);
+        $latest = $updater->findLatestVersion($major, $tag_prefix);
 
         // Convert $latest to a version number matching $version_pattern,
         // and put the actual tag name in $latestTag.
         list($latest, $latestTag) = $this->versionAndTagFromLatest($latest, $tag_prefix, $version_pattern);
+        $update_parameters['latest-tag'] = $latestTag;
 
         // Exit with no action and no error if already up-to-date
         if ($remote_repo->has($latest)) {
@@ -185,49 +198,18 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $this->logger->notice("Pull requests will be made in forked repository {fork}", ['fork' => $fork_url]);
         }
 
-        // Clone the upstream. Check out just $latest
-        $upstream_working_copy = WorkingCopy::shallowClone($upstream_url, $upstream_dir, $latestTag, 1, $api);
-        $upstream_working_copy
-            ->setLogger($this->logger);
-
-        // Run 'composer install' if necessary
-        $this->composerInstall($upstream_working_copy->dir());
-
-        // Confirm that the local working copy of the upstream has checked out $latest
-        $version_info = new VersionTool();
-        $info = $version_info->info($upstream_working_copy->dir());
-        if (!$info) {
-            throw new \Exception("Could not identify the type of application at " . $upstream_working_copy->dir());
-        }
-        $upstream_version = $info->version();
-        if ($upstream_version != $latest) {
-            throw new \Exception("Update failed. We expected that the local working copy of the upstream project should be $latest, but instead it is $upstream_version.");
-        }
-
         // TODO: Existing drops-8 script pre-tags scaffolding files if possible
         // We should probably do this in a separate command.
 
         // TODO: Apply 'shipit' PRs from the GitHub repository to the project working copy
 
-        // Find an update method and run it
-        $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
-        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
-        $updater = $this->getUpdater($update_method, $api);
-        if (empty($updater)) {
-            throw new \Exception('Project cannot be updated; it is missing an update method.');
-        }
-        $updater->setApi($api);
-        $updater->setLogger($this->logger);
-
-        // Allow the updator to configure itself prior to the update.
-        $updater->configure($this->getConfig(), $remote, $latest);
-
         // TODO: Some update methods (e.g. WpCliUpdate) do not need the
         // upstream working copy. We are needlessly cloning that repo in
         // those instances at the moment.
-        $updated_project = $updater->update($project_working_copy, $upstream_working_copy, $update_parameters);
+        $updated_project = $updater->update($project_working_copy, $update_parameters);
 
         // Confirm that the updated version of the code is now equal to $latest
+        $version_info = new VersionTool();
         $info = $version_info->info($updated_project->dir());
         $updated_version = $info->version();
         if ($updated_version != $latest) {
@@ -271,7 +253,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // requests will never be released).
         // We should probably do this in a separate command.
 
-        $updater->complete($project_working_copy, $upstream_working_copy, $update_parameters);
+        $updater->complete($update_parameters);
     }
 
     protected function versionAndTagFromLatest($latest, $tag_prefix, $version_pattern)
@@ -284,22 +266,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         return [$latest, $latestTag];
-    }
-
-    /**
-     * Run 'composer install' if there is a 'composer json' in the specified directory.
-     *
-     * TODO: SHould this be part of the 'SingleCommit' update method?
-     */
-    protected function composerInstall($dir)
-    {
-        if (!file_exists("$dir/composer.json")) {
-            return;
-        }
-
-        $this->logger->notice("Running composer install");
-
-        passthru("composer --working-dir=$dir -q install --prefer-dist --no-dev --optimize-autoloader");
     }
 
     protected function getUpdater($update_method, $api)

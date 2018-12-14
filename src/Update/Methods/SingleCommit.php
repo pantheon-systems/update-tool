@@ -2,14 +2,16 @@
 
 namespace Updatinate\Update\Methods;
 
+use Consolidation\Config\ConfigInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
+use Updatinate\Git\Remote;
 use Updatinate\Git\WorkingCopy;
-use Updatinate\Util\TmpDir;
 use Updatinate\Util\ExecWithRedactionTrait;
-use Consolidation\Config\ConfigInterface;
+use Updatinate\Util\TmpDir;
+use VersionTool\VersionTool;
 
 /**
  * SingleCommit is an update method that takes all of the changes from
@@ -22,36 +24,92 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
     use LoggerAwareTrait;
     use ExecWithRedactionTrait;
 
-    public function configure(ConfigInterface $config, $project, $version)
+    protected $upstream_repo;
+
+    public function configure(ConfigInterface $config, $project)
     {
+        $upstream = $config->get("projects.$project.upstream.project");
+        $this->upstream_url = $config->get("projects.$upstream.repo");
+        $this->upstream_dir = $config->get("projects.$upstream.path");
+
+        $this->upstream_repo = Remote::create($this->upstream_url, $this->api);
     }
 
-    public function update(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
+    public function findLatestVersion($major, $tag_prefix)
     {
+        $this->latest = $this->upstream_repo->latest($major, $tag_prefix);
+
+        return $this->latest;
+    }
+
+    public function update(WorkingCopy $originalProject, array $parameters)
+    {
+        $this->originalProject = $originalProject;
+        $this->updatedProject = $this->cloneUpstream($parameters);
+
         // Copy over the additional files we need on the platform over to
         // the updated project.
-        $this->copyPlatformAdditions($originalProject->dir(), $updatedProject->dir(), $parameters);
+        $this->copyPlatformAdditions($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
 
         // Apply any patch files needed
-        $this->applyPlatformPatches($updatedProject->dir(), $parameters);
+        $this->applyPlatformPatches($this->updatedProject->dir(), $parameters);
 
-        // $updatedProject retains its working contents, and takes over
-        // the .git directory of $originalProject.
-        $updatedProject->take($originalProject);
-        $originalProject->remove();
+        // $this->updatedProject retains its working contents, and takes over
+        // the .git directory of $this->originalProject.
+        $this->updatedProject->take($this->originalProject);
 
-        return $updatedProject;
+        return $this->updatedProject;
     }
 
-    public function complete(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
+    protected function cloneUpstream(array $parameters)
+    {
+        $latestTag = $parameters['latest-tag'];
+
+        // Clone the upstream. Check out just $latest
+        $upstream_working_copy = WorkingCopy::shallowClone($this->upstream_url, $this->upstream_dir, $latestTag, 1, $this->api);
+        $upstream_working_copy
+            ->setLogger($this->logger);
+
+        // Run 'composer install' if necessary
+        $this->composerInstall($upstream_working_copy->dir());
+
+        // Confirm that the local working copy of the upstream has checked out $latest
+        $version_info = new VersionTool();
+        $info = $version_info->info($upstream_working_copy->dir());
+        if (!$info) {
+            throw new \Exception("Could not identify the type of application at " . $upstream_working_copy->dir());
+        }
+        $upstream_version = $info->version();
+        if ($upstream_version != $this->latest) {
+            throw new \Exception("Update failed. We expected that the local working copy of the upstream project should be {$this->latest}, but instead it is $upstream_version.");
+        }
+
+        return $upstream_working_copy;
+    }
+
+    /**
+     * Run 'composer install' if there is a 'composer json' in the specified directory.
+     */
+    protected function composerInstall($dir)
+    {
+        if (!file_exists("$dir/composer.json")) {
+            return;
+        }
+
+        $this->logger->notice("Running composer install");
+
+        passthru("composer --working-dir=$dir -q install --prefer-dist --no-dev --optimize-autoloader");
+    }
+
+    public function complete(array $parameters)
     {
         // Restore the original project to avoid dirtying our cache
         // TODO: Maybe we should just remove it
-        $originalProject->take($updatedProject);
+        $this->originalProject->take($this->updatedProject);
 
         // Remove the updated project local working copy, as it is no
         // longer usable
-        $updatedProject->remove();
+        $this->updatedProject->remove();
     }
 
     protected function applyPlatformPatches($dst, $parameters)

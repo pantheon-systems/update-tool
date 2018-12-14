@@ -42,9 +42,9 @@ class ProjectCommandsTest extends CommandsTestBase
     }
 
     /**
-     * Test our project (e.g. drops-8) update commands.
+     * Test to see if we can update drops-8 from 8.5.6 to 8.6.0 using a snapshot.
      */
-    public function testProjectCommands()
+    public function testDrops8Update()
     {
         // Create a fork
         $drops8_repo = $this->fixtures()->forkTestRepo('drops-8');
