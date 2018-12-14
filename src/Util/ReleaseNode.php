@@ -61,9 +61,9 @@ class ReleaseNode
      * @param string $remote Name of the remote project to fetch the release node for
      * @return [string, string] Failure message (empty for success), release node page URL
      */
-    public function get(ConfigInterface $config, $remote, $major = '[0-9]')
+    public function get(ConfigInterface $config, $remote, $major = '[0-9]', $version = false)
     {
-        list($release_node_template, $release_node_url, $release_node_pattern) = $this->info($config, $remote, $major);
+        list($release_node_template, $release_node_url, $release_node_pattern) = $this->info($config, $remote, $major, $version);
 
         if (empty($release_node_template) && empty($release_node_url)) {
             return ['The specified project does not exist, or does not define information on how to obtain the release node.', ''];
@@ -84,7 +84,7 @@ class ReleaseNode
         return ['', $release_node];
     }
 
-    protected function info($config, $remote, $major = '[0-9]')
+    protected function info($config, $remote, $major = '[0-9]', $version = false)
     {
         // Get the tag prefix for our upstream before switching '$remote'.
         $tag_prefix = $config->get("projects.$remote.upstream.tag-prefix", '');
@@ -99,11 +99,16 @@ class ReleaseNode
 
         $release_node_pattern = str_replace('{major}', $major, $release_node_pattern);
 
-        if (!empty($release_node_template)) {
+        if (!empty($release_node_template) && empty($version)) {
             $remote_repo = $this->createRemote($config, $remote);
-            $latest = $remote_repo->latest($major, $tag_prefix);
-            $release_node_template = str_replace('{version}', $latest, $release_node_template);
+            // TODO: We've lost the distinction of 'version' vs. 'tag' here.
+            // e.g. in Pressflow6, '{version}' is '6.46' and '{tag}' would be
+            // 'pressflow-4.46', but `latest` here returns '6.46.126'. We
+            // add the 'pressflow' back by inserting it into the release node template.
+            $version = $remote_repo->latest($major, $tag_prefix);
         }
+
+        $release_node_template = str_replace('{version}', $version, $release_node_template);
 
         return [$release_node_template, $release_node_url, $release_node_pattern];
     }

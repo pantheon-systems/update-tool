@@ -9,6 +9,7 @@ use Symfony\Component\Finder\Finder;
 use Updatinate\Git\WorkingCopy;
 use Updatinate\Util\TmpDir;
 use Updatinate\Util\ExecWithRedactionTrait;
+use Consolidation\Config\ConfigInterface;
 
 /**
  * SingleCommit is an update method that takes all of the changes from
@@ -20,6 +21,10 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
     use UpdateMethodTrait;
     use LoggerAwareTrait;
     use ExecWithRedactionTrait;
+
+    public function configure(ConfigInterface $config, $project, $version)
+    {
+    }
 
     public function update(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
     {

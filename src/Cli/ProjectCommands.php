@@ -56,15 +56,17 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
      *
      * @command project:upstream:check
      */
-    public function projectCheck($remote, $options = ['as' => 'default', 'major' => '[0-9]+'])
+    public function projectCheck($remote, $options = ['as' => 'default'])
     {
         $api = $this->api($options['as']);
         $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
+        $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
+        $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
 
         $remote_repo = $this->createRemote($remote, $api);
         $upstream_repo = $this->createRemote($upstream, $api);
 
-        $latest = $upstream_repo->latest($options['major']);
+        $latest = $upstream_repo->latest($major, $tag_prefix);
 
         if ($remote_repo->has($latest)) {
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
@@ -76,11 +78,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     /**
      * @command project:release-node
      */
-    public function releaseNode($remote, $options = ['as' => 'default'])
+    public function releaseNode($remote, $version = '', $options = ['as' => 'default', 'major' => '[0-9]'])
     {
         $api = $this->api($options['as']);
         $releaseNode = new ReleaseNode($api);
-        list($failure_message, $release_node) = $releaseNode->get($this->getConfig(), $remote);
+        list($failure_message, $release_node) = $releaseNode->get($this->getConfig(), $remote, $options['major'], $version);
 
         if (!empty($failure_message)) {
             throw new \Exception($failure_message);
@@ -122,8 +124,12 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // TODO: existing script allows 'latest' to be taken from beta / RC / nightly builds.
         $latest = $upstream_repo->latest($major, $tag_prefix);
 
+        // Convert $latest to a version number matching $version_pattern,
+        // and put the actual tag name in $latestTag.
+        list($latest, $latestTag) = $this->versionAndTagFromLatest($latest, $tag_prefix, $version_pattern);
+
         // Exit with no action and no error if already up-to-date
-        if (($current == $latest) || ($remote_repo->has($latest))) {
+        if ($remote_repo->has($latest)) {
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
             return;
         }
@@ -158,7 +164,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
 
-        $branch = "updatex-$latest";
+        $branch = "update-$latest";
 
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
@@ -180,7 +186,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         // Clone the upstream. Check out just $latest
-        $upstream_working_copy = WorkingCopy::shallowClone($upstream_url, $upstream_dir, "$tag_prefix$latest", 1, $api);
+        $upstream_working_copy = WorkingCopy::shallowClone($upstream_url, $upstream_dir, $latestTag, 1, $api);
         $upstream_working_copy
             ->setLogger($this->logger);
 
@@ -190,6 +196,9 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Confirm that the local working copy of the upstream has checked out $latest
         $version_info = new VersionTool();
         $info = $version_info->info($upstream_working_copy->dir());
+        if (!$info) {
+            throw new \Exception("Could not identify the type of application at " . $upstream_working_copy->dir());
+        }
         $upstream_version = $info->version();
         if ($upstream_version != $latest) {
             throw new \Exception("Update failed. We expected that the local working copy of the upstream project should be $latest, but instead it is $upstream_version.");
@@ -210,6 +219,12 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $updater->setApi($api);
         $updater->setLogger($this->logger);
 
+        // Allow the updator to configure itself prior to the update.
+        $updater->configure($this->getConfig(), $remote, $latest);
+
+        // TODO: Some update methods (e.g. WpCliUpdate) do not need the
+        // upstream working copy. We are needlessly cloning that repo in
+        // those instances at the moment.
         $updated_project = $updater->update($project_working_copy, $upstream_working_copy, $update_parameters);
 
         // Confirm that the updated version of the code is now equal to $latest
@@ -257,6 +272,18 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // We should probably do this in a separate command.
 
         $updater->complete($project_working_copy, $upstream_working_copy, $update_parameters);
+    }
+
+    protected function versionAndTagFromLatest($latest, $tag_prefix, $version_pattern)
+    {
+        $latestTag = "$tag_prefix$latest";
+        $versionPatternRegex = str_replace('.', '\\.', $version_pattern);
+        $versionPatternRegex = str_replace('#', '[0-9]+', $versionPatternRegex);
+        if (preg_match("#$versionPatternRegex#", $latest, $matches)) {
+            $latest = $matches[0];
+        }
+
+        return [$latest, $latestTag];
     }
 
     /**
