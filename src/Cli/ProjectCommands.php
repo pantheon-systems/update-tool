@@ -52,30 +52,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
-     * Check to see if there is an update available on the upstream of the specified project.
-     *
-     * @command project:upstream:check
-     */
-    public function projectCheck($remote, $options = ['as' => 'default'])
-    {
-        $api = $this->api($options['as']);
-        $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
-        $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
-        $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
-
-        $remote_repo = $this->createRemote($remote, $api);
-        $upstream_repo = $this->createRemote($upstream, $api);
-
-        $latest = $upstream_repo->latest($major, $tag_prefix);
-
-        if ($remote_repo->has($latest)) {
-            $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
-            return;
-        }
-        $this->logger->notice("{remote} has an available update: {latest}", ['remote' => $remote, 'latest' => $latest]);
-    }
-
-    /**
      * @command project:release-node
      */
     public function releaseNode($remote, $version = '', $options = ['as' => 'default', 'major' => '[0-9]'])
@@ -92,13 +68,13 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
-     * @command project:upstream:update
+     * Check to see if there is an update available on the upstream of the specified project.
+     *
+     * @command project:upstream:check
      */
-    public function projectUpstreamUpdate($remote, $options = ['as' => 'default'])
+    public function projectCheck($remote, $options = ['as' => 'default'])
     {
         $api = $this->api($options['as']);
-
-        $releaseNode = new ReleaseNode($api);
 
         // Get references to the remote repo and the upstream repo
         $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
@@ -106,12 +82,60 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             throw new \Exception('Project cannot be updated; it is missing an upstream.');
         }
 
-        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
+        $remote_repo = $this->createRemote($remote, $api);
+
+        // Determine the major version of the upstream repo
+        $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
+        $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
+        $current = $remote_repo->latest($major);
+        $major = preg_replace('#\..*#', '', $major);
+
+        // Find an update method and create an updater
+        $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
+        $updater = $this->getUpdater($update_method, $api);
+        if (empty($updater)) {
+            throw new \Exception('Project cannot be updated; it is missing an update method.');
+        }
+        $updater->setApi($api);
+        $updater->setLogger($this->logger);
+
+        // Allow the updator to configure itself prior to the update.
+        $updater->configure($this->getConfig(), $remote);
+
+        $this->logger->notice("Check latest version for {upstream}.", ['upstream' => $upstream]);
+
+        // Determine the latest version in the same major series in the upstream
+        $latest = $updater->findLatestVersion($major, $tag_prefix);
+
+        // TODO: Everything above is a duplicate of the first part of
+        // the projectUpstreamUpdate method. Encapsulating it all into
+        // a worker class with accessors for all of the collected variables
+        // would be useful.
+
+        if ($remote_repo->has($latest)) {
+            $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
+            return;
+        }
+        $this->logger->notice("{remote} has an available update: {latest}", ['remote' => $remote, 'latest' => $latest]);
+    }
+
+    /**
+     * @command project:upstream:update
+     */
+    public function projectUpstreamUpdate($remote, $options = ['as' => 'default'])
+    {
+        $api = $this->api($options['as']);
+
+        // Get references to the remote repo and the upstream repo
+        $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
+        if (empty($upstream)) {
+            throw new \Exception('Project cannot be updated; it is missing an upstream.');
+        }
 
         $remote_repo = $this->createRemote($remote, $api);
 
         // Determine the major version of the upstream repo
-        $version_pattern = $this->getConfig()->get("projects.$remote.upstream.version-pattern", '#.#.#');
         $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
         $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
         $current = $remote_repo->latest($major);
@@ -138,6 +162,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Convert $latest to a version number matching $version_pattern,
         // and put the actual tag name in $latestTag.
+        $version_pattern = $this->getConfig()->get("projects.$remote.upstream.version-pattern", '#.#.#');
         list($latest, $latestTag) = $this->versionAndTagFromLatest($latest, $tag_prefix, $version_pattern);
         $update_parameters['latest-tag'] = $latestTag;
 
@@ -155,9 +180,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $message = str_replace('{version}', $latest, $message);
 
         // If we can find a release node, then add the "more information" blerb.
-        list($failure_message, $releaseNode) = $releaseNode->get($this->getConfig(), $remote, $major);
-        if (strstr($releaseNode, $latest) !== false) {
-            $message .= " For more information, see $releaseNode";
+        $releaseNode = new ReleaseNode($api);
+        list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major);
+        if (!empty($release_url)) {
+            $message .= " For more information, see $release_url";
         }
 
         $this->logger->notice("Update message: {msg}", ['msg' => $message]);
@@ -182,6 +208,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
         $project_fork = $this->getConfig()->get("projects.$remote.fork");
+        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
 
         $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");

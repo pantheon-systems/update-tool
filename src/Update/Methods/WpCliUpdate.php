@@ -46,7 +46,15 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
 
     public function findLatestVersion($major, $tag_prefix)
     {
-        $version = $major; // TODO: look up most recent version
+        $availableVersions = file_get_contents('https://api.wordpress.org/core/version-check/1.7/');
+        if (empty($availableVersions)) {
+            throw new \Exception('Could not contact the WordPress version-check API endpoint.');
+        }
+        $versionData = json_decode($availableVersions, true);
+        if (!isset($versionData['offers'][0])) {
+            throw new \Exception('No offers returned from the WordPress version-check API endpoint.');
+        }
+        $version = $versionData['offers'][0]['version'];
         $this->version = $version;
 
         return $version;
