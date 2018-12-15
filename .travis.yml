@@ -12,10 +12,7 @@ matrix:
   fast_finish: true
   include:
     - php: 7.1
-
-env:
-  global:
-    - PATH: "$HOME/bin:$PATH"
+      env: "$HOME/bin:$PATH"
 
 sudo: false
 
@@ -24,6 +21,7 @@ cache:
     - $HOME/.composer/cache
 
 install:
+  - "mkdir $HOME/bin"
   - "curl -o $HOME/bin/wp https://github.com/wp-cli/wp-cli/releases/download/v2.0.1/wp-cli-2.0.1.phar"
   - 'composer scenario "${SCENARIO}" "${DEPENDENCIES}"'
 
