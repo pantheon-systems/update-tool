@@ -46,6 +46,6 @@ projects:
     path: ${working-copy-path}/WordPressUpstream
     main-branch: master
     version-api:
-      url: 'https://github.com/pantheon-fixtures/pantheon-wp-fixture/blob/api-fixture/version-check.json'
+      url: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture/version-check.json'
     release-node:
       atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture/releases.atom'
