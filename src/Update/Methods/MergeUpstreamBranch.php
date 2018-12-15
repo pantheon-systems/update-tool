@@ -23,7 +23,6 @@ class MergeUpstreamBranch implements UpdateMethodInterface, LoggerAwareInterface
      */
     public function configure(ConfigInterface $config, $project)
     {
-
     }
 
     /**
@@ -31,7 +30,6 @@ class MergeUpstreamBranch implements UpdateMethodInterface, LoggerAwareInterface
      */
     public function findLatestVersion($major, $tag_prefix)
     {
-
     }
 
     /**
@@ -47,6 +45,5 @@ class MergeUpstreamBranch implements UpdateMethodInterface, LoggerAwareInterface
      */
     public function complete(array $parameters)
     {
-
     }
 }

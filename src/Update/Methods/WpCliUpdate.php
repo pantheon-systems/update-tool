@@ -82,8 +82,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
             // Tell wp-cli to go do the update; check and make sure the checksums are okay
             $this->wpCoreUpdate($path, $this->version);
             $this->wpCoreVerifyChecksums($path);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         } finally {
             $this->wpDbDrop($path);

@@ -91,8 +91,7 @@ class ReleaseNode
             if (!$remote_repo->has($version)) {
                 throw new \Exception("$version is not a valid release.");
             }
-        }
-        else {
+        } else {
             $tag_prefix = $config->get("projects.$remote.upstream.tag-prefix", '');
             $major = $config->get("projects.$remote.upstream.major", $major);
             // TODO: We've lost the distinction of 'version' vs. 'tag' here.
