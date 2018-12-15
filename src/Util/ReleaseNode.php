@@ -63,44 +63,37 @@ class ReleaseNode
      */
     public function get(ConfigInterface $config, $remote, $major = '[0-9]', $version = false)
     {
-        list($release_node_template, $release_node_url, $release_node_pattern) = $this->info($config, $remote, $major, $version);
-
-        if (empty($release_node_template) && empty($release_node_url)) {
-            return ['The specified project does not exist, or does not define information on how to obtain the release node.', ''];
+        // If there's a simple template, try filling that in first & return if found.
+        $release_node = $this->getViaTemplate($config, $remote, $major, $version);
+        if (!empty($release_node)) {
+            return ['', $release_node];
         }
 
-        if (!empty($release_node_template)) {
-            return ['', $release_node_template];
+        $release_node = $this->getViaAtom($config, $remote, $major, $version);
+        if (!empty($release_node)) {
+            return ['', $release_node];
         }
 
-        $release_node = $this->pageUrl($release_node_url, $release_node_pattern);
-
-        if (empty($release_node)) {
-            return ['No information on release node.', ''];
-        }
-
-        // TODO: Try to GET the release node, and return an error if there's nothing there
-
-        return ['', $release_node];
+        return ['No information on release node.', ''];
     }
 
-    protected function info($config, $remote, $major = '[0-9]', $version = false)
+    protected function getViaTemplate($config, $remote, $major = '[0-9]', $version = false)
     {
-        // Get the tag prefix for our upstream before switching '$remote'.
-        $tag_prefix = $config->get("projects.$remote.upstream.tag-prefix", '');
-
-        if (!$config->has("projects.$remote.release-node.url") && $config->has("projects.$remote.upstream.project")) {
-            $remote = $config->get("projects.$remote.upstream.project");
-            $major = $config->get("projects.$remote.upstream.major", $major);
+        $release_node_template = $this->getProjectAttribute($config, $remote, 'release-node.template');
+        if (empty($release_node_template)) {
+            return '';
         }
-        $release_node_url = $config->get("projects.$remote.release-node.url");
-        $release_node_pattern = $config->get("projects.$remote.release-node.pattern");
-        $release_node_template = $config->get("projects.$remote.release-node.template");
 
-        $release_node_pattern = str_replace('{major}', $major, $release_node_pattern);
+        $remote_repo = $this->createRemote($config, $remote);
 
-        if (!empty($release_node_template) && empty($version)) {
-            $remote_repo = $this->createRemote($config, $remote);
+        if (!empty($version)) {
+            if (!$remote_repo->has($version)) {
+                throw new \Exception("$version is not a valid release.");
+            }
+        }
+        else {
+            $tag_prefix = $config->get("projects.$remote.upstream.tag-prefix", '');
+            $major = $config->get("projects.$remote.upstream.major", $major);
             // TODO: We've lost the distinction of 'version' vs. 'tag' here.
             // e.g. in Pressflow6, '{version}' is '6.46' and '{tag}' would be
             // 'pressflow-4.46', but `latest` here returns '6.46.126'. We
@@ -108,9 +101,61 @@ class ReleaseNode
             $version = $remote_repo->latest($major, $tag_prefix);
         }
 
-        $release_node_template = str_replace('{version}', $version, $release_node_template);
+        $release_node = str_replace('{version}', $version, $release_node_template);
 
-        return [$release_node_template, $release_node_url, $release_node_pattern];
+        return $release_node;
+    }
+
+    protected function getViaAtom($config, $remote, $major, $version)
+    {
+        $atom_url = $this->getProjectAttribute($config, $remote, 'release-node.atom');
+        if (empty($atom_url)) {
+            return '';
+        }
+        // This only gets us the last ten releases, but that should be
+        // enough for our purposes.
+        $atom_contents = file_get_contents($atom_url);
+        $releases = new \SimpleXMLElement($atom_contents);
+        foreach ($releases->entry as $entry) {
+            $url = $entry->link['href'];
+            if ($this->stable($entry->title) && $this->matchesVersion($entry->title, $version)) {
+                // TODO: Would it be useful to also expose the title and other metadata here?
+                return $url;
+            }
+        }
+
+        // TODO: Read more pages to find older versions?
+        throw new \Exception("$version is not a recent release.");
+    }
+
+    protected function stable($title)
+    {
+        if (strstr($title, "WordPress") === false) {
+            return false;
+        }
+
+        foreach ([' RC', ' Release Candidate', ' Beta', ' Alpha'] as $unstable) {
+            if (strstr($title, $unstable) !== false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function matchesVersion($title, $version)
+    {
+        return empty($version) || (strstr($title, " $version ") !== false);
+    }
+
+    protected function getProjectAttribute($config, $remote, $name)
+    {
+        $upstream = $config->get("projects.$remote.upstream.project");
+        $value = $config->get("projects.$remote.$name");
+        if (empty($value) && !empty($upstream)) {
+            $value = $config->get("projects.$upstream.$name");
+        }
+        return $value;
     }
 
     protected function pageUrl($release_url, $pattern)

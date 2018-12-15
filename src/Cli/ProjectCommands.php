@@ -10,6 +10,7 @@ use Updatinate\Git\WorkingCopy;
 use Hubph\VersionIdentifiers;
 use Hubph\HubphAPI;
 use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
+use Consolidation\OutputFormatters\StructuredData\PropertyList;
 use Updatinate\Util\ReleaseNode;
 use Consolidation\Config\Util\Interpolator;
 
@@ -42,6 +43,12 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
      * Show the latest available releases for the specified project.
      *
      * @command project:latest
+     * @table-style compact
+     * @list-delimiter :
+     * @field-labels
+     *   drush-version: Drush version
+     *
+     * @return \Consolidation\OutputFormatters\StructuredData\PropertyList
      */
     public function projectLatest($remote, $options = ['as' => 'default', 'major' => '[0-9]+'])
     {
@@ -53,6 +60,12 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
     /**
      * @command project:release-node
+     * @table-style compact
+     * @list-delimiter :
+     * @field-labels
+     *   url: Release URL
+     *
+     * @return \Consolidation\OutputFormatters\StructuredData\PropertyList
      */
     public function releaseNode($remote, $version = '', $options = ['as' => 'default', 'major' => '[0-9]'])
     {
@@ -64,7 +77,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             throw new \Exception($failure_message);
         }
 
-        return $release_node;
+        return new PropertyList(['url' => $release_node]);
     }
 
     /**

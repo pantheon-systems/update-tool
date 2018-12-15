@@ -31,9 +31,6 @@ class ProjectCommandsTest extends CommandsTestBase
         $this->setupCommandTester('TestFixtureApp', '1.0.1', $commandClasses, $this->fixtures->configurationFile());
 
         @unlink($this->fixtures()->activityLogPath());
-
-        // Closes any leftover PRs in the fixture repository.
-        $this->fixtures()->forceReinitializeProjectFixtures('drops-8');
     }
 
     public function tearDown()
@@ -46,6 +43,9 @@ class ProjectCommandsTest extends CommandsTestBase
      */
     public function testDrops8Update()
     {
+        // Closes any leftover PRs in the fixture repository.
+        $this->fixtures()->forceReinitializeProjectFixtures('drops-8');
+
         // Create a fork
         $drops8_repo = $this->fixtures()->forkTestRepo('drops-8');
 
@@ -62,7 +62,7 @@ class ProjectCommandsTest extends CommandsTestBase
         // TODO: Is there any reasonable test we can do on project:releases?
 
         // Check to see if we can compose a release node url for our fixtures
-        $output = $this->executeExpectOK(['project:release-node', 'drops-8']);
+        $output = $this->executeExpectOK(['project:release-node', 'drops-8', '--format=string']);
         $this->assertEquals('https://www.drupal.org/project/drupal/releases/8.6.0', $output);
         $output = $this->executeExpectOK(['project:release-node', 'drupal']);
         $this->assertEquals('https://www.drupal.org/project/drupal/releases/8.6.0', $output);
