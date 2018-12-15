@@ -18,6 +18,15 @@ projects:
     repo: git@github.com:pantheon-fixtures/php-cookbook-fixture.git
     path: ${working-copy-path}/php-cookbook
     src: libraries/php.rb
+  wp:
+    repo: git@github.com:pantheon-fixtures/pantheon-wp-fixture.git
+    path: ${working-copy-path}/WordPress
+    main-branch: default
+    upstream:
+      project: WordPress
+      major: 5
+      version-pattern: '#.#.#'
+      update-method: WpCliUpdate
   drops-8:
     repo: git@github.com:pantheon-fixtures/drops-8-fixture.git
     path: ${working-copy-path}/drops-8
@@ -32,3 +41,11 @@ projects:
     path: ${working-copy-path}/drupal
     release-node:
       template: 'https://www.drupal.org/project/drupal/releases/{version}'
+  WordPress:
+    repo: git@github.com:WordPress/WordPress.git
+    path: ${working-copy-path}/WordPressUpstream
+    main-branch: master
+    version-api:
+      url: 'https://github.com/pantheon-fixtures/pantheon-wp-fixture/blob/api-fixture/version-check.json'
+    release-node:
+      atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture/releases.atom'

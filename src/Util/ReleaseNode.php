@@ -84,7 +84,8 @@ class ReleaseNode
             return '';
         }
 
-        $remote_repo = $this->createRemote($config, $remote);
+        $upstream = $config->get("projects.$remote.upstream.project", null);
+        $remote_repo = $this->createRemote($config, $upstream ?: $remote);
 
         if (!empty($version)) {
             if (!$remote_repo->has($version)) {

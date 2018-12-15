@@ -44,10 +44,10 @@ class ProjectCommandsTest extends CommandsTestBase
     public function testDrops8Update()
     {
         // Closes any leftover PRs in the fixture repository.
-        $this->fixtures()->forceReinitializeProjectFixtures('drops-8');
+        $this->fixtures()->closeAllOpenPullRequests('drops-8');
 
         // Create a fork
-        $drops8_repo = $this->fixtures()->forkTestRepo('drops-8');
+//        $drops8_repo = $this->fixtures()->forkTestRepo('drops-8');
 
         // Verify the latest releast in our drops-8 and drupal fixtures.
         $output = $this->executeExpectOK(['project:latest', 'drops-8']);
@@ -64,7 +64,7 @@ class ProjectCommandsTest extends CommandsTestBase
         // Check to see if we can compose a release node url for our fixtures
         $output = $this->executeExpectOK(['project:release-node', 'drops-8', '--format=string']);
         $this->assertEquals('https://www.drupal.org/project/drupal/releases/8.6.0', $output);
-        $output = $this->executeExpectOK(['project:release-node', 'drupal']);
+        $output = $this->executeExpectOK(['project:release-node', 'drupal', '--format=string']);
         $this->assertEquals('https://www.drupal.org/project/drupal/releases/8.6.0', $output);
 
         // Try to create an upstream update PR for our drops-8 fixture
@@ -80,5 +80,44 @@ class ProjectCommandsTest extends CommandsTestBase
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'drops-8']);
         $this->assertContains('[notice] Pull request already exists for available update 8.6.0; nothing more to do.', $output);
+    }
+
+    /**
+     * Test to see if we can update Pantheon's WordPress from 4.9.8 to 5.0.1
+     * using a snapshot.
+     */
+    public function testWordPressUpdate()
+    {
+        // Closes any leftover PRs in the fixture repository.
+        $this->fixtures()->closeAllOpenPullRequests('wp');
+
+        // Create a fork
+//        $wp_repo = $this->fixtures()->forkTestRepo('wp');
+
+        // Verify the latest releast in our drops-8 and drupal fixtures.
+        $output = $this->executeExpectOK(['project:latest', 'wp']);
+        $this->assertEquals('4.9.8', $output);
+
+        // Check to see if an update is expected in our fixture. (It always is.)
+        $output = $this->executeExpectOK(['project:upstream:check', 'wp']);
+        $this->assertContains('wp has an available update: 5.0.1', $output);
+
+        // Check to see if we can compose a release node url for our fixtures
+        $output = $this->executeExpectOK(['project:release-node', 'wp', '--format=string']);
+        $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
+
+        // Try to create an upstream update PR for our drops-8 fixture
+        $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
+        $this->assertContains('Updating wp from 4.9.8 to 5.0.1', $output);
+
+        // Ensure that the PR that was created is logged
+        $this->assertFileExists($this->fixtures()->activityLogPath());
+
+        // Make sure github API has enough time to realize the PR has been created
+        sleep(5);
+
+        // Try to make another update; confirm that nothing is done
+        $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
+        $this->assertContains('[notice] Pull request already exists for available update 5.0.1; nothing more to do.', $output);
     }
 }

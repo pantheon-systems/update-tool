@@ -255,7 +255,7 @@ projects:
     repo: git@github.com:WordPress/WordPress.git
     path: ${working-copy-path}/WordPressUpstream
     main-branch: master
+    version-api:
+      url: https://api.wordpress.org/core/version-check/1.7/
     release-node:
-      # TODO: How can we look this up?
-      # We could make a scraper for https://wordpress.org/news/category/releases/feed/
       atom: 'https://wordpress.org/news/category/releases/feed/atom/'

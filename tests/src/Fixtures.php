@@ -101,7 +101,7 @@ class Fixtures
         return WorkingCopy::clone($php_cookbook_url, $php_cookbook_dir, $this->api());
     }
 
-    public function forceReinitializeProjectFixtures($remote_name, $as = 'default')
+    public function closeAllOpenPullRequests($remote_name, $as = 'default')
     {
         $api = $this->api($as);
 

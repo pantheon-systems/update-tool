@@ -21,6 +21,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     use LoggerAwareTrait;
     use ExecWithRedactionTrait;
 
+    protected $version_check_url;
     protected $version;
 
     protected $dbname;
@@ -34,6 +35,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
 
     public function configure(ConfigInterface $config, $project)
     {
+        $upstream = $config->get("projects.$project.upstream.project");
+        $this->version_check_url = $config->get("projects.$upstream.version-api.url", 'https://api.wordpress.org/core/version-check/1.7/');
+
         $this->dbuser = $config->get("fixtures.mysql.user", 'root');
         $this->dbpw = $config->get("fixtures.mysql.pw", '');
         $this->dbname = $config->get("fixtures.wp.dbname", 'updatinate-wp-db');
@@ -46,7 +50,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
 
     public function findLatestVersion($major, $tag_prefix)
     {
-        $availableVersions = file_get_contents('https://api.wordpress.org/core/version-check/1.7/');
+        $availableVersions = file_get_contents($this->version_check_url);
         if (empty($availableVersions)) {
             throw new \Exception('Could not contact the WordPress version-check API endpoint.');
         }
