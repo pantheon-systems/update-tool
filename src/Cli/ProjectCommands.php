@@ -247,9 +247,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // TODO: Apply 'shipit' PRs from the GitHub repository to the project working copy
 
-        // TODO: Some update methods (e.g. WpCliUpdate) do not need the
-        // upstream working copy. We are needlessly cloning that repo in
-        // those instances at the moment.
         $updated_project = $updater->update($project_working_copy, $update_parameters);
 
         // Confirm that the updated version of the code is now equal to $latest
