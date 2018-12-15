@@ -75,7 +75,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         try {
             // Set up a local WordPress site
             $this->wpCoreConfig($path, $this->dbname, $this->dbuser, $this->dbpw);
-            $this->wpDbDrop($path);
+            $this->wpDbDropIfNotCI($path);
             $this->wpDbCreate($path);
             $this->wpCoreInstall($path, $this->url, $this->title, $this->admin, $this->adminPw, $this->adminEmail);
 
@@ -85,7 +85,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         } catch (\Exception $e) {
             throw $e;
         } finally {
-            $this->wpDbDrop($path);
+            $this->wpDbDropIfNotCI($path);
             file_put_contents($wpConfigPath, $wpConfigData);
         }
         return $originalProject;
@@ -112,6 +112,13 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     protected function wpDbCreate($path)
     {
         return $this->wp($path, 'db create');
+    }
+
+    protected function wpDbDropIfNotCI($path)
+    {
+        if (!getenv('CI')) {
+            $this->wpDbDrop($path);
+        }
     }
 
     protected function wpDbDrop($path)
