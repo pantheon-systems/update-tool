@@ -33,6 +33,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     protected $adminPw;
     protected $adminEmail;
 
+    /**
+     * @inheritdoc
+     */
     public function configure(ConfigInterface $config, $project)
     {
         $upstream = $config->get("projects.$project.upstream.project");
@@ -48,6 +51,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $this->adminEmail = $config->get("fixtures.wp.admin-email", 'bot@pantheon.io');
     }
 
+    /**
+     * @inheritdoc
+     */
     public function findLatestVersion($major, $tag_prefix)
     {
         $availableVersions = file_get_contents($this->version_check_url);
@@ -64,6 +70,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         return $version;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function update(WorkingCopy $originalProject, array $parameters)
     {
         $path = $originalProject->dir();
@@ -91,10 +100,16 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         return $originalProject;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function complete(array $parameters)
     {
     }
 
+    /**
+     * Call the wp-cli 'core config' command to set up our wp-config.php file.
+     */
     protected function wpCoreConfig($path, $dbname, $dbuser, $dbpw)
     {
         // wp core config --dbname=wp --dbuser=mywp --dbpass=mywp
@@ -109,11 +124,17 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         );
     }
 
+    /**
+     * Create a database for us to work with
+     */
     protected function wpDbCreate($path)
     {
         return $this->wp($path, 'db create');
     }
 
+    /**
+     * Call 'db drop', but only if not running on a CI server
+     */
     protected function wpDbDropIfNotCI($path)
     {
         if (!getenv('CI')) {
@@ -121,11 +142,19 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         }
     }
 
+    /**
+     * Drop any existing database to clean up after previous aborted
+     * runs / at the end of the current run.
+     */
     protected function wpDbDrop($path)
     {
         return $this->wpcliReturnStatus($path, 'db drop', ['--yes']);
     }
 
+    /**
+     * Use wp-cli to install WordPress. The update function only works
+     * on an installed site.
+     */
     protected function wpCoreInstall($path, $url, $title, $admin, $pw, $email)
     {
         // wp core install --url=your_domain --title=Your_Blog_Title --admin_user=username --admin_password=password --admin_email=your_email.com
@@ -142,6 +171,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         );
     }
 
+    /**
+     * Use wp-cli to update to the specified version.
+     */
     protected function wpCoreUpdate($path, $version)
     {
         return $this->wp(
@@ -151,6 +183,10 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         );
     }
 
+    /**
+     * Use wp-cli to verify the checksums of the installed release to
+     * ensure it is valid. (This is a great feature.)
+     */
     protected function wpCoreVerifyChecksums($path)
     {
         return $this->wp(
@@ -159,12 +195,18 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         );
     }
 
+    /**
+     * Run wp-cli and return the status code from the result of the operation.
+     */
     protected function wpcliReturnStatus($path, $command, $args = [])
     {
         passthru("wp --path=$path $command " . implode(' ', $args), $status);
         return $status;
     }
 
+    /**
+     * Call wp-cli and throw an exception if the operation fails.
+     */
     protected function wp($path, $command, $args = [])
     {
         $this->logger->notice("wp $command " . implode(' ', $args));

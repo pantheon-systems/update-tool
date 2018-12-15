@@ -5,9 +5,7 @@ namespace Updatinate\Update\Methods;
 use Hubph\HubphAPI;
 
 /**
- * SingleCommit is an update method that takes all of the changes from
- * the upstream repository and composes them into a single commit that
- * is added to the working copy being updated.
+ * Not sure why this is a trait; it should probably be a base class.
  */
 trait UpdateMethodTrait
 {

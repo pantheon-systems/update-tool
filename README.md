@@ -20,7 +20,8 @@ periodically via `cron`, as managed by the
 The following commands are available:
 
 - php:rpm:update: Check for new php releases in [php.net/distributions](http://php.net/distributions) and create a pull requests in the [pantheon-systems/rpmbuild-php](https://github.com/pantheon-systems/rpmbuild-php) project as needed.
-- php:cookbook:update: After a php rpmbuild completes, this command will create a pull request in the [php cookbook](https://github.com/pantheon-cookbooks/php) to deploy the new RPMs.
+- php:cookbook:update: After a php rpmbuild completes, this command will create a pull request in the [php cookbook](https://github.com/pantheon-cookbooks/php) to deploy the new RPMs. This is not working, and will not be necessary in the near future.
+- project:upstream:update: Given a repository that is a fork of an upstream repository, apply the changes from a newer tag.
 
 ## Authentication
 

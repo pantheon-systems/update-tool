@@ -26,6 +26,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
 
     protected $upstream_repo;
 
+    /**
+     * @inheritdoc
+     */
     public function configure(ConfigInterface $config, $project)
     {
         $upstream = $config->get("projects.$project.upstream.project");
@@ -35,6 +38,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $this->upstream_repo = Remote::create($this->upstream_url, $this->api);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function findLatestVersion($major, $tag_prefix)
     {
         $this->latest = $this->upstream_repo->latest($major, $tag_prefix);
@@ -42,6 +48,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         return $this->latest;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function update(WorkingCopy $originalProject, array $parameters)
     {
         $this->originalProject = $originalProject;
@@ -61,6 +70,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         return $this->updatedProject;
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function cloneUpstream(array $parameters)
     {
         $latestTag = $parameters['latest-tag'];
@@ -88,6 +100,20 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
     }
 
     /**
+     * @inheritdoc
+     */
+    public function complete(array $parameters)
+    {
+        // Restore the original project to avoid dirtying our cache
+        // TODO: Maybe we should just remove it
+        $this->originalProject->take($this->updatedProject);
+
+        // Remove the updated project local working copy, as it is no
+        // longer usable
+        $this->updatedProject->remove();
+    }
+
+    /**
      * Run 'composer install' if there is a 'composer json' in the specified directory.
      */
     protected function composerInstall($dir)
@@ -101,17 +127,10 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         passthru("composer --working-dir=$dir -q install --prefer-dist --no-dev --optimize-autoloader");
     }
 
-    public function complete(array $parameters)
-    {
-        // Restore the original project to avoid dirtying our cache
-        // TODO: Maybe we should just remove it
-        $this->originalProject->take($this->updatedProject);
-
-        // Remove the updated project local working copy, as it is no
-        // longer usable
-        $this->updatedProject->remove();
-    }
-
+    /**
+     * If the update parameters contain any patch files, then apply
+     * them by running 'patch'
+     */
     protected function applyPlatformPatches($dst, $parameters)
     {
         $parameters += ['platform-patches' => []];
@@ -122,6 +141,13 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         }
     }
 
+    /**
+     * Platform "additions" are files in the Pantheon repository that
+     * do not exist in the upstream. These must all be listed in the
+     * update parameters. Listed files are copied from the Pantheon
+     * repository into the repository being updated, which starts off
+     * as a pristine copy of the upstream.
+     */
     protected function copyPlatformAdditions($src, $dest, $parameters)
     {
         $parameters += ['platform-additions' => []];
@@ -132,6 +158,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         }
     }
 
+    /**
+     * Run 'patch' to apply a patch to the project being updated.
+     */
     protected function applyPatch($dst, $patch)
     {
         $patchContents = file_get_contents($patch);
@@ -143,6 +172,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $this->execWithRedaction('patch -Np1 --no-backup-if-mismatch --directory={dst} --input={patch}', ['patch' => $patchPath, 'dst' => $dst], ['patch' => basename($patchPath), 'dst' => basename($dst)]);
     }
 
+    /**
+     * Helpful wrapper to call either 'mirror' or 'copy' as needed.
+     */
     protected function copyFileOrDirectory($src, $dest)
     {
         $fs = new Filesystem();
