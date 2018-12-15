@@ -24,7 +24,7 @@ projects:
     main-branch: default
     upstream:
       project: WordPress
-      major: 5
+      major: '[4-9]'
       version-pattern: '#.#.#'
       update-method: WpCliUpdate
   drops-8:

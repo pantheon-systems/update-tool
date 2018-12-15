@@ -34,7 +34,7 @@ projects:
     main-branch: default
     upstream:
       project: WordPress
-      major: 5
+      major: '[4-9]'
       version-pattern: '#.#.#'
       update-method: WpCliUpdate
       update-parameters:
@@ -92,6 +92,15 @@ projects:
           - Push your files back up to Pantheon.
           - Switch back to sftp mode.
           - Visit your site and step through the installation process.
+  wp-test:
+    repo: git@github.com:pantheon-fixtures/pantheon-wp-fixture.git
+    path: ${working-copy-path}/WordPress
+    main-branch: default
+    upstream:
+      project: WordPress
+      major: '[4-9]'
+      version-pattern: '#.#.#'
+      update-method: WpCliUpdate
   drops-8:
     repo: git@github.com:pantheon-systems/drops-8.git
     path: ${working-copy-path}/drops-8

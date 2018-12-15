@@ -57,7 +57,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'drops-8']);
-        $this->assertContains('drops-8 has an available update: 8.6.0', $output);
+        $this->assertContains('drops-8 8.5.6 has an available update: 8.6.0', $output);
 
         // TODO: Is there any reasonable test we can do on project:releases?
 
@@ -100,7 +100,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'wp']);
-        $this->assertContains('wp has an available update: 5.0.1', $output);
+        $this->assertContains('wp 4.9.8 has an available update: 5.0.1', $output);
 
         // Check to see if we can compose a release node url for our fixtures
         $output = $this->executeExpectOK(['project:release-node', 'wp', '--format=string']);

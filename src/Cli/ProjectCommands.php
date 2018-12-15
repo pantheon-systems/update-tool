@@ -100,8 +100,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Determine the major version of the upstream repo
         $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
         $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
-        $current = $remote_repo->latest($major);
         $major = preg_replace('#\..*#', '', $major);
+        // We haven't cloned the repo yet, so look at the remote tags to
+        // determine our version.
+        $current = $remote_repo->latest($major);
 
         // Find an update method and create an updater
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
@@ -130,7 +132,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
             return;
         }
-        $this->logger->notice("{remote} has an available update: {latest}", ['remote' => $remote, 'latest' => $latest]);
+        $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
     }
 
     /**
@@ -151,8 +153,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Determine the major version of the upstream repo
         $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
         $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
-        $current = $remote_repo->latest($major);
         $major = preg_replace('#\..*#', '', $major);
+        // We haven't cloned the repo yet, so look at the remote tags to
+        // determine our version.
+        $current = $remote_repo->latest($major);
 
         // Find an update method and create an updater
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
