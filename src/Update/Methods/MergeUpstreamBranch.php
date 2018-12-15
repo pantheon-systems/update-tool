@@ -2,6 +2,7 @@
 
 namespace Updatinate\Update\Methods;
 
+use Consolidation\Config\ConfigInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
