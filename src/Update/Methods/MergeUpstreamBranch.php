@@ -2,6 +2,7 @@
 
 namespace Updatinate\Update\Methods;
 
+use Consolidation\Config\ConfigInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
@@ -17,11 +18,32 @@ class MergeUpstreamBranch implements UpdateMethodInterface, LoggerAwareInterface
     use UpdateMethodTrait;
     use LoggerAwareTrait;
 
-    public function update(WorkingCopy $project, WorkingCopy $upstream, array $parameters)
+    /**
+     * @inheritdoc
+     */
+    public function configure(ConfigInterface $config, $project)
     {
     }
 
-    public function complete(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
+    /**
+     * @inheritdoc
+     */
+    public function findLatestVersion($major, $tag_prefix)
+    {
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function update(WorkingCopy $project, array $parameters)
+    {
+        return $project;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function complete(array $parameters)
     {
     }
 }

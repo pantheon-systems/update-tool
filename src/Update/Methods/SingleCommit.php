@@ -2,13 +2,16 @@
 
 namespace Updatinate\Update\Methods;
 
+use Consolidation\Config\ConfigInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
+use Updatinate\Git\Remote;
 use Updatinate\Git\WorkingCopy;
-use Updatinate\Util\TmpDir;
 use Updatinate\Util\ExecWithRedactionTrait;
+use Updatinate\Util\TmpDir;
+use VersionTool\VersionTool;
 
 /**
  * SingleCommit is an update method that takes all of the changes from
@@ -21,34 +24,113 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
     use LoggerAwareTrait;
     use ExecWithRedactionTrait;
 
-    public function update(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
+    protected $upstream_repo;
+
+    /**
+     * @inheritdoc
+     */
+    public function configure(ConfigInterface $config, $project)
     {
-        // Copy over the additional files we need on the platform over to
-        // the updated project.
-        $this->copyPlatformAdditions($originalProject->dir(), $updatedProject->dir(), $parameters);
+        $upstream = $config->get("projects.$project.upstream.project");
+        $this->upstream_url = $config->get("projects.$upstream.repo");
+        $this->upstream_dir = $config->get("projects.$upstream.path");
 
-        // Apply any patch files needed
-        $this->applyPlatformPatches($updatedProject->dir(), $parameters);
-
-        // $updatedProject retains its working contents, and takes over
-        // the .git directory of $originalProject.
-        $updatedProject->take($originalProject);
-        $originalProject->remove();
-
-        return $updatedProject;
+        $this->upstream_repo = Remote::create($this->upstream_url, $this->api);
     }
 
-    public function complete(WorkingCopy $originalProject, WorkingCopy $updatedProject, array $parameters)
+    /**
+     * @inheritdoc
+     */
+    public function findLatestVersion($major, $tag_prefix)
+    {
+        $this->latest = $this->upstream_repo->latest($major, $tag_prefix);
+
+        return $this->latest;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function update(WorkingCopy $originalProject, array $parameters)
+    {
+        $this->originalProject = $originalProject;
+        $this->updatedProject = $this->cloneUpstream($parameters);
+
+        // Copy over the additional files we need on the platform over to
+        // the updated project.
+        $this->copyPlatformAdditions($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
+
+        // Apply any patch files needed
+        $this->applyPlatformPatches($this->updatedProject->dir(), $parameters);
+
+        // $this->updatedProject retains its working contents, and takes over
+        // the .git directory of $this->originalProject.
+        $this->updatedProject->take($this->originalProject);
+
+        return $this->updatedProject;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function cloneUpstream(array $parameters)
+    {
+        $latestTag = $parameters['latest-tag'];
+
+        // Clone the upstream. Check out just $latest
+        $upstream_working_copy = WorkingCopy::shallowClone($this->upstream_url, $this->upstream_dir, $latestTag, 1, $this->api);
+        $upstream_working_copy
+            ->setLogger($this->logger);
+
+        // Run 'composer install' if necessary
+        $this->composerInstall($upstream_working_copy->dir());
+
+        // Confirm that the local working copy of the upstream has checked out $latest
+        $version_info = new VersionTool();
+        $info = $version_info->info($upstream_working_copy->dir());
+        if (!$info) {
+            throw new \Exception("Could not identify the type of application at " . $upstream_working_copy->dir());
+        }
+        $upstream_version = $info->version();
+        if ($upstream_version != $this->latest) {
+            throw new \Exception("Update failed. We expected that the local working copy of the upstream project should be {$this->latest}, but instead it is $upstream_version.");
+        }
+
+        return $upstream_working_copy;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function complete(array $parameters)
     {
         // Restore the original project to avoid dirtying our cache
         // TODO: Maybe we should just remove it
-        $originalProject->take($updatedProject);
+        $this->originalProject->take($this->updatedProject);
 
         // Remove the updated project local working copy, as it is no
         // longer usable
-        $updatedProject->remove();
+        $this->updatedProject->remove();
     }
 
+    /**
+     * Run 'composer install' if there is a 'composer json' in the specified directory.
+     */
+    protected function composerInstall($dir)
+    {
+        if (!file_exists("$dir/composer.json")) {
+            return;
+        }
+
+        $this->logger->notice("Running composer install");
+
+        passthru("composer --working-dir=$dir -q install --prefer-dist --no-dev --optimize-autoloader");
+    }
+
+    /**
+     * If the update parameters contain any patch files, then apply
+     * them by running 'patch'
+     */
     protected function applyPlatformPatches($dst, $parameters)
     {
         $parameters += ['platform-patches' => []];
@@ -59,6 +141,13 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         }
     }
 
+    /**
+     * Platform "additions" are files in the Pantheon repository that
+     * do not exist in the upstream. These must all be listed in the
+     * update parameters. Listed files are copied from the Pantheon
+     * repository into the repository being updated, which starts off
+     * as a pristine copy of the upstream.
+     */
     protected function copyPlatformAdditions($src, $dest, $parameters)
     {
         $parameters += ['platform-additions' => []];
@@ -69,6 +158,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         }
     }
 
+    /**
+     * Run 'patch' to apply a patch to the project being updated.
+     */
     protected function applyPatch($dst, $patch)
     {
         $patchContents = file_get_contents($patch);
@@ -77,9 +169,12 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $patchPath = "$tmpDir/" . basename($patch);
         file_put_contents($patchPath, $patchContents);
 
-        $this->execWithRedaction('patch -Np1 --directory={dst} --input={patch}', ['patch' => $patchPath, 'dst' => $dst], ['patch' => basename($patchPath), 'dst' => basename($dst)]);
+        $this->execWithRedaction('patch -Np1 --no-backup-if-mismatch --directory={dst} --input={patch}', ['patch' => $patchPath, 'dst' => $dst], ['patch' => basename($patchPath), 'dst' => basename($dst)]);
     }
 
+    /**
+     * Helpful wrapper to call either 'mirror' or 'copy' as needed.
+     */
     protected function copyFileOrDirectory($src, $dest)
     {
         $fs = new Filesystem();

@@ -28,6 +28,79 @@ projects:
     path: ${working-copy-path}/infrastructure
     src: pantheon-cookbooks/php/libraries/php.rb
     fork: git@github.com:pantheon-circleci/infrastructure.git
+  wp:
+    repo: git@github.com:pantheon-systems/WordPress.git
+    path: ${working-copy-path}/WordPress
+    main-branch: default
+    upstream:
+      project: WordPress
+      major: '[4-9]'
+      version-pattern: '#.#.#'
+      update-method: WpCliUpdate
+      update-parameters:
+        # Not used by the WPCliUpdate, but recorded here for documentation purposes
+        platform-additions:
+          - .gitignore
+          - README.md
+          - pantheon.upstream.yml
+          - wp-config.php
+          - wp-content/mu-plugins/pantheon
+    pr:
+      instructions: |
+        Update from WordPress {{original-version}} to WordPress {{update-version}}.
+
+        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-7), and then visit the test site and confirm that the correct version of WordPress was, in fact, installed and tested.
+
+        Optionally, you may also create your own test site:
+
+          - Create a new WordPress site on Pantheon.
+          - When site creation is finished, visit dashboard.
+          - Switch to "git" mode.
+          - Clone your site locally.
+          - Apply the files from this PR on top of your local checkout.
+            - git remote add {{project}} {{project-url}}
+            - git fetch {{project}}
+            - git merge {{project}}/{{branch}}
+          - Push your files back up to Pantheon.
+          - Switch back to sftp mode.
+          - Visit your site and step through the installation process.
+  wp-4:
+    repo: git@github.com:pantheon-systems/WordPress.git
+    path: ${working-copy-path}/WordPress-4.x
+    main-branch: 4.x
+    upstream:
+      project: WordPress
+      major: 4
+      version-pattern: '#.#.#'
+      update-method: WpCliUpdate
+    pr:
+      instructions: |
+        Update from WordPress {{original-version}} to WordPress {{update-version}}.
+
+        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-7), and then visit the test site and confirm that the correct version of WordPress was, in fact, installed and tested.
+
+        Optionally, you may also create your own test site:
+
+          - Create a new WordPress site on Pantheon.
+          - When site creation is finished, visit dashboard.
+          - Switch to "git" mode.
+          - Clone your site locally.
+          - Apply the files from this PR on top of your local checkout.
+            - git remote add {{project}} {{project-url}}
+            - git fetch {{project}}
+            - git merge {{project}}/{{branch}}
+          - Push your files back up to Pantheon.
+          - Switch back to sftp mode.
+          - Visit your site and step through the installation process.
+  wp-test:
+    repo: git@github.com:pantheon-fixtures/pantheon-wp-fixture.git
+    path: ${working-copy-path}/WordPress
+    main-branch: default
+    upstream:
+      project: WordPress
+      major: '[4-9]'
+      version-pattern: '#.#.#'
+      update-method: WpCliUpdate
   drops-8:
     repo: git@github.com:pantheon-systems/drops-8.git
     path: ${working-copy-path}/drops-8
@@ -100,7 +173,47 @@ projects:
 
         Optionally, you may also create your own test site:
 
-          - Create a new Drupal 8 site on Pantheon.
+          - Create a new Drupal 7 site on Pantheon.
+          - When site creation is finished, visit dashboard.
+          - Switch to "git" mode.
+          - Clone your site locally.
+          - Apply the files from this PR on top of your local checkout.
+            - git remote add {{project}} {{project-url}}
+            - git fetch {{project}}
+            - git merge {{project}}/{{branch}}
+          - Push your files back up to Pantheon.
+          - Switch back to sftp mode.
+          - Visit your site and step through the installation process.
+  drops-6:
+    repo: git@github.com:pantheon-systems/drops-6.git
+    path: ${working-copy-path}/drops-6
+    main-branch: master
+    upstream:
+      project: pressflow6
+      major: 6
+      tag-prefix: 'pressflow-'
+      version-pattern: '#.#'
+      update-message: Update to Drupal {version}.
+      update-method: SingleCommit
+      update-parameters:
+        platform-additions:
+          - .drush-lock-update
+          - .gitignore
+          - pantheon.upstream.yml
+          - misc/favicon.ico
+          - misc/healthchecks/
+          - modules/pantheon/
+          - themes/garland/logo.png
+          - themes/garland/minnelli/logo.png
+        platform-patches:
+          - https://raw.githubusercontent.com/pantheon-systems/drops-6/patches/drops-6-pantheon.patch
+    pr:
+      instructions: |
+        Update from Drupal {{original-version}} to Drupal {{update-version}}.
+
+        To test:
+
+          - Create a new Drupal 6 site on Pantheon.
           - When site creation is finished, visit dashboard.
           - Switch to "git" mode.
           - Clone your site locally.
@@ -121,6 +234,25 @@ projects:
       update-method: MergeUpstreamBranch
     release-node:
       template: 'https://www.drupal.org/project/drupal/releases/{version}'
+  pressflow6:
+    repo: git@github.com:pressflow/6.git
+    path: ${working-copy-path}/pressflow6
+    main-branch: master
+    upstream:
+      project: d6lts
+      major: 6
+      version-pattern: '#.#'
+      update-method: MergeUpstreamBranch
+    release-node:
+      # We would prefer:
+      #    template: 'https://github.com/pressflow/6/releases/tag/{tag}'
+      # However, the release node does not have a reference to the tag.
+      template: 'https://github.com/pressflow/6/releases/tag/pressflow-{version}'
+  d6lts:
+    repo: git@github.com:d6lts/drupal.git
+    path: ${working-copy-path}/d6lts
+    release-node:
+      template: 'https://github.com/d6lts/drupal/releases/tag/{version}'
   drupal:
     repo: git://git.drupal.org/project/drupal.git
     path: ${working-copy-path}/drupal
@@ -128,3 +260,11 @@ projects:
 #      url: https://www.drupal.org/project/drupal
 #      pattern: '"(https://www.drupal.org/project/drupal/releases/{major}[0-9.]*)"'
       template: 'https://www.drupal.org/project/drupal/releases/{version}'
+  WordPress:
+    repo: git@github.com:WordPress/WordPress.git
+    path: ${working-copy-path}/WordPressUpstream
+    main-branch: master
+    version-api:
+      url: https://api.wordpress.org/core/version-check/1.7/
+    release-node:
+      atom: 'https://wordpress.org/news/category/releases/feed/atom/'

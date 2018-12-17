@@ -10,6 +10,7 @@ use Updatinate\Git\WorkingCopy;
 use Hubph\VersionIdentifiers;
 use Hubph\HubphAPI;
 use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
+use Consolidation\OutputFormatters\StructuredData\PropertyList;
 use Updatinate\Util\ReleaseNode;
 use Consolidation\Config\Util\Interpolator;
 
@@ -42,6 +43,12 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
      * Show the latest available releases for the specified project.
      *
      * @command project:latest
+     * @table-style compact
+     * @list-delimiter :
+     * @field-labels
+     *   drush-version: Drush version
+     *
+     * @return \Consolidation\OutputFormatters\StructuredData\PropertyList
      */
     public function projectLatest($remote, $options = ['as' => 'default', 'major' => '[0-9]+'])
     {
@@ -52,41 +59,80 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
-     * Check to see if there is an update available on the upstream of the specified project.
-     *
-     * @command project:upstream:check
-     */
-    public function projectCheck($remote, $options = ['as' => 'default', 'major' => '[0-9]+'])
-    {
-        $api = $this->api($options['as']);
-        $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
-
-        $remote_repo = $this->createRemote($remote, $api);
-        $upstream_repo = $this->createRemote($upstream, $api);
-
-        $latest = $upstream_repo->latest($options['major']);
-
-        if ($remote_repo->has($latest)) {
-            $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
-            return;
-        }
-        $this->logger->notice("{remote} has an available update: {latest}", ['remote' => $remote, 'latest' => $latest]);
-    }
-
-    /**
      * @command project:release-node
+     * @table-style compact
+     * @list-delimiter :
+     * @field-labels
+     *   url: Release URL
+     *
+     * @return \Consolidation\OutputFormatters\StructuredData\PropertyList
      */
-    public function releaseNode($remote, $options = ['as' => 'default'])
+    public function releaseNode($remote, $version = '', $options = ['as' => 'default', 'major' => '[0-9]'])
     {
         $api = $this->api($options['as']);
         $releaseNode = new ReleaseNode($api);
-        list($failure_message, $release_node) = $releaseNode->get($this->getConfig(), $remote);
+        list($failure_message, $release_node) = $releaseNode->get($this->getConfig(), $remote, $options['major'], $version);
 
         if (!empty($failure_message)) {
             throw new \Exception($failure_message);
         }
 
-        return $release_node;
+        return new PropertyList(['url' => $release_node]);
+    }
+
+    /**
+     * Check to see if there is an update available on the upstream of the specified project.
+     *
+     * @command project:upstream:check
+     */
+    public function projectCheck($remote, $options = ['as' => 'default'])
+    {
+        $api = $this->api($options['as']);
+
+        // Get references to the remote repo and the upstream repo
+        $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
+        if (empty($upstream)) {
+            throw new \Exception('Project cannot be updated; it is missing an upstream.');
+        }
+
+        $remote_repo = $this->createRemote($remote, $api);
+
+        // Determine the major version of the upstream repo
+        $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
+        $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
+        $major = preg_replace('#\..*#', '', $major);
+        // We haven't cloned the repo yet, so look at the remote tags to
+        // determine our version.
+        $current = $remote_repo->latest($major);
+
+        // Find an update method and create an updater
+        $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
+        $updater = $this->getUpdater($update_method, $api);
+        if (empty($updater)) {
+            throw new \Exception('Project cannot be updated; it is missing an update method.');
+        }
+        $updater->setApi($api);
+        $updater->setLogger($this->logger);
+
+        // Allow the updator to configure itself prior to the update.
+        $updater->configure($this->getConfig(), $remote);
+
+        $this->logger->notice("Check latest version for {upstream}.", ['upstream' => $upstream]);
+
+        // Determine the latest version in the same major series in the upstream
+        $latest = $updater->findLatestVersion($major, $tag_prefix);
+
+        // TODO: Everything above is a duplicate of the first part of
+        // the projectUpstreamUpdate method. Encapsulating it all into
+        // a worker class with accessors for all of the collected variables
+        // would be useful.
+
+        if ($remote_repo->has($latest)) {
+            $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
+            return;
+        }
+        $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
     }
 
     /**
@@ -96,34 +142,49 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     {
         $api = $this->api($options['as']);
 
-        $releaseNode = new ReleaseNode($api);
-
         // Get references to the remote repo and the upstream repo
         $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
         if (empty($upstream)) {
             throw new \Exception('Project cannot be updated; it is missing an upstream.');
         }
 
-        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
-
         $remote_repo = $this->createRemote($remote, $api);
-        $upstream_repo = $this->createRemote($upstream, $api);
 
         // Determine the major version of the upstream repo
-        $version_pattern = $this->getConfig()->get("projects.$remote.upstream.version-pattern", '#.#.#');
         $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
         $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
-        $current = $remote_repo->latest($major);
         $major = preg_replace('#\..*#', '', $major);
+        // We haven't cloned the repo yet, so look at the remote tags to
+        // determine our version.
+        $current = $remote_repo->latest($major);
+
+        // Find an update method and create an updater
+        $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
+        $updater = $this->getUpdater($update_method, $api);
+        if (empty($updater)) {
+            throw new \Exception('Project cannot be updated; it is missing an update method.');
+        }
+        $updater->setApi($api);
+        $updater->setLogger($this->logger);
+
+        // Allow the updator to configure itself prior to the update.
+        $updater->configure($this->getConfig(), $remote);
 
         $this->logger->notice("Check latest version for {upstream}.", ['upstream' => $upstream]);
 
         // Determine the latest version in the same major series in the upstream
         // TODO: existing script allows 'latest' to be taken from beta / RC / nightly builds.
-        $latest = $upstream_repo->latest($major, $tag_prefix);
+        $latest = $updater->findLatestVersion($major, $tag_prefix);
+
+        // Convert $latest to a version number matching $version_pattern,
+        // and put the actual tag name in $latestTag.
+        $version_pattern = $this->getConfig()->get("projects.$remote.upstream.version-pattern", '#.#.#');
+        list($latest, $latestTag) = $this->versionAndTagFromLatest($latest, $tag_prefix, $version_pattern);
+        $update_parameters['latest-tag'] = $latestTag;
 
         // Exit with no action and no error if already up-to-date
-        if (($current == $latest) || ($remote_repo->has($latest))) {
+        if ($remote_repo->has($latest)) {
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
             return;
         }
@@ -136,9 +197,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $message = str_replace('{version}', $latest, $message);
 
         // If we can find a release node, then add the "more information" blerb.
-        list($failure_message, $releaseNode) = $releaseNode->get($this->getConfig(), $remote, $major);
-        if (strstr($releaseNode, $latest) !== false) {
-            $message .= " For more information, see $releaseNode";
+        $releaseNode = new ReleaseNode($api);
+        list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major);
+        if (!empty($release_url)) {
+            $message .= " For more information, see $release_url";
         }
 
         $this->logger->notice("Update message: {msg}", ['msg' => $message]);
@@ -158,11 +220,12 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
 
-        $branch = "updatex-$latest";
+        $branch = "update-$latest";
 
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
         $project_fork = $this->getConfig()->get("projects.$remote.fork");
+        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
 
         $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
@@ -179,40 +242,15 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $this->logger->notice("Pull requests will be made in forked repository {fork}", ['fork' => $fork_url]);
         }
 
-        // Clone the upstream. Check out just $latest
-        $upstream_working_copy = WorkingCopy::shallowClone($upstream_url, $upstream_dir, "$tag_prefix$latest", 1, $api);
-        $upstream_working_copy
-            ->setLogger($this->logger);
-
-        // Run 'composer install' if necessary
-        $this->composerInstall($upstream_working_copy->dir());
-
-        // Confirm that the local working copy of the upstream has checked out $latest
-        $version_info = new VersionTool();
-        $info = $version_info->info($upstream_working_copy->dir());
-        $upstream_version = $info->version();
-        if ($upstream_version != $latest) {
-            throw new \Exception("Update failed. We expected that the local working copy of the upstream project should be $latest, but instead it is $upstream_version.");
-        }
-
         // TODO: Existing drops-8 script pre-tags scaffolding files if possible
         // We should probably do this in a separate command.
 
         // TODO: Apply 'shipit' PRs from the GitHub repository to the project working copy
 
-        // Find an update method and run it
-        $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
-        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
-        $updater = $this->getUpdater($update_method, $api);
-        if (empty($updater)) {
-            throw new \Exception('Project cannot be updated; it is missing an update method.');
-        }
-        $updater->setApi($api);
-        $updater->setLogger($this->logger);
-
-        $updated_project = $updater->update($project_working_copy, $upstream_working_copy, $update_parameters);
+        $updated_project = $updater->update($project_working_copy, $update_parameters);
 
         // Confirm that the updated version of the code is now equal to $latest
+        $version_info = new VersionTool();
         $info = $version_info->info($updated_project->dir());
         $updated_version = $info->version();
         if ($updated_version != $latest) {
@@ -256,23 +294,19 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // requests will never be released).
         // We should probably do this in a separate command.
 
-        $updater->complete($project_working_copy, $upstream_working_copy, $update_parameters);
+        $updater->complete($update_parameters);
     }
 
-    /**
-     * Run 'composer install' if there is a 'composer json' in the specified directory.
-     *
-     * TODO: SHould this be part of the 'SingleCommit' update method?
-     */
-    protected function composerInstall($dir)
+    protected function versionAndTagFromLatest($latest, $tag_prefix, $version_pattern)
     {
-        if (!file_exists("$dir/composer.json")) {
-            return;
+        $latestTag = "$tag_prefix$latest";
+        $versionPatternRegex = str_replace('.', '\\.', $version_pattern);
+        $versionPatternRegex = str_replace('#', '[0-9]+', $versionPatternRegex);
+        if (preg_match("#$versionPatternRegex#", $latest, $matches)) {
+            $latest = $matches[0];
         }
 
-        $this->logger->notice("Running composer install");
-
-        passthru("composer --working-dir=$dir -q install --prefer-dist --no-dev --optimize-autoloader");
+        return [$latest, $latestTag];
     }
 
     protected function getUpdater($update_method, $api)
