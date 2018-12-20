@@ -24,6 +24,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     protected $version_check_url;
     protected $version;
 
+    protected $dbhost;
     protected $dbname;
     protected $dbuser;
     protected $dbpw;
@@ -41,6 +42,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $upstream = $config->get("projects.$project.upstream.project");
         $this->version_check_url = $config->get("projects.$upstream.version-api.url", 'https://api.wordpress.org/core/version-check/1.7/');
 
+        $this->dbhost = $config->get("fixtures.mysql.host", '127.0.0.1');
         $this->dbuser = $config->get("fixtures.mysql.user", 'root');
         $this->dbpw = $config->get("fixtures.mysql.pw", '');
         $this->dbname = $config->get("fixtures.wp.dbname", 'updatinate-wp-db');
@@ -83,7 +85,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
 
         try {
             // Set up a local WordPress site
-            $this->wpCoreConfig($path, $this->dbname, $this->dbuser, $this->dbpw);
+            $this->wpCoreConfig($path, $this->dbhost, $this->dbname, $this->dbuser, $this->dbpw);
             $this->wpDbDropIfNotCI($path);
             $this->wpDbCreate($path);
             $this->wpCoreInstall($path, $this->url, $this->title, $this->admin, $this->adminPw, $this->adminEmail);
@@ -110,13 +112,14 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     /**
      * Call the wp-cli 'core config' command to set up our wp-config.php file.
      */
-    protected function wpCoreConfig($path, $dbname, $dbuser, $dbpw)
+    protected function wpCoreConfig($path, $dbhost, $dbname, $dbuser, $dbpw)
     {
         // wp core config --dbname=wp --dbuser=mywp --dbpass=mywp
         return $this->wp(
             $path,
             'core config',
             [
+                "--dbhost=$dbhost",
                 "--dbname=$dbname",
                 "--dbuser=$dbuser",
                 "--dbpass=$dbpw",
