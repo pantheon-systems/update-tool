@@ -12,6 +12,7 @@ jobs:
       - image: circleci/mysql:5.7.24
     steps:
       - checkout
+      - run: composer install
       - run: git config --global user.email "bot@getpantheon.com"
       - run: git config --global user.name "Pantheon Automation"
       - run: ./updatinate whoami
