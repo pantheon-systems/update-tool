@@ -104,6 +104,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // We haven't cloned the repo yet, so look at the remote tags to
         // determine our version.
         $current = $remote_repo->latest($major);
+        $this->logger->notice("Considering updates for {project}", ['project' => $remote_repo->projectWithOrg()]);
 
         // Find an update method and create an updater
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
@@ -157,6 +158,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // We haven't cloned the repo yet, so look at the remote tags to
         // determine our version.
         $current = $remote_repo->latest($major);
+        $this->logger->notice("Considering updates for {project}", ['project' => $remote_repo->projectWithOrg()]);
 
         // Find an update method and create an updater
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
