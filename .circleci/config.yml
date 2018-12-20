@@ -1,8 +1,12 @@
 ---
+defaults:
+  updatinator_container: &updatinator_container
+    working_directory: /updatinator
+
 version: 2
 jobs:
   test:
-    working_directory: /updatinator
+    <<: *updatinator_container
     docker:
       - image: quay.io/pantheon-public/docker-updatinator:1.x
       - image: circleci/mysql:5.7.24
