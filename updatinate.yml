@@ -254,7 +254,7 @@ projects:
     release-node:
       template: 'https://github.com/d6lts/drupal/releases/tag/{version}'
   drupal:
-    repo: git://git.drupal.org/project/drupal.git
+    repo: https://git.drupal.org/project/drupal.git
     path: ${working-copy-path}/drupal
     release-node:
 #      url: https://www.drupal.org/project/drupal

@@ -31,7 +31,7 @@ use Updatinate\Git\Remote;
  * Example configuration for template:
  *
  *   drupal:
- *     repo: git://git.drupal.org/project/drupal.git
+ *     repo: https://git.drupal.org/project/drupal.git
  *     release-node:
  *       template: 'https://www.drupal.org/project/drupal/releases/{version}'
  *
