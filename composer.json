@@ -21,8 +21,8 @@
     "require": {
         "php": ">=7.1",
         "consolidation/Robo": "^1.2.3",
-        "consolidation/version-tool": "dev-master",
-        "g1a/hubph": "^0.3.2",
+        "consolidation/version-tool": "^0.1.8",
+        "g1a/hubph": "dev-allow-non-semver-patterns",
         "php-http/guzzle6-adapter": "^1.1",
         "symfony/console": "^2.8|^3|^4"
     },

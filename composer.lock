@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "37afac1668b787b28c1c28b3be7a1251",
+    "content-hash": "c7a045d16b178d66ebffeb9f4c0d89d8",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -638,16 +638,16 @@
         },
         {
             "name": "consolidation/version-tool",
-            "version": "dev-master",
+            "version": "0.1.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/consolidation/version-tool.git",
-                "reference": "1156eb7c6bced83e7ea226ccca889ebc79a96d53"
+                "reference": "62a54ce9113ccc147421d568af71c166502f26c4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/consolidation/version-tool/zipball/1156eb7c6bced83e7ea226ccca889ebc79a96d53",
-                "reference": "1156eb7c6bced83e7ea226ccca889ebc79a96d53",
+                "url": "https://api.github.com/repos/consolidation/version-tool/zipball/62a54ce9113ccc147421d568af71c166502f26c4",
+                "reference": "62a54ce9113ccc147421d568af71c166502f26c4",
                 "shasum": ""
             },
             "require": {
@@ -684,7 +684,7 @@
                 }
             ],
             "description": "Template project for PHP libraries.",
-            "time": "2018-12-12T23:59:01+00:00"
+            "time": "2018-12-12T23:58:56+00:00"
         },
         {
             "name": "container-interop/container-interop",
@@ -778,16 +778,16 @@
         },
         {
             "name": "g1a/hubph",
-            "version": "0.3.3",
+            "version": "dev-allow-non-semver-patterns",
             "source": {
                 "type": "git",
                 "url": "https://github.com/g1a/hubph.git",
-                "reference": "14ec709e52d12f1da112484500ddff865fdd160b"
+                "reference": "db2737d2db3665b593ea9e28fd702df90eb5dc93"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/g1a/hubph/zipball/14ec709e52d12f1da112484500ddff865fdd160b",
-                "reference": "14ec709e52d12f1da112484500ddff865fdd160b",
+                "url": "https://api.github.com/repos/g1a/hubph/zipball/db2737d2db3665b593ea9e28fd702df90eb5dc93",
+                "reference": "db2737d2db3665b593ea9e28fd702df90eb5dc93",
                 "shasum": ""
             },
             "require": {
@@ -827,7 +827,7 @@
                 }
             ],
             "description": "Template project for PHP libraries.",
-            "time": "2018-11-14T05:32:15+00:00"
+            "time": "2019-03-05T20:37:19+00:00"
         },
         {
             "name": "grasmash/expander",
@@ -1942,7 +1942,7 @@
         },
         {
             "name": "symfony/console",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
@@ -2082,7 +2082,7 @@
         },
         {
             "name": "symfony/event-dispatcher",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/event-dispatcher.git",
@@ -2146,7 +2146,7 @@
         },
         {
             "name": "symfony/filesystem",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/filesystem.git",
@@ -2196,7 +2196,7 @@
         },
         {
             "name": "symfony/finder",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/finder.git",
@@ -2245,7 +2245,7 @@
         },
         {
             "name": "symfony/options-resolver",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/options-resolver.git",
@@ -2416,7 +2416,7 @@
         },
         {
             "name": "symfony/process",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/process.git",
@@ -2465,7 +2465,7 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
@@ -2717,16 +2717,16 @@
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "4.3.0",
+            "version": "4.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "94fd0001232e47129dd3504189fa1c7225010d08"
+                "reference": "bdd9f737ebc2a01c06ea7ff4308ec6697db9b53c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/94fd0001232e47129dd3504189fa1c7225010d08",
-                "reference": "94fd0001232e47129dd3504189fa1c7225010d08",
+                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/bdd9f737ebc2a01c06ea7ff4308ec6697db9b53c",
+                "reference": "bdd9f737ebc2a01c06ea7ff4308ec6697db9b53c",
                 "shasum": ""
             },
             "require": {
@@ -2764,7 +2764,7 @@
                 }
             ],
             "description": "With this component, a library can provide support for annotations via DocBlocks or otherwise retrieve information that is embedded in a DocBlock.",
-            "time": "2017-11-30T07:14:17+00:00"
+            "time": "2019-04-30T17:48:53+00:00"
         },
         {
             "name": "phpdocumentor/type-resolver",
@@ -3944,7 +3944,7 @@
         },
         {
             "name": "symfony/config",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/config.git",
@@ -4007,7 +4007,7 @@
         },
         {
             "name": "symfony/stopwatch",
-            "version": "v4.2.7",
+            "version": "v4.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/stopwatch.git",
@@ -4110,7 +4110,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "consolidation/version-tool": 20
+        "g1a/hubph": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

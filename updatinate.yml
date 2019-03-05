@@ -35,7 +35,7 @@ projects:
     upstream:
       project: WordPress
       major: '[4-9]'
-      version-pattern: '#.#.#'
+      version-pattern: '#.#.-'
       update-method: WpCliUpdate
       update-parameters:
         # Not used by the WPCliUpdate, but recorded here for documentation purposes
@@ -71,7 +71,7 @@ projects:
     upstream:
       project: WordPress
       major: 4
-      version-pattern: '#.#.#'
+      version-pattern: '#.#.-'
       update-method: WpCliUpdate
     pr:
       instructions: |
@@ -99,7 +99,7 @@ projects:
     upstream:
       project: WordPress
       major: '[4-9]'
-      version-pattern: '#.#.#'
+      version-pattern: '#.#.-'
       update-method: WpCliUpdate
   drops-8:
     repo: git@github.com:pantheon-systems/drops-8.git
