@@ -130,30 +130,11 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
         $this->assertNotContains('+++ b/php-7.0/php.spec', $diff);
         $this->assertNotContains('+++ b/php-5.6/php.spec', $diff);
 
-        // Step 5: Next we'll merge our PR and make a Cookbook update.
+        // Step 5: Finally we'll merge our PR. No tests to do here any more though.
         $phpRpmWorkingCopy
             ->switchBranch('master')
             ->merge("php-$seed-7.1.21-7.2.9")
             ->push('origin', 'master');
-        $output = $this->executeExpectOK(['php:cookbook:update']);
-        $this->assertContains("[notice] Executing git push origin php-$seed-7.1.21-7.2.9", $output);
-        $output = $this->executeExpectOK(['pr:list', 'pantheon-fixtures/php-cookbook-fixture', '--field=title']);
-        $expectedTitle = "[$seed] Update to php-7.1.21 and php-7.2.9";
-        $this->assertEquals($expectedTitle, $output);
-        $message = $phpCookbookWorkingCopy->message();
-        $this->assertEquals($expectedTitle, $message);
-        $diff = preg_replace('#  +#', ' ', $phpCookbookWorkingCopy->show());
-        $this->assertContains("+ '7.2.9-", $diff);
-        $this->assertContains("+ '7.1.21-", $diff);
-        $this->assertNotContains("+ '7.0", $diff);
-        $this->assertNotContains("+ '5.6", $diff);
-
-        // Make sure github API has enough time to realize the PR has been created
-        sleep(5);
-
-        // Step 6: Try to make another Cookbook update; confirm that nothing is done
-        $output = $this->executeExpectOK(['php:cookbook:update']);
-        $this->assertContains('[notice] Pull requests already exist; nothing more to do.', $output);
     }
 
     public function assertCommand($expectedOutput, $expectedStatus, $variable_args)
