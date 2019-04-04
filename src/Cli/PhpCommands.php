@@ -26,7 +26,10 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      */
     protected function phpIsEOL($work_dir, $version)
     {
-        return file_exists("$work_dir/php-$version/eol.txt");
+        $version_parts = explode('.', $version);
+        $majorMinorVersion = implode('.', [$version_parts[0], $version_parts[1]]);
+        $this->logger->notice("Check for $work_dir/php-$majorMinorVersion/eol.txt");
+        return file_exists("$work_dir/php-$majorMinorVersion/eol.txt");
     }
 
     /**
@@ -181,9 +184,23 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }
 
         // For network urls, run `curl -I` to do just a HEAD request.
-        // -s is "silent mode".
-        exec("curl -s -I $url", $output, $status);
-        return (strpos($output[0], '200 OK') !== false);
+        // -s is "silent mode", and -L follows redirects.
+        exec("curl -s -L -I $url", $output, $status);
+        $httpStatus = $this->findStatusInCurlOutput($output);
+        return $httpStatus == 200;
+    }
+
+    protected function findStatusInCurlOutput(array $output)
+    {
+        foreach ($output as $line) {
+            print "Check: $line\n";
+            if (preg_match('#HTTP/*[0-9]* +([0-9]+)#i', $line, $matches)) {
+                if (!empty($matches[1]) && ($matches[1][0] != '3')) {
+                    return $matches[1];
+                }
+            }
+        }
+        return false;
     }
 
     /**
