@@ -20,116 +20,16 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     use ApiTrait;
 
     /**
-     * Given a set of available php RPMs, as specified in the rpmbuild-php
-     * repository, create a PR in the php cookbook to deploy those rpms.
-     *
-     * @command php:cookbook:update
+     * Determine whether the given PHP version has reached EOL.
+     * We judge this based on the presence of an 'eol.txt' file
+     * in the php.spec directory.
      */
-    public function phpCookbookUpdate($options = ['as' => 'default'])
+    protected function phpIsEOL($work_dir, $version)
     {
-        $api = $this->api($options['as']);
-
-        $rpmbuild_php_url = $this->getConfig()->get('projects.rpmbuild-php.repo');
-        $rpmbuild_php_dir = $this->getConfig()->get('projects.rpmbuild-php.path');
-
-        $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
-        $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
-
-        $php_cookbook_fork = $this->getConfig()->get('projects.php-cookbook.fork', '');
-
-        $php_cookbook_src = $this->getConfig()->get('projects.php-cookbook.src');
-
-        $rpmbuild_php = WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $api);
-        $rpmbuild_php
-            ->setLogger($this->logger);
-        $this->logger->notice("Check out {project} to {path}.", ['project' => $rpmbuild_php->projectWithOrg(), 'path' => $rpmbuild_php_dir]);
-
-        // Look at the most recent commit on the current branch.
-        $output = $rpmbuild_php->git('show HEAD');
-
-        // Look for changes to both the php_version and rpm_datecode in the same file.
-        $version_updates = [];
-        $version = false;
-        foreach ($output as $line) {
-            if (preg_match('#^diff #', $line)) {
-                $version = false;
-            } elseif (preg_match('#.%define php_version *([0-9.]*)#', $line, $matches)) {
-                $version = $matches[1];
-            } elseif ($version && preg_match('#\+%define rpm_datecode *([0-9]*)#', $line, $matches)) {
-                $rpm_datecode = $matches[1];
-                $version_updates[$version] = "{$version}-{$rpm_datecode}";
-            }
-        }
-
-        // If there were no updates to php versions, then we are done.
-        if (empty($version_updates)) {
-            $this->logger->notice("Nothing was updated.");
-            return;
-        }
-
-        $php_cookbook = WorkingCopy::clone($php_cookbook_url, $php_cookbook_dir, $api);
-        $php_cookbook
-            ->addFork($php_cookbook_fork)
-            ->setLogger($this->logger);
-
-        // Create a commit message with all of our modified versions
-        $all_updated_versions = $this->prettyImplode(', ', ' and ', array_map(function ($v) {
-            return "php-$v";
-        }, array_keys($version_updates)));
-        $preamble = $this->preamble();
-        $message = "{$preamble}{$all_updated_versions}";
-        $this->logger->notice("Commit message {message}", ['message' => $message]);
-
-        // Create a set of version ids from the commit message
-        $vids = new VersionIdentifiers();
-        $vids->setVidPattern('php-#.#.');
-        $vids->setVvalPattern('#');
-        $vids->setPreamble($preamble);
-        $vids->addVidsFromMessage($message);
-
-        // Modify the php.rb source file in the php cookbook to select the php rpm that was built
-        $php_library_src_path = "$php_cookbook_dir/$php_cookbook_src";
-        $contents = file_get_contents($php_library_src_path);
-
-        foreach ($version_updates as $version_spec) {
-            if (preg_match('#^[0-9]+\.[0-9]+#', $version_spec, $matches)) {
-                $major_minor = $matches[0];
-                $contents = preg_replace("#'$major_minor\.[0-9]+-[0-9]{8}'#", "'$version_spec'", $contents);
-            }
-        }
-
-        file_put_contents($php_library_src_path, $contents);
-
-        // Check to see if our modifications caused any changes
-        $output = $php_cookbook->status();
-        if (empty($output)) {
-            $this->logger->notice("Nothing was updated.");
-            return;
-        }
-
-        // Check to see if there are any open PRs that have already done this
-        // work, or that are old and need to be closed.
-        list($status, $prs) = $api->prCheck($php_cookbook->projectWithOrg(), $vids);
-        if ($status) {
-            $this->logger->notice("Pull requests already exist; nothing more to do.");
-            return;
-        }
-
-        // Create a pull request with the update.
-        $branch = $this->branchPrefix() . implode('-', array_keys($version_updates));
-        $this->logger->notice('Using {branch}', ['branch' => $branch]);
-
-        // Commit, push, and make the PR
-        $pr_body = '';
-        $php_cookbook
-            ->createBranch($branch, 'master', true)
-            ->add($php_cookbook_src)
-            ->commit($message)
-            ->push()
-            ->pr($message);
-
-        // These PRs may be closed now, as they are replaced by the new PR.
-        $api->prClose($php_cookbook->org(), $php_cookbook->project(), $prs);
+        $version_parts = explode('.', $version);
+        $majorMinorVersion = implode('.', [$version_parts[0], $version_parts[1]]);
+        $this->logger->notice("Check for $work_dir/php-$majorMinorVersion/eol.txt");
+        return file_exists("$work_dir/php-$majorMinorVersion/eol.txt");
     }
 
     /**
@@ -166,6 +66,11 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         $updated_versions = [];
         foreach ($versions as $version) {
+            // Don't check for updates if the PHP version has reached end-of-life
+            if ($this->phpIsEOL($work_dir, $version)) {
+                $this->logger->notice("$version is EOL; skipping check.");
+                continue;
+            }
             $next_version = $this->nextVersionThatExists($version);
             if (!$next_version) {
                 $urlTemplate = $this->getConfig()->get('php-net.download-url');
@@ -279,9 +184,23 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }
 
         // For network urls, run `curl -I` to do just a HEAD request.
-        // -s is "silent mode".
-        exec("curl -s -I $url", $output, $status);
-        return (strpos($output[0], '200 OK') !== false);
+        // -s is "silent mode", and -L follows redirects.
+        exec("curl -s -L -I " . escapeshellarg($url), $output, $status);
+        $httpStatus = $this->findStatusInCurlOutput($output);
+        return $httpStatus == 200;
+    }
+
+    protected function findStatusInCurlOutput(array $output)
+    {
+        foreach ($output as $line) {
+            print "Check: $line\n";
+            if (preg_match('#HTTP/*[0-9]* +([0-9]+)#i', $line, $matches)) {
+                if (!empty($matches[1]) && ($matches[1][0] != '3')) {
+                    return $matches[1];
+                }
+            }
+        }
+        return false;
     }
 
     /**
