@@ -185,7 +185,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         // For network urls, run `curl -I` to do just a HEAD request.
         // -s is "silent mode", and -L follows redirects.
-        exec("curl -s -L -I $url", $output, $status);
+        exec("curl -s -L -I " . escapeshellarg($url), $output, $status);
         $httpStatus = $this->findStatusInCurlOutput($output);
         return $httpStatus == 200;
     }
