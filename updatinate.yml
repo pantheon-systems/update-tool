@@ -189,9 +189,8 @@ projects:
     path: ${working-copy-path}/drops-6
     main-branch: master
     upstream:
-      project: pressflow6
+      project: d6lts
       major: 6
-      tag-prefix: 'pressflow-'
       version-pattern: '#.#'
       update-message: Update to Drupal {version}.
       update-method: SingleCommit
