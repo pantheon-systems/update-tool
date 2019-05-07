@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c7a045d16b178d66ebffeb9f4c0d89d8",
+    "content-hash": "1a52668bdda5e8e33a9c8ffdc72b4dd7",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -778,16 +778,16 @@
         },
         {
             "name": "g1a/hubph",
-            "version": "dev-allow-non-semver-patterns",
+            "version": "0.3.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/g1a/hubph.git",
-                "reference": "db2737d2db3665b593ea9e28fd702df90eb5dc93"
+                "reference": "a254324a4ab799f0fa15e1163b5d0442571439b1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/g1a/hubph/zipball/db2737d2db3665b593ea9e28fd702df90eb5dc93",
-                "reference": "db2737d2db3665b593ea9e28fd702df90eb5dc93",
+                "url": "https://api.github.com/repos/g1a/hubph/zipball/a254324a4ab799f0fa15e1163b5d0442571439b1",
+                "reference": "a254324a4ab799f0fa15e1163b5d0442571439b1",
                 "shasum": ""
             },
             "require": {
@@ -827,7 +827,7 @@
                 }
             ],
             "description": "Template project for PHP libraries.",
-            "time": "2019-03-05T20:37:19+00:00"
+            "time": "2019-05-07T21:41:28+00:00"
         },
         {
             "name": "grasmash/expander",
@@ -4109,9 +4109,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "g1a/hubph": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
