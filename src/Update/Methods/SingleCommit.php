@@ -72,14 +72,16 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         return $this->updatedProject;
     }
 
-    protected function fetchUpstream(array $parameters) {
+    protected function fetchUpstream(array $parameters)
+    {
         if (!empty($this->download_url)) {
             return $this->downloadUpstream($parameters);
         }
         return $this->cloneUpstream($parameters);
     }
 
-    protected function downloadUpstream(array $parameters) {
+    protected function downloadUpstream(array $parameters)
+    {
         $latestTag = $parameters['latest-tag'];
 
         // Ensure $this->upstream_dir is empty, as we are going to untar
