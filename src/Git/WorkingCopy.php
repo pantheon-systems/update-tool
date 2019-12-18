@@ -150,6 +150,11 @@ class WorkingCopy implements LoggerAwareInterface
         return $workingCopy;
     }
 
+    public static function unclonedReference($url, $dir, $branch, $api = null)
+    {
+        return new self($url, $dir, $branch, $api);
+    }
+
     /**
      * Clone the specified branch of the specified repository to the given URL.
      *

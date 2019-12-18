@@ -25,6 +25,7 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
     use ExecWithRedactionTrait;
 
     protected $upstream_repo;
+    protected $download_url;
 
     /**
      * @inheritdoc
@@ -34,6 +35,7 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $upstream = $config->get("projects.$project.upstream.project");
         $this->upstream_url = $config->get("projects.$upstream.repo");
         $this->upstream_dir = $config->get("projects.$upstream.path");
+        $this->download_url = $config->get("projects.$upstream.download.url");
 
         $this->upstream_repo = Remote::create($this->upstream_url, $this->api);
     }
@@ -54,7 +56,7 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
     public function update(WorkingCopy $originalProject, array $parameters)
     {
         $this->originalProject = $originalProject;
-        $this->updatedProject = $this->cloneUpstream($parameters);
+        $this->updatedProject = $this->fetchUpstream($parameters);
 
         // Copy over the additional files we need on the platform over to
         // the updated project.
@@ -68,6 +70,44 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $this->updatedProject->take($this->originalProject);
 
         return $this->updatedProject;
+    }
+
+    protected function fetchUpstream(array $parameters)
+    {
+        if (!empty($this->download_url)) {
+            return $this->downloadUpstream($parameters);
+        }
+        return $this->cloneUpstream($parameters);
+    }
+
+    protected function downloadUpstream(array $parameters)
+    {
+        $latestTag = $parameters['latest-tag'];
+
+        // Ensure $this->upstream_dir is empty, as we are going to untar
+        // on top of it.
+        $this->logger->notice('Removing upstream cache {dir}', ['dir' => $this->upstream_dir]);
+        $fs = new Filesystem();
+        $fs->remove($this->upstream_dir);
+
+        $this->logger->notice('Downloading from url template {url}', ['url' => $this->download_url]);
+
+        $download_url = str_replace('{version}', $latestTag, $this->download_url);
+        $this->logger->notice('Downloading {url}', ['url' => $download_url]);
+
+        $upstream_working_copy = WorkingCopy::unclonedReference($this->upstream_url, $this->upstream_dir, $latestTag, $this->api);
+        $upstream_working_copy
+            ->setLogger($this->logger);
+
+        // Download the tarball
+        $download_target = '/tmp/' . basename($download_url);
+        $this->execWithRedaction('curl {url} --output {target}', ['url' => $download_url, 'target' => $download_target], ['target' => basename($download_target)]);
+
+        // Uncompress the tarball
+        $fs->mkdir($this->upstream_dir);
+        $this->execWithRedaction('tar -xzvf {tarball} -C {working-copy} --strip-components=1', ['tarball' => $download_target, 'working-copy' => $this->upstream_dir], ['tarball' => basename($download_target)]);
+
+        return $upstream_working_copy;
     }
 
     /**

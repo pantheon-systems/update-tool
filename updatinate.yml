@@ -259,6 +259,9 @@ projects:
 #      url: https://www.drupal.org/project/drupal
 #      pattern: '"(https://www.drupal.org/project/drupal/releases/{major}[0-9.]*)"'
       template: 'https://www.drupal.org/project/drupal/releases/{version}'
+    download:
+      url: 'https://ftp.drupal.org/files/projects/drupal-{version}.tar.gz'
+
   WordPress:
     repo: git@github.com:WordPress/WordPress.git
     path: ${working-copy-path}/WordPressUpstream

@@ -244,16 +244,16 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $this->logger->notice("Pull requests will be made in forked repository {fork}", ['fork' => $fork_url]);
         }
 
-        // TODO: Existing drops-8 script pre-tags scaffolding files if possible
-        // We should probably do this in a separate command.
-
-        // TODO: Apply 'shipit' PRs from the GitHub repository to the project working copy
+        $this->logger->notice("Updating via update method {method} using {class}.", ['method' => $update_method, 'class' => get_class($updater)]);
 
         $updated_project = $updater->update($project_working_copy, $update_parameters);
 
         // Confirm that the updated version of the code is now equal to $latest
         $version_info = new VersionTool();
         $info = $version_info->info($updated_project->dir());
+        if (!$info) {
+            throw new \Exception("Could not figure out version from " . $updated_project->dir() . "; maybe project failed to clone / download.");
+        }
         $updated_version = $info->version();
         if ($updated_version != $latest) {
             throw new \Exception("Update failed. We expected that the updated version of the project should be $latest, but instead it is $updated_version.");
