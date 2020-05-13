@@ -20,7 +20,7 @@ class FilterManager implements LoggerAwareInterface
      */
     public function getFilters($filter_classnames)
     {
-        foreach ($filter_classnames as $filter_class) {
+        foreach ((array)$filter_classnames as $filter_class) {
             $filter_fqcn = "\\Updatinate\\Update\\Filters\\$filter_class";
             $filter = new $filter_fqcn();
             if ($filter instanceof LoggerAwareInterface) {
