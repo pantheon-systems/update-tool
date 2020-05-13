@@ -93,14 +93,6 @@ class Fixtures
         return WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $this->api());
     }
 
-    public function phpCookbookWorkingCopy()
-    {
-        $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
-        $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
-
-        return WorkingCopy::clone($php_cookbook_url, $php_cookbook_dir, $this->api());
-    }
-
     public function closeAllOpenPullRequests($remote_name, $as = 'default')
     {
         $api = $this->api($as);

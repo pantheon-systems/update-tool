@@ -11,13 +11,12 @@ php-net:
   download-url: ${env.PHPDOTNETFIXTURE}/distributions/php-{version}.tar.gz
 
 projects:
+  cos-php:
+    repo: git@github.com:pantheon-fixtures/cos-runtime-php-fixture.git
+    path: ${working-copy-path}/cos-php
   rpmbuild-php:
     repo: git@github.com:pantheon-fixtures/rpmbuild-php-fixture.git
     path: ${working-copy-path}/rpmbuild-php
-  php-cookbook:
-    repo: git@github.com:pantheon-fixtures/php-cookbook-fixture.git
-    path: ${working-copy-path}/php-cookbook
-    src: libraries/php.rb
   wp:
     repo: git@github.com:pantheon-fixtures/pantheon-wp-fixture.git
     path: ${working-copy-path}/WordPress

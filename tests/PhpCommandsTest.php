@@ -59,7 +59,6 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
     public function testPhpCommands()
     {
         $phpRpmWorkingCopy = $this->fixtures()->phpRpmWorkingCopy();
-        $phpCookbookWorkingCopy = $this->fixtures()->phpCookbookWorkingCopy();
         $seed = $this->fixtures()->seed();
 
         // Step 1: No updates available. No pull requests opened.
