@@ -61,10 +61,10 @@ class ReleaseNode
      * @param string $remote Name of the remote project to fetch the release node for
      * @return [string, string] Failure message (empty for success), release node page URL
      */
-    public function get(ConfigInterface $config, $remote, $major = '[0-9]', $version = false)
+    public function get(ConfigInterface $config, $remote, $major = '[0-9]', $version = false, $stable = true)
     {
         // If there's a simple template, try filling that in first & return if found.
-        $release_node = $this->getViaTemplate($config, $remote, $major, $version);
+        $release_node = $this->getViaTemplate($config, $remote, $major, $version, $stable);
         if (!empty($release_node)) {
             return ['', $release_node];
         }
@@ -77,7 +77,7 @@ class ReleaseNode
         return ['No information on release node.', ''];
     }
 
-    protected function getViaTemplate($config, $remote, $major = '[0-9]', $version = false)
+    protected function getViaTemplate($config, $remote, $major = '[0-9]', $version = false, $stable = true)
     {
         $release_node_template = $this->getProjectAttribute($config, $remote, 'release-node.template');
         if (empty($release_node_template)) {
@@ -98,7 +98,7 @@ class ReleaseNode
             // e.g. in Pressflow6, '{version}' is '6.46' and '{tag}' would be
             // 'pressflow-4.46', but `latest` here returns '6.46.126'. We
             // add the 'pressflow' back by inserting it into the release node template.
-            $version = $remote_repo->latest($major, $tag_prefix);
+            $version = $remote_repo->latest($major, $stable, $tag_prefix);
         }
 
         $release_node = str_replace('{version}', $version, $release_node_template);

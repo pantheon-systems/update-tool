@@ -43,9 +43,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
     /**
      * @inheritdoc
      */
-    public function findLatestVersion($major, $tag_prefix)
+    public function findLatestVersion($major, $tag_prefix, $update_parameters)
     {
-        $this->latest = $this->upstream_repo->latest($major, $tag_prefix);
+        $this->latest = $this->upstream_repo->latest($major, empty($update_parameters['allow-pre-release']), $tag_prefix);
 
         return $this->latest;
     }
@@ -58,12 +58,8 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $this->originalProject = $originalProject;
         $this->updatedProject = $this->fetchUpstream($parameters);
 
-        // Copy over the additional files we need on the platform over to
-        // the updated project.
-        $this->copyPlatformAdditions($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
-
-        // Apply any patch files needed
-        $this->applyPlatformPatches($this->updatedProject->dir(), $parameters);
+        // Apply configured filters.
+        $this->filters->apply($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
 
         // $this->updatedProject retains its working contents, and takes over
         // the .git directory of $this->originalProject.
@@ -165,65 +161,5 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $this->logger->notice("Running composer install");
 
         passthru("composer --working-dir=$dir -q install --prefer-dist --no-dev --optimize-autoloader");
-    }
-
-    /**
-     * If the update parameters contain any patch files, then apply
-     * them by running 'patch'
-     */
-    protected function applyPlatformPatches($dst, $parameters)
-    {
-        $parameters += ['platform-patches' => []];
-
-        foreach ($parameters['platform-patches'] as $patch) {
-            $this->logger->notice('Applying {patch}', ['patch' => $patch]);
-            $this->applyPatch($dst, $patch);
-        }
-    }
-
-    /**
-     * Platform "additions" are files in the Pantheon repository that
-     * do not exist in the upstream. These must all be listed in the
-     * update parameters. Listed files are copied from the Pantheon
-     * repository into the repository being updated, which starts off
-     * as a pristine copy of the upstream.
-     */
-    protected function copyPlatformAdditions($src, $dest, $parameters)
-    {
-        $parameters += ['platform-additions' => []];
-
-        foreach ($parameters['platform-additions'] as $item) {
-            $this->logger->notice('Copying {item}', ['item' => $item]);
-            $this->copyFileOrDirectory($src . '/' . $item, $dest . '/' . $item);
-        }
-    }
-
-    /**
-     * Run 'patch' to apply a patch to the project being updated.
-     */
-    protected function applyPatch($dst, $patch)
-    {
-        $patchContents = file_get_contents($patch);
-
-        $tmpDir = TmpDir::create();
-        $patchPath = "$tmpDir/" . basename($patch);
-        file_put_contents($patchPath, $patchContents);
-
-        $this->execWithRedaction('patch -Np1 --no-backup-if-mismatch --directory={dst} --input={patch}', ['patch' => $patchPath, 'dst' => $dst], ['patch' => basename($patchPath), 'dst' => basename($dst)]);
-    }
-
-    /**
-     * Helpful wrapper to call either 'mirror' or 'copy' as needed.
-     */
-    protected function copyFileOrDirectory($src, $dest)
-    {
-        $fs = new Filesystem();
-
-        $fs->mkdir(dirname($dest));
-        if (is_dir($src)) {
-            $fs->mirror($src, $dest);
-        } else {
-            $fs->copy($src, $dest, true);
-        }
     }
 }

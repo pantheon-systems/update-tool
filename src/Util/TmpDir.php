@@ -11,7 +11,7 @@ use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 class TmpDir
 {
     protected static $tmpDirs = [];
-    protected static $retain = true;
+    protected static $retain = false;
 
     /**
      * create will create a new empty temporary directory. This directory

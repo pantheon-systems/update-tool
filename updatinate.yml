@@ -122,8 +122,7 @@ projects:
           - sites/default/settings.pantheon.php
           - sites/default/settings.php
       update-filters:
-        -
-          filter: FixupDrupal8
+        - CopyPlatformAdditions
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
@@ -143,6 +142,68 @@ projects:
           - Push your files back up to Pantheon.
           - Switch back to sftp mode.
           - Visit your site and step through the installation process.
+  drupal-9-branch-on-drops-8:
+    repo: git@github.com:pantheon-systems/drops-8.git
+    path: ${working-copy-path}/drupal-9-branch-on-drops-8
+    # fork: git@github.com:greg-1-anderson/drops-8.git
+    main-branch: default-9.x
+    upstream:
+      project: drupal
+      major: 9
+      update-method: SingleCommit
+      update-parameters:
+        allow-pre-release: true
+        platform-additions:
+          - .circleci
+          - .drush-lock-update
+          - .gitignore
+          - pantheon.upstream.yml
+          - drush/example.drushrc.php
+          - sites/default/config/.htaccess
+          - sites/default/config/README.txt
+          - sites/default/default.services.pantheon.preproduction.yml
+          - sites/default/settings.pantheon.php
+          - sites/default/settings.php
+        platform-patches:
+          'install failure': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-1--core-install-error.patch"
+          'db version': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-2--mariadb-version.patch"
+      update-filters:
+        - CopyPlatformAdditions
+        - ApplyPlatformPatches
+    pr:
+      instructions: |
+        Update from Drupal {{original-version}} to Drupal {{update-version}}.
+        
+        This is experimental. Do not merge.
+  drupal-9-branch-web-docroot-wip:
+    repo: git@github.com:pantheon-systems/drops-8.git
+    path: ${working-copy-path}/drupal-9-branch-on-drops-8
+    # fork: git@github.com:greg-1-anderson/drops-8.git
+    main-branch: default-9.x
+    upstream:
+      project: drupal
+      major: 9
+      update-method: SingleCommit
+      update-parameters:
+        allow-pre-release: true
+        platform-additions:
+          - .circleci
+        scaffold-allowed-packages:
+          - pantheon-systems/drupal-integrations
+        composer-dependencies:
+          pantheon-systems/drupal-integrations: ^9.0.0-alpha2
+        platform-patches:
+          'install failure': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-1--core-install-error.patch"
+          'db version': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-2--mariadb-version.patch"
+      update-filters:
+        - CopyPlatformAdditions
+        - AddComposerDependencies
+        - ApplyPlatformPatches
+    pr:
+      instructions: |
+        Update from Drupal {{original-version}} to Drupal {{update-version}}.
+        
+        This is experimental. Do not merge.
   drops-7:
     repo: git@github.com:pantheon-systems/drops-7.git
     path: ${working-copy-path}/drops-7
@@ -165,6 +226,8 @@ projects:
           - modules/pantheon/
         platform-patches:
           - https://raw.githubusercontent.com/pantheon-systems/drops-7/patches/drops-7-pantheon.patch
+      update-filters:
+        - ApplyPlatformPatches
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
@@ -206,6 +269,8 @@ projects:
           - themes/garland/minnelli/logo.png
         platform-patches:
           - https://raw.githubusercontent.com/pantheon-systems/drops-6/patches/drops-6-pantheon.patch
+      update-filters:
+        - ApplyPlatformPatches
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
@@ -253,7 +318,7 @@ projects:
     release-node:
       template: 'https://github.com/d6lts/drupal/releases/tag/{version}'
   drupal:
-    repo: https://git.drupal.org/project/drupal.git
+    repo: https://git.drupalcode.org/project/drupal.git/
     path: ${working-copy-path}/drupal
     release-node:
 #      url: https://www.drupal.org/project/drupal

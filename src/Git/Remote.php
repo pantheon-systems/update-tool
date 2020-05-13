@@ -87,7 +87,7 @@ class Remote implements LoggerAwareInterface
      *
      * @return array
      */
-    public function tags($filter = '', $stable = false, $tag_prefix = '')
+    public function tags($filter, $stable, $tag_prefix)
     {
         $tags = $this->git('ls-remote --tags --refs {remote}', ['remote' => $this->remote]);
         $trailing = $stable ? '[0-9.]*' : '.*';
@@ -105,9 +105,9 @@ class Remote implements LoggerAwareInterface
         return $result;
     }
 
-    public function releases($majorVersion = '[0-9]+', $tag_prefix = '')
+    public function releases($majorVersion /*= '[0-9]+'*/, $stable, $tag_prefix)
     {
-        return $this->tags("$majorVersion\.", true, $tag_prefix);
+        return $this->tags("$majorVersion\.", $stable, $tag_prefix);
     }
 
     /**
@@ -115,9 +115,9 @@ class Remote implements LoggerAwareInterface
      *
      * TODO: allow for beta or RC builds (by request via a second parameter)
      */
-    public function latest($majorVersion = '[0-9]+', $tag_prefix = '')
+    public function latest($majorVersion /*= '[0-9]+'*/, $stable, $tag_prefix)
     {
-        $tags = $this->releases($majorVersion, $tag_prefix);
+        $tags = $this->releases($majorVersion, $stable, $tag_prefix);
         $tags = array_keys($tags);
         return array_pop($tags);
     }
@@ -125,9 +125,9 @@ class Remote implements LoggerAwareInterface
     /**
      * Return 'true' if the provided tag exists on this remote.
      */
-    public function has($tag_to_check, $majorVersion = '[0-9]+', $tag_prefix = '')
+    public function has($tag_to_check, $majorVersion = '[0-9]+', $stable = false, $tag_prefix = '')
     {
-        $tags = $this->releases($majorVersion, $tag_prefix);
+        $tags = $this->releases($majorVersion, $stable, $tag_prefix);
 
         return array_key_exists($tag_to_check, $tags);
     }

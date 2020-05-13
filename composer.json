@@ -20,7 +20,7 @@
     },
     "require": {
         "php": ">=7.1",
-        "consolidation/Robo": "^1.2.3",
+        "consolidation/robo": "^1.2.3",
         "consolidation/version-tool": "^0.1.8",
         "g1a/hubph": "^0.3.4",
         "php-http/guzzle6-adapter": "^1.1",

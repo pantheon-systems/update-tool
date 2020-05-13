@@ -3,6 +3,7 @@
 namespace Updatinate\Update\Methods;
 
 use Updatinate\Git\WorkingCopy;
+use Updatinate\Update\Filters\FilterManager;
 use Consolidation\Config\ConfigInterface;
 
 /**
@@ -19,7 +20,7 @@ interface UpdateMethodInterface
     /**
      * Determine the most recent version of the given project that is available
      */
-    public function findLatestVersion($major, $tag_prefix);
+    public function findLatestVersion($major, $tag_prefix, $update_parameters);
 
     /**
      * Update the project's working copy. Return $project if it was updated
@@ -32,4 +33,11 @@ interface UpdateMethodInterface
      * Do any cleanup tasks required after an update function completes.
      */
     public function complete(array $parameters);
+
+    /**
+     * Set the filters to be applied after the update
+     *
+     * @param FilterManger $filters
+     */
+    public function setFilters(FilterManager $filters);
 }

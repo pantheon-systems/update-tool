@@ -2,19 +2,19 @@
 
 namespace Updatinate\Cli;
 
+use Consolidation\Config\Util\Interpolator;
+use Consolidation\OutputFormatters\StructuredData\PropertyList;
+use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
+use Hubph\HubphAPI;
+use Hubph\VersionIdentifiers;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use Robo\Contract\ConfigAwareInterface;
 use Robo\Common\ConfigAwareTrait;
-use Updatinate\Git\WorkingCopy;
-use Hubph\VersionIdentifiers;
-use Hubph\HubphAPI;
-use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
-use Consolidation\OutputFormatters\StructuredData\PropertyList;
-use Updatinate\Util\ReleaseNode;
-use Consolidation\Config\Util\Interpolator;
-
+use Robo\Contract\ConfigAwareInterface;
 use Updatinate\Git\Remote;
+use Updatinate\Git\WorkingCopy;
+use Updatinate\Update\Filters\FilterManager;
+use Updatinate\Util\ReleaseNode;
 use VersionTool\VersionTool;
 
 /**
@@ -27,7 +27,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     use ApiTrait;
 
     /**
-     * Show the list of available releases for the specified project.
+     * Show the list of available versions already released for the specified project.
      *
      * @command project:releases
      */
@@ -35,8 +35,9 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     {
         $api = $this->api($options['as']);
         $remote_repo = $this->createRemote($remote, $api);
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
 
-        return new RowsOfFields($remote_repo->releases($options['major']));
+        return new RowsOfFields($remote_repo->releases($options['major'], empty($update_parameters['allow-pre-release']), ''));
     }
 
     /**
@@ -54,8 +55,9 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     {
         $api = $this->api($options['as']);
         $remote_repo = $this->createRemote($remote, $api);
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
 
-        return $remote_repo->latest($options['major']);
+        return $remote_repo->latest($options['major'], empty($update_parameters['allow-pre-release']), '');
     }
 
     /**
@@ -67,11 +69,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
      *
      * @return \Consolidation\OutputFormatters\StructuredData\PropertyList
      */
-    public function releaseNode($remote, $version = '', $options = ['as' => 'default', 'major' => '[0-9]'])
+    public function releaseNode($remote, $version = '', $options = ['as' => 'default', 'major' => '[0-9]', 'allow-pre-release' => false])
     {
         $api = $this->api($options['as']);
         $releaseNode = new ReleaseNode($api);
-        list($failure_message, $release_node) = $releaseNode->get($this->getConfig(), $remote, $options['major'], $version);
+        list($failure_message, $release_node) = $releaseNode->get($this->getConfig(), $remote, $options['major'], $version, !$options['allow-pre-release']);
 
         if (!empty($failure_message)) {
             throw new \Exception($failure_message);
@@ -96,6 +98,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         $remote_repo = $this->createRemote($remote, $api);
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
 
         // Determine the major version of the upstream repo
         $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
@@ -103,18 +106,24 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $major = preg_replace('#\..*#', '', $major);
         // We haven't cloned the repo yet, so look at the remote tags to
         // determine our version.
-        $current = $remote_repo->latest($major);
+        $current = $remote_repo->latest($major, empty($update_parameters['allow-pre-release']), '');
         $this->logger->notice("Considering updates for {project}", ['project' => $remote_repo->projectWithOrg()]);
+
+        // Create the filters
+        $filters = $this->getConfig()->get("projects.$remote.upstream.update-filters");
+        $filter_manager = new FilterManager();
+        $filter_manager->setLogger($this->logger);
+        $filter_manager->getFilters($filters);
 
         // Find an update method and create an updater
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
-        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
         $updater = $this->getUpdater($update_method, $api);
         if (empty($updater)) {
             throw new \Exception('Project cannot be updated; it is missing an update method.');
         }
         $updater->setApi($api);
         $updater->setLogger($this->logger);
+        $updater->setFilters($filter_manager);
 
         // Allow the updator to configure itself prior to the update.
         $updater->configure($this->getConfig(), $remote);
@@ -122,7 +131,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $this->logger->notice("Check latest version for {upstream}.", ['upstream' => $upstream]);
 
         // Determine the latest version in the same major series in the upstream
-        $latest = $updater->findLatestVersion($major, $tag_prefix);
+        $latest = $updater->findLatestVersion($major, $tag_prefix, $update_parameters);
 
         // TODO: Everything above is a duplicate of the first part of
         // the projectUpstreamUpdate method. Encapsulating it all into
@@ -150,6 +159,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         $remote_repo = $this->createRemote($remote, $api);
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
 
         // Determine the major version of the upstream repo
         $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
@@ -157,18 +167,24 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $major = preg_replace('#\..*#', '', $major);
         // We haven't cloned the repo yet, so look at the remote tags to
         // determine our version.
-        $current = $remote_repo->latest($major);
+        $current = $remote_repo->latest($major, empty($update_parameters['allow-pre-release']), '');
         $this->logger->notice("Considering updates for {project}", ['project' => $remote_repo->projectWithOrg()]);
+
+        // Create the filters
+        $filters = $this->getConfig()->get("projects.$remote.upstream.update-filters");
+        $filter_manager = new FilterManager();
+        $filter_manager->setLogger($this->logger);
+        $filter_manager->getFilters($filters);
 
         // Find an update method and create an updater
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
-        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
         $updater = $this->getUpdater($update_method, $api);
         if (empty($updater)) {
             throw new \Exception('Project cannot be updated; it is missing an update method.');
         }
         $updater->setApi($api);
         $updater->setLogger($this->logger);
+        $updater->setFilters($filter_manager);
 
         // Allow the updator to configure itself prior to the update.
         $updater->configure($this->getConfig(), $remote);
@@ -176,12 +192,21 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $this->logger->notice("Check latest version for {upstream}.", ['upstream' => $upstream]);
 
         // Determine the latest version in the same major series in the upstream
-        // TODO: existing script allows 'latest' to be taken from beta / RC / nightly builds.
-        $latest = $updater->findLatestVersion($major, $tag_prefix);
+        $latest = $updater->findLatestVersion($major, $tag_prefix, $update_parameters);
+
+        // TODO: Remove. If/else here temporary, for debugging.
+        if ($remote_repo->has($latest)) {
+            $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
+        } else {
+            $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
+        }
 
         // Convert $latest to a version number matching $version_pattern,
         // and put the actual tag name in $latestTag.
         $version_pattern = $this->getConfig()->get("projects.$remote.upstream.version-pattern", '#.#.#');
+        if (!empty($update_parameters['allow-pre-release'])) {
+            $version_pattern .= '(-[a-z]+#|)';
+        }
         list($latest, $latestTag) = $this->versionAndTagFromLatest($latest, $tag_prefix, $version_pattern);
         $update_parameters['latest-tag'] = $latestTag;
 
@@ -200,7 +225,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // If we can find a release node, then add the "more information" blerb.
         $releaseNode = new ReleaseNode($api);
-        list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major);
+        list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
         if (!empty($release_url)) {
             $message .= " For more information, see $release_url";
         }
@@ -256,7 +281,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
         $updated_version = $info->version();
         if ($updated_version != $latest) {
-            throw new \Exception("Update failed. We expected that the updated version of the project should be $latest, but instead it is $updated_version.");
+            throw new \Exception("Update failed. We expected that the updated version of the project should be $latest, but instead it is $updated_version. " . $updated_project->dir());
         }
 
         // Give folks instructions on what to do with this update.
