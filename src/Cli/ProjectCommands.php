@@ -197,9 +197,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // TODO: Remove. If/else here temporary, for debugging.
         if ($remote_repo->has($latest)) {
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
-        }
-        else {
-          $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
+        } else {
+            $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
         }
 
         // Convert $latest to a version number matching $version_pattern,
