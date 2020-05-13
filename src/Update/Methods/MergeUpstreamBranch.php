@@ -28,7 +28,7 @@ class MergeUpstreamBranch implements UpdateMethodInterface, LoggerAwareInterface
     /**
      * @inheritdoc
      */
-    public function findLatestVersion($major, $tag_prefix)
+    public function findLatestVersion($major, $tag_prefix, $update_parameters)
     {
     }
 

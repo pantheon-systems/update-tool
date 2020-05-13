@@ -78,12 +78,12 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             }
 
             if ($next_version != $version) {
-                $this->say("$next_version is available, but we are still on version $version");
+                $this->say("$next_version is available, but we are still on version $version on heirloom");
 
                 $this->updateSpec($next_version, $datecode, $work_dir);
                 $updated_versions[] = $next_version;
             } else {
-                $this->say("$version is the most recent version");
+                $this->say("$version is the most recent version on heirloom");
             }
         }
 
