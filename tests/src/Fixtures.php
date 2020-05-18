@@ -174,7 +174,7 @@ class Fixtures
 
         // Make extra-sure that no one accidentally calls the tests on a non-fixture repo
         if (strpos($url, 'fixture') === false) {
-            throw new \Exception('WorkingCopy::forceReinitializeFixture requires url to contain the string "fixture" to avoid accidental deletion of non-fixture repositories.');
+            throw new \Exception('WorkingCopy::forceReinitializeFixture requires url to contain the string "fixture" to avoid accidental deletion of non-fixture repositories. Provided fixture: ' . $url);
         }
 
         // TODO: check to see if the fixture repository has never been initialized
