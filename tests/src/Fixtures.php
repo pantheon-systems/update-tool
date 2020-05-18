@@ -114,13 +114,6 @@ class Fixtures
         $rpmbuild_php_fixture = $this->rpmbuildPhpFixture();
 
         $this->forceReinitialize($rpmbuild_php_url, $rpmbuild_php_dir, $rpmbuild_php_fixture, $api);
-
-        $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
-        $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
-
-        $php_cookbook_fixture = $this->phpCookbookFixture();
-
-        $this->forceReinitialize($php_cookbook_url, $php_cookbook_dir, $php_cookbook_fixture, $api);
     }
 
     protected function forceReinitialize($url, $dir, $fixture, $api)
