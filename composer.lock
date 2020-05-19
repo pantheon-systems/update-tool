@@ -660,16 +660,16 @@
         },
         {
             "name": "g1a/hubph",
-            "version": "0.3.4",
+            "version": "0.3.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/g1a/hubph.git",
-                "reference": "a254324a4ab799f0fa15e1163b5d0442571439b1"
+                "reference": "5e5d370474fbb6aa62d3e574272d9303037869cb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/g1a/hubph/zipball/a254324a4ab799f0fa15e1163b5d0442571439b1",
-                "reference": "a254324a4ab799f0fa15e1163b5d0442571439b1",
+                "url": "https://api.github.com/repos/g1a/hubph/zipball/5e5d370474fbb6aa62d3e574272d9303037869cb",
+                "reference": "5e5d370474fbb6aa62d3e574272d9303037869cb",
                 "shasum": ""
             },
             "require": {
@@ -678,7 +678,7 @@
                 "knplabs/github-api": "^2.7",
                 "php": ">=5.5.0",
                 "php-http/guzzle6-adapter": "^1.1",
-                "symfony/console": "^2.8|^3|^4",
+                "symfony/console": "^2.8|^3|^4|^5",
                 "symfony/filesystem": "^2.8|^3|^4"
             },
             "require-dev": {
@@ -709,7 +709,7 @@
                 }
             ],
             "description": "Template project for PHP libraries.",
-            "time": "2019-05-07T21:41:28+00:00"
+            "time": "2020-05-13T17:33:38+00:00"
         },
         {
             "name": "grasmash/expander",

@@ -13,6 +13,8 @@ class FilterManager implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
+    protected $filters = [];
+
     /**
      * Instantiate requested filters.
      *

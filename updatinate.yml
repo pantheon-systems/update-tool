@@ -20,14 +20,13 @@ php-net:
   download-url: http://php.net/distributions/php-{version}.tar.gz
 
 projects:
+  cos-php:
+    repo: git@github.com:pantheon-systems/cos-runtime-php.git
+    path: ${working-copy-path}/cos-php
+    #fork: git@github.com:pantheon-circleci/cos-runtime-php.git
   rpmbuild-php:
     repo: git@github.com:pantheon-systems/rpmbuild-php.git
     path: ${working-copy-path}/rpmbuild-php
-  php-cookbook:
-    repo: git@github.com:pantheon-systems/infrastructure.git
-    path: ${working-copy-path}/infrastructure
-    src: pantheon-cookbooks/php/libraries/php.rb
-    fork: git@github.com:pantheon-circleci/infrastructure.git
   wp:
     repo: git@github.com:pantheon-systems/WordPress.git
     path: ${working-copy-path}/WordPress

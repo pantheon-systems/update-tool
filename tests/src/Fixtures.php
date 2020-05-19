@@ -93,14 +93,6 @@ class Fixtures
         return WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $this->api());
     }
 
-    public function phpCookbookWorkingCopy()
-    {
-        $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
-        $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
-
-        return WorkingCopy::clone($php_cookbook_url, $php_cookbook_dir, $this->api());
-    }
-
     public function closeAllOpenPullRequests($remote_name, $as = 'default')
     {
         $api = $this->api($as);
@@ -122,13 +114,6 @@ class Fixtures
         $rpmbuild_php_fixture = $this->rpmbuildPhpFixture();
 
         $this->forceReinitialize($rpmbuild_php_url, $rpmbuild_php_dir, $rpmbuild_php_fixture, $api);
-
-        $php_cookbook_url = $this->getConfig()->get('projects.php-cookbook.repo');
-        $php_cookbook_dir = $this->getConfig()->get('projects.php-cookbook.path');
-
-        $php_cookbook_fixture = $this->phpCookbookFixture();
-
-        $this->forceReinitialize($php_cookbook_url, $php_cookbook_dir, $php_cookbook_fixture, $api);
     }
 
     protected function forceReinitialize($url, $dir, $fixture, $api)
@@ -182,7 +167,7 @@ class Fixtures
 
         // Make extra-sure that no one accidentally calls the tests on a non-fixture repo
         if (strpos($url, 'fixture') === false) {
-            throw new \Exception('WorkingCopy::forceReinitializeFixture requires url to contain the string "fixture" to avoid accidental deletion of non-fixture repositories.');
+            throw new \Exception('WorkingCopy::forceReinitializeFixture requires url to contain the string "fixture" to avoid accidental deletion of non-fixture repositories. Provided fixture: ' . $url);
         }
 
         // TODO: check to see if the fixture repository has never been initialized
