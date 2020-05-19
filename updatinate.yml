@@ -17,7 +17,7 @@ github:
     me:
       path: ${env.HOME}/.github-token
 php-net:
-  download-url: http://php.net/distributions/php-{version}.tar.gz
+  download-url: https://php.net/distributions/php-{version}.tar.gz
 
 projects:
   cos-php:
@@ -48,7 +48,7 @@ projects:
       instructions: |
         Update from WordPress {{original-version}} to WordPress {{update-version}}.
 
-        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-7), and then visit the test site and confirm that the correct version of WordPress was, in fact, installed and tested.
+        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/WordPress), and then visit the test site and confirm that the correct version of WordPress was, in fact, installed and tested.
 
         Optionally, you may also create your own test site:
 
@@ -76,7 +76,7 @@ projects:
       instructions: |
         Update from WordPress {{original-version}} to WordPress {{update-version}}.
 
-        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-7), and then visit the test site and confirm that the correct version of WordPress was, in fact, installed and tested.
+        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/WordPress), and then visit the test site and confirm that the correct version of WordPress was, in fact, installed and tested.
 
         Optionally, you may also create your own test site:
 
