@@ -105,6 +105,13 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     /**
      * @inheritdoc
      */
+    public function postCommit(WorkingCopy $updatedProject, array $parameters)
+    {
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function complete(array $parameters)
     {
     }
