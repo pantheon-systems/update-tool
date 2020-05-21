@@ -297,6 +297,12 @@ class WorkingCopy implements LoggerAwareInterface
         return $this;
     }
 
+    public function cherryPick($sha)
+    {
+        $this->git('cherry-pick {sha}', ['sha' => $sha]);
+        return $this;
+    }
+
     /**
      * Reset to the specified reference.
      */
@@ -375,6 +381,11 @@ class WorkingCopy implements LoggerAwareInterface
     public function branch($ref = 'HEAD')
     {
         return trim(implode("\n", $this->git('rev-parse --abbrev-ref {ref}', ['ref' => $ref])));
+    }
+
+    public function revParse($ref)
+    {
+        return trim(implode("\n", $this->git('rev-parse {ref}', ['ref' => $ref])));
     }
 
     /**

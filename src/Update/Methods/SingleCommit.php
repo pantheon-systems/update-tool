@@ -68,6 +68,28 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         return $this->updatedProject;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function postCommit(WorkingCopy $updatedProject, array $parameters)
+    {
+        $this->filters->postCommit($updatedProject, $parameters);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function complete(array $parameters)
+    {
+        // Restore the original project to avoid dirtying our cache
+        // TODO: Maybe we should just remove it
+        $this->originalProject->take($this->updatedProject);
+
+        // Remove the updated project local working copy, as it is no
+        // longer usable
+        $this->updatedProject->remove();
+    }
+
     protected function fetchUpstream(array $parameters)
     {
         if (!empty($this->download_url)) {
@@ -118,9 +140,6 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $upstream_working_copy
             ->setLogger($this->logger);
 
-        // Run 'composer install' if necessary
-        $this->composerInstall($upstream_working_copy->dir());
-
         // Confirm that the local working copy of the upstream has checked out $latest
         $version_info = new VersionTool();
         $info = $version_info->info($upstream_working_copy->dir());
@@ -133,33 +152,5 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         }
 
         return $upstream_working_copy;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function complete(array $parameters)
-    {
-        // Restore the original project to avoid dirtying our cache
-        // TODO: Maybe we should just remove it
-        $this->originalProject->take($this->updatedProject);
-
-        // Remove the updated project local working copy, as it is no
-        // longer usable
-        $this->updatedProject->remove();
-    }
-
-    /**
-     * Run 'composer install' if there is a 'composer json' in the specified directory.
-     */
-    protected function composerInstall($dir)
-    {
-        if (!file_exists("$dir/composer.json")) {
-            return;
-        }
-
-        $this->logger->notice("Running composer install");
-
-        passthru("composer --working-dir=$dir -q install --prefer-dist --no-dev --optimize-autoloader");
     }
 }

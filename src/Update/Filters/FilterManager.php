@@ -5,6 +5,7 @@ namespace Updatinate\Update\Filters;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
+use Updatinate\Git\WorkingCopy;
 
 /**
  * Manage a collection of filters.
@@ -33,7 +34,7 @@ class FilterManager implements LoggerAwareInterface
     }
 
     /**
-     * Run the action on each of our filters in turn.
+     * Run the filter action on each of our filters in turn.
      *
      * @param string $src
      *   Path to source of site being updated
@@ -45,7 +46,26 @@ class FilterManager implements LoggerAwareInterface
     public function apply($src, $dest, $parameters)
     {
         foreach ($this->filters as $filter) {
-            $filter->action($src, $dest, $parameters);
+            if ($filter instanceof UpdateFilterInterface) {
+                $filter->action($src, $dest, $parameters);
+            }
+        }
+    }
+
+    /**
+     * Call the post commit method on each filters.
+     *
+     * @param WorkingCopy $updatedProject
+     *   The updated project, after the update commit has been made.
+     * @param string[] $parameters
+     *   Map of named parameters
+     */
+    public function postCommit(WorkingCopy $updatedProject, array $parameters)
+    {
+        foreach ($this->filters as $filter) {
+            if ($filter instanceof PostCommitInterface) {
+                $filter->postCommit($updatedProject, $parameters);
+            }
         }
     }
 }

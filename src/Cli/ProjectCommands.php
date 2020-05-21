@@ -148,9 +148,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     /**
      * @command project:upstream:update
      */
-    public function projectUpstreamUpdate($remote, $options = ['as' => 'default'])
+    public function projectUpstreamUpdate($remote, $options = ['as' => 'default', 'pr' => true])
     {
         $api = $this->api($options['as']);
+        $make_pr = $options['pr'];
 
         // Get references to the remote repo and the upstream repo
         $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
@@ -164,7 +165,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Determine the major version of the upstream repo
         $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
         $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
-        $major = preg_replace('#\..*#', '', $major);
         // We haven't cloned the repo yet, so look at the remote tags to
         // determine our version.
         $current = $remote_repo->latest($major, empty($update_parameters['allow-pre-release']), '');
@@ -216,7 +216,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             return;
         }
 
-        $this->logger->notice("Latest version of {upstream} is {latest}.", ['upstream' => $upstream, 'latest' => $latest]);
+        $this->logger->notice("Latest version of {upstream} {major} is {latest}.", ['upstream' => $upstream, 'major' => $major, 'latest' => $latest]);
 
         // Create a commit message.
         $upstream_label = ucfirst($upstream);
@@ -300,11 +300,23 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $interpolator = new Interpolator();
         $body = $interpolator->mustInterpolate($replacements, $instructions);
 
-        // Commit, push, and make the PR
+        // Commit onto the branch
         $updated_project
             ->createBranch($branch, $main_branch, true)
             ->add('.')
-            ->commit($message)
+            ->commit($message);
+
+        // Give the updater a chance to do something after the commit.
+        $updater->postCommit($updated_project, $update_parameters);
+
+        // If we aren't going to make a PR, then exit dirty.
+        if (!$make_pr) {
+            $this->logger->notice("Updated project can be found at {dir}.", ['dir' => $updated_project->dir()]);
+            return;
+        }
+
+        // Push and make the PR. Close similar PRs.
+        $updated_project
             ->forcePush()
             ->pr($message, $body, $main_branch);
 
