@@ -30,6 +30,11 @@ interface UpdateMethodInterface
     public function update(WorkingCopy $project, array $parameters);
 
     /**
+     * Modify the updated project after the update commit is made.
+     */
+    public function postCommit(WorkingCopy $updatedProject, array $parameters);
+
+    /**
      * Do any cleanup tasks required after an update function completes.
      */
     public function complete(array $parameters);

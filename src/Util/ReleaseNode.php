@@ -87,12 +87,12 @@ class ReleaseNode
         $upstream = $config->get("projects.$remote.upstream.project", null);
         $remote_repo = $this->createRemote($config, $upstream ?: $remote);
 
+        $tag_prefix = $config->get("projects.$remote.upstream.tag-prefix", '');
         if (!empty($version)) {
-            if (!$remote_repo->has($version)) {
+            if (!$remote_repo->has("$version") && !$remote_repo->has("$tag_prefix$version")) {
                 throw new \Exception("$version is not a valid release.");
             }
         } else {
-            $tag_prefix = $config->get("projects.$remote.upstream.tag-prefix", '');
             $major = $config->get("projects.$remote.upstream.major", $major);
             // TODO: We've lost the distinction of 'version' vs. 'tag' here.
             // e.g. in Pressflow6, '{version}' is '6.46' and '{tag}' would be

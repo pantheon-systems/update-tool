@@ -44,6 +44,8 @@ projects:
           - pantheon.upstream.yml
           - wp-config.php
           - wp-content/mu-plugins/pantheon
+      update-filters:
+        - CopyPlatformAdditions
     pr:
       instructions: |
         Update from WordPress {{original-version}} to WordPress {{update-version}}.
@@ -100,6 +102,50 @@ projects:
       major: '[4-9]'
       version-pattern: '#.#.-'
       update-method: WpCliUpdate
+  wordpress-composer:
+    repo: git@github.com:pantheon-systems/wordpress-composer.git
+    path: ${working-copy-path}/wordpress-composer
+    source:
+      project: wp
+      version-pattern: '^5'
+      update-parameters:
+      update-parameters:
+        rsync:
+          options: '-ravz --delete'
+          exclusions:
+            - .git
+        unwanted:
+          - wp-config.php
+      update-filters:
+        - RsyncFromSource
+        - CopyTemplateAdditions
+        - RemoveUnwanted
+  drops-7-composer:
+    repo: git@github.com:pantheon-systems/drops-7-composer.git
+    path: ${working-copy-path}/drops-7-composer
+    source:
+      project: drops-7
+      version-pattern: '^7'
+      update-filters:
+        - RsyncFromSource
+        - CopyTemplateAdditions
+  drops-8-scaffolding:
+    repo: git@github.com:pantheon-systems/drops-8-scaffolding.git
+    path: ${working-copy-path}/drops-8-scaffolding
+    source:
+      project: drops-8
+      version-pattern: '^8.6'
+      update-parameters:
+        rsync:
+          options: '-ravz --delete'
+          exclusions:
+            - .git
+            - core
+            - vendor
+            - composer.lock
+      update-filters:
+        - RsyncFromSource
+        - RenameProject
   drops-8:
     repo: git@github.com:pantheon-systems/drops-8.git
     path: ${working-copy-path}/drops-8
@@ -121,7 +167,9 @@ projects:
           - sites/default/settings.pantheon.php
           - sites/default/settings.php
       update-filters:
+        - OptimizeAutoloader
         - CopyPlatformAdditions
+        - RemoveDrupalOrgPackagingInfo
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
@@ -141,6 +189,42 @@ projects:
           - Push your files back up to Pantheon.
           - Switch back to sftp mode.
           - Visit your site and step through the installation process.
+  drops-8-previous:
+    repo: git@github.com:pantheon-systems/drops-8.git
+    path: ${working-copy-path}/drops-8
+    main-branch: previous-minor
+    upstream:
+      project: drupal
+      major: '8\.7'
+      update-method: SingleCommit
+      update-parameters:
+        platform-additions:
+          - .drush-lock-update
+          - .gitignore
+          - pantheon.upstream.yml
+          - drush/example.drushrc.php
+          - sites/default/config/.htaccess
+          - sites/default/config/README.txt
+          - sites/default/default.services.pantheon.preproduction.yml
+          - sites/default/settings.pantheon.php
+          - sites/default/settings.php
+      update-filters:
+        - OptimizeAutoloader
+        - CopyPlatformAdditions
+        - RemoveDrupalOrgPackagingInfo
+        - ApplyCircleTests
+    pr:
+      instructions: |
+        Update from Drupal {{original-version}} to Drupal {{update-version}}.
+
+        DO NOT MERGE THIS PR.
+        
+        Instead:
+        
+        - check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-8)
+        - Visit the test site and confirm that the correct version of Drupal was, in fact, installed and tested.
+        - Cherry-pick commit ~2 onto the previous-minor branch
+        - Tag and push manually
   drupal-9-branch-on-drops-8:
     repo: git@github.com:pantheon-systems/drops-8.git
     path: ${working-copy-path}/drupal-9-branch-on-drops-8
@@ -167,8 +251,10 @@ projects:
           'install failure': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-1--core-install-error.patch"
           'db version': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-2--mariadb-version.patch"
       update-filters:
+        - OptimizeAutoloader
         - CopyPlatformAdditions
         - ApplyPlatformPatches
+        - RemoveDrupalOrgPackagingInfo
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
@@ -195,9 +281,11 @@ projects:
           'install failure': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-1--core-install-error.patch"
           'db version': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-2--mariadb-version.patch"
       update-filters:
+        - OptimizeAutoloader
         - CopyPlatformAdditions
         - AddComposerDependencies
         - ApplyPlatformPatches
+        - RemoveDrupalOrgPackagingInfo
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
@@ -226,7 +314,9 @@ projects:
         platform-patches:
           - https://raw.githubusercontent.com/pantheon-systems/drops-7/patches/drops-7-pantheon.patch
       update-filters:
+        - CopyPlatformAdditions
         - ApplyPlatformPatches
+        - RemoveDrupalOrgPackagingInfo
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
@@ -269,7 +359,9 @@ projects:
         platform-patches:
           - https://raw.githubusercontent.com/pantheon-systems/drops-6/patches/drops-6-pantheon.patch
       update-filters:
+        - CopyPlatformAdditions
         - ApplyPlatformPatches
+        - RemoveDrupalOrgPackagingInfo
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
@@ -317,7 +409,7 @@ projects:
     release-node:
       template: 'https://github.com/d6lts/drupal/releases/tag/{version}'
   drupal:
-    repo: https://git.drupalcode.org/project/drupal.git/
+    repo: https://git.drupalcode.org/project/drupal.git
     path: ${working-copy-path}/drupal
     release-node:
 #      url: https://www.drupal.org/project/drupal

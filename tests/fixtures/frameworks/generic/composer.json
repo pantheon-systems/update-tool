@@ -1,0 +1,13 @@
+{
+    "name": "org/generic",
+    "description": "Generic framework fixture.",
+    "type": "project",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        }
+    },
+    "license": [
+        "GPL-2.0+"
+    ]
+}
