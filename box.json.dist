@@ -1,5 +1,5 @@
 {
   "main": "updatinate",
   "output": "updatinate.phar",
-  "files": ["updatinate", "VERSION"]
+  "files": ["updatinate", "VERSION","updatinate.yml"]
 }

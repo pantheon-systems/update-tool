@@ -42,6 +42,39 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
+     * Show a list of available projects.
+     *
+     * @command project:list
+     *
+     * @return array
+     */
+    public function projectList($options = ['format' => 'list'])
+    {
+        $projects = $this->getConfig()->get("projects", []);
+        if (empty($projects)) {
+            throw new \Exception("No projects defined.");
+        }
+        return array_keys($projects);
+    }
+
+    /**
+     * Show the metadata for the requested project.
+     *
+     * @command project:info
+     * @param string $remote
+     *
+     * @return array
+     */
+    public function projectInfo($remote, $options = ['format' => 'yaml'])
+    {
+        $info = $this->getConfig()->get("projects.$remote", []);
+        if (empty($info)) {
+            throw new \Exception("Project $remote not found.");
+        }
+        return $info;
+    }
+
+    /**
      * Show the latest available releases for the specified project.
      *
      * @command project:latest

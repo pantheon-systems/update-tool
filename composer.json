@@ -21,9 +21,9 @@
     "require": {
         "php": ">=7.1",
         "composer/semver": "^2.0",
-        "consolidation/robo": "^1.2.3",
+        "consolidation/robo": "^2.0.5",
         "consolidation/version-tool": "^0.1.8",
-        "g1a/hubph": "^0.3.4",
+        "g1a/hubph": "^0.3.6",
         "php-http/guzzle6-adapter": "^1.1",
         "symfony/console": "^2.8|^3|^4"
     },
