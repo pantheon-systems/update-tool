@@ -172,7 +172,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
             if ($options['push']) {
                 $this->logger->notice("Push tag {version} to {target}", ['version' => $version, 'target' => $remote_repo->projectWithOrg()]);
-               $project_working_copy->push('origin', $version);
+                $project_working_copy->push('origin', $version);
             }
         }
     }
