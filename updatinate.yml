@@ -102,6 +102,45 @@ projects:
       major: '[4-9]'
       version-pattern: '#.#.-'
       update-method: WpCliUpdate
+  wordpress-composer:
+    repo: git@github.com:pantheon-systems/wordpress-composer.git
+    path: ${working-copy-path}/wordpress-composer
+    source:
+      project: wp
+      version-pattern: '^5'
+      update-parameters:
+        unwanted:
+          - wp-config.php
+      update-filters:
+        - RsyncFromSource
+        - CopyTemplateAdditions
+        - RemoveUnwanted
+  drops-7-composer:
+    repo: git@github.com:pantheon-systems/drops-7-composer.git
+    path: ${working-copy-path}/drops-7-composer
+    source:
+      project: drops-7
+      version-pattern: '^7'
+      update-filters:
+        - RsyncFromSource
+        - CopyTemplateAdditions
+  drops-8-scaffolding:
+    repo: git@github.com:pantheon-systems/drops-8-scaffolding.git
+    path: ${working-copy-path}/drops-8-scaffolding
+    source:
+      project: drops-8
+      version-pattern: '^8.6'
+      update-parameters:
+        rsync:
+          options: '-ravz --delete'
+          exclusions:
+            - .git
+            - core
+            - vendor
+            - composer.lock
+      update-filters:
+        - RsyncFromSource
+        - RenameProject
   drops-8:
     repo: git@github.com:pantheon-systems/drops-8.git
     path: ${working-copy-path}/drops-8
@@ -365,7 +404,7 @@ projects:
     release-node:
       template: 'https://github.com/d6lts/drupal/releases/tag/{version}'
   drupal:
-    repo: https://git.drupalcode.org/project/drupal.git/
+    repo: https://git.drupalcode.org/project/drupal.git
     path: ${working-copy-path}/drupal
     release-node:
 #      url: https://www.drupal.org/project/drupal

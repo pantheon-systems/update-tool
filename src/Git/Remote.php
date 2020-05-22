@@ -2,6 +2,7 @@
 
 namespace Updatinate\Git;
 
+use Composer\Semver\Semver;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
@@ -87,22 +88,47 @@ class Remote implements LoggerAwareInterface
      *
      * @return array
      */
-    public function tags($filter, $stable, $tag_prefix)
+    public function tags($constraint_arg, $stable, $tag_prefix)
     {
-        $tags = $this->git('ls-remote --tags --refs {remote}', ['remote' => $this->remote]);
+        $filter = $this->appearsToBeSemver($constraint_arg) ? '' : $constraint_arg;
+        $version_constraints = $this->appearsToBeSemver($constraint_arg) ? $constraint_arg : '*';
         $trailing = $stable ? '[0-9.]*' : '.*';
+        $tags = $this->git('ls-remote --tags --refs {remote}', ['remote' => $this->remote]);
         $regex = "#([^ ]+)[ \t]+refs/tags/$tag_prefix($filter$trailing\$)#";
         $result = [];
         foreach ($tags as $tagLine) {
             if (preg_match($regex, $tagLine, $matches)) {
                 $sha = $matches[1];
                 $tag = $matches[2];
-                $result[$tag] = ['ref' => $sha];
+                if ($this->satisfies($tag, $version_constraints)) {
+                    $result[$tag] = ['ref' => $sha];
+                }
             }
         }
         // Sort result by keys using natural order
         uksort($result, "strnatcmp");
         return $result;
+    }
+
+    protected function satisfies($tag, $version_constraints)
+    {
+        // If we are using a regex rather than semver, then pass anything.
+        if ($version_constraints == '*') {
+            return true;
+        }
+
+        try {
+            return Semver::satisfies($tag, $version_constraints);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    // @deprecated: we should just use semver everywhere, not regex.
+    // The downside to this theory is that WordPress doesn't use semver.
+    protected function appearsToBeSemver($arg)
+    {
+        return ($arg[0] == '^') || ($arg[0] == '~');
     }
 
     public function releases($majorVersion /*= '[0-9]+'*/, $stable, $tag_prefix)

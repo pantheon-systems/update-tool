@@ -2,6 +2,7 @@
 
 namespace Updatinate\Cli;
 
+use Composer\Semver\Semver;
 use Consolidation\Config\Util\Interpolator;
 use Consolidation\OutputFormatters\StructuredData\PropertyList;
 use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
@@ -83,72 +84,113 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
+     * @command project:derivative:update
+     */
+    public function projectDerivativeUpdate($remote, $options = ['as' => 'default', 'push' => true, 'check' => false])
+    {
+        $api = $this->api($options['as']);
+
+        $upstream = $this->getConfig()->get("projects.$remote.source.project");
+        if (empty($upstream)) {
+            throw new \Exception('Derivative project cannot be updated; it is missing a source.');
+        }
+
+        $remote_repo = $this->createRemote($remote, $api);
+        $upstream_repo = $this->createRemote($upstream, $api);
+
+        $update_parameters = $this->getConfig()->get("projects.$remote.source.update-parameters", []);
+        $update_parameters['meta']['name'] = $remote_repo->projectWithOrg();
+
+        $version_pattern = $this->getConfig()->get("projects.$remote.source.version-pattern", '#.#.#');
+        $versionPatternRegex = $this->versionPatternRegex($version_pattern);
+
+
+
+        $source_releases = $upstream_repo->tags($versionPatternRegex, empty($update_parameters['allow-pre-release']), '');
+        $existing_releases = $remote_repo->tags($versionPatternRegex, empty($update_parameters['allow-pre-release']), '');
+
+        $this->logger->notice("Finding missing derived tags for {project}", ['project' => $remote_repo->projectWithOrg()]);
+
+        // Find versions in the source that have not been created in the target.
+        $versions_to_process = [];
+        $previous_version = 'master'; // @todo: what's our best default?
+        foreach ($source_releases as $source_version => $info) {
+            if (array_key_exists($source_version, $existing_releases)) {
+                $this->logger->notice("{version} already exists", ['version' => $source_version]);
+            } else {
+                $this->logger->notice("{version} needs to be created", ['version' => $source_version]);
+                $versions_to_process[$source_version] = $previous_version;
+            }
+            $previous_version = $source_version;
+        }
+
+        if (empty($versions_to_process)) {
+            $this->logger->notice("Everything is up-to-date.");
+            return;
+        }
+
+        // If we are running in check-only mode, exit now, before we do anything.
+        if ($options['check']) {
+            return;
+        }
+
+        $project_url = $this->getConfig()->get("projects.$remote.repo");
+        $project_dir = $this->getConfig()->get("projects.$remote.path");
+        $project_fork = $this->getConfig()->get("projects.$remote.fork");
+        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
+
+        $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
+        $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
+
+        $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
+
+        $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
+
+        $upstream_working_copy = WorkingCopy::shallowClone($upstream_url, $upstream_dir, $main_branch, 1, $api);
+
+        $project_working_copy->fetchTags();
+        $upstream_working_copy->fetchTags();
+
+        // Create the filters
+        $filter_manager = $this->getFilters($this->getConfig()->get("projects.$remote.source.update-filters"));
+
+        foreach ($versions_to_process as $version => $previous_version) {
+            $project_working_copy->switchBranch($previous_version);
+            $upstream_working_copy->switchBranch($version);
+
+            $this->logger->notice("Processing files from {upstream} {version} over {target} {previous}", ['upstream' => $upstream_repo->projectWithOrg(), 'version' => $version, 'target' => $remote_repo->projectWithOrg(), 'previous' => $previous_version]);
+
+            // Apply the filters
+            $filter_manager->apply($upstream_working_copy->dir(), $project_working_copy->dir(), $update_parameters);
+
+            // Commit and tag
+            $comment = $upstream_working_copy->message();
+            $commit_date = $upstream_working_copy->commitDate();
+            $project_working_copy->addAll();
+            $project_working_copy->commitBy($comment, 'Pantheon Automation <bot@getpantheon.com>', $commit_date);
+            $project_working_copy->tag($version);
+
+            if ($options['push']) {
+                $this->logger->notice("Push tag {version} to {target}", ['version' => $version, 'target' => $remote_repo->projectWithOrg()]);
+               $project_working_copy->push('origin', $version);
+            }
+        }
+    }
+
+    /**
      * Check to see if there is an update available on the upstream of the specified project.
      *
      * @command project:upstream:check
      */
     public function projectCheck($remote, $options = ['as' => 'default'])
     {
-        $api = $this->api($options['as']);
-
-        // Get references to the remote repo and the upstream repo
-        $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
-        if (empty($upstream)) {
-            throw new \Exception('Project cannot be updated; it is missing an upstream.');
-        }
-
-        $remote_repo = $this->createRemote($remote, $api);
-        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
-
-        // Determine the major version of the upstream repo
-        $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
-        $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
-        $major = preg_replace('#\..*#', '', $major);
-        // We haven't cloned the repo yet, so look at the remote tags to
-        // determine our version.
-        $current = $remote_repo->latest($major, empty($update_parameters['allow-pre-release']), '');
-        $this->logger->notice("Considering updates for {project}", ['project' => $remote_repo->projectWithOrg()]);
-
-        // Create the filters
-        $filters = $this->getConfig()->get("projects.$remote.upstream.update-filters");
-        $filter_manager = new FilterManager();
-        $filter_manager->setLogger($this->logger);
-        $filter_manager->getFilters($filters);
-
-        // Find an update method and create an updater
-        $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
-        $updater = $this->getUpdater($update_method, $api);
-        if (empty($updater)) {
-            throw new \Exception('Project cannot be updated; it is missing an update method.');
-        }
-        $updater->setApi($api);
-        $updater->setLogger($this->logger);
-        $updater->setFilters($filter_manager);
-
-        // Allow the updator to configure itself prior to the update.
-        $updater->configure($this->getConfig(), $remote);
-
-        $this->logger->notice("Check latest version for {upstream}.", ['upstream' => $upstream]);
-
-        // Determine the latest version in the same major series in the upstream
-        $latest = $updater->findLatestVersion($major, $tag_prefix, $update_parameters);
-
-        // TODO: Everything above is a duplicate of the first part of
-        // the projectUpstreamUpdate method. Encapsulating it all into
-        // a worker class with accessors for all of the collected variables
-        // would be useful.
-
-        if ($remote_repo->has($latest)) {
-            $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
-            return;
-        }
-        $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
+        $this->projectUpstreamUpdate($remote, $options + ['check' => true]);
     }
 
     /**
      * @command project:upstream:update
      */
-    public function projectUpstreamUpdate($remote, $options = ['as' => 'default', 'pr' => true])
+    public function projectUpstreamUpdate($remote, $options = ['as' => 'default', 'pr' => true, 'check' => false])
     {
         $api = $this->api($options['as']);
         $make_pr = $options['pr'];
@@ -161,6 +203,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $remote_repo = $this->createRemote($remote, $api);
         $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
+        $update_parameters['meta']['name'] = $remote_repo->projectWithOrg();
 
         // Determine the major version of the upstream repo
         $tag_prefix = $this->getConfig()->get("projects.$remote.upstream.tag-prefix", '');
@@ -171,10 +214,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $this->logger->notice("Considering updates for {project}", ['project' => $remote_repo->projectWithOrg()]);
 
         // Create the filters
-        $filters = $this->getConfig()->get("projects.$remote.upstream.update-filters");
-        $filter_manager = new FilterManager();
-        $filter_manager->setLogger($this->logger);
-        $filter_manager->getFilters($filters);
+        $filter_manager = $this->getFilters($this->getConfig()->get("projects.$remote.upstream.update-filters"));
 
         // Find an update method and create an updater
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
@@ -194,11 +234,16 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Determine the latest version in the same major series in the upstream
         $latest = $updater->findLatestVersion($major, $tag_prefix, $update_parameters);
 
-        // TODO: Remove. If/else here temporary, for debugging.
+        // Show what we are about to do
         if ($remote_repo->has($latest)) {
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
         } else {
             $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
+        }
+
+        // If we are running in check-only mode, exit now, before we do anything.
+        if ($options['check']) {
+            return;
         }
 
         // Convert $latest to a version number matching $version_pattern,
@@ -336,16 +381,41 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $updater->complete($update_parameters);
     }
 
+    protected function getFilters($filters)
+    {
+        $filter_manager = new FilterManager();
+        $filter_manager->setLogger($this->logger);
+        $filter_manager->getFilters($filters);
+
+        return $filter_manager;
+    }
+
     protected function versionAndTagFromLatest($latest, $tag_prefix, $version_pattern)
     {
         $latestTag = "$tag_prefix$latest";
-        $versionPatternRegex = str_replace('.', '\\.', $version_pattern);
-        $versionPatternRegex = str_replace('#', '[0-9]+', $versionPatternRegex);
+        $versionPatternRegex = $this->versionPatternRegex($version_pattern);
         if (preg_match("#$versionPatternRegex#", $latest, $matches)) {
             $latest = $matches[0];
         }
 
         return [$latest, $latestTag];
+    }
+
+    protected function versionPatternRegex($version_pattern)
+    {
+        if ($this->appearsToBeSemver($version_pattern)) {
+            return $version_pattern;
+        }
+        $versionPatternRegex = str_replace('.', '\\.', $version_pattern);
+        $versionPatternRegex = str_replace('#', '[0-9]+', $versionPatternRegex);
+
+        return $versionPatternRegex;
+    }
+
+    // @deprecated: we should just use semver everywhere, not regex
+    protected function appearsToBeSemver($arg)
+    {
+        return ($arg[0] == '^') || ($arg[0] == '~');
     }
 
     protected function getUpdater($update_method, $api)

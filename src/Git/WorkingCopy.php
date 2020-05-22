@@ -251,6 +251,24 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Fetch from the specified remote.
+     */
+    public function fetch($remote, $branch)
+    {
+        $this->git('fetch {remote} {branch}', ['remote' => $remote, 'branch' => $branch]);
+        return $this;
+    }
+
+    /**
+     * Fetch from the specified remote.
+     */
+    public function fetchTags($remote = 'origin')
+    {
+        $this->fetch($remote, '--tags');
+        return $this;
+    }
+
+    /**
      * Pull from the specified remote.
      */
     public function pull($remote, $branch)
@@ -350,6 +368,15 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Stage everything
+     */
+    public function addAll()
+    {
+        $this->git('add -A --force .');
+        return $this;
+    }
+
+    /**
      * Commit the staged changes.
      *
      * @param string $message
@@ -363,6 +390,21 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Commit the staged changes by a specified user at specified date.
+     *
+     * @param string $message
+     * @param string $author
+     * @param string $commit_date
+     * @param bool $amend
+     */
+    public function commitBy($message, $author, $commit_date, $amend = false)
+    {
+        $flag = $amend ? '--amend ' : '';
+        $this->git("commit {flag}-m '{message}' --author='{author}' --date='{date}'", ['message' => $message, 'author' => $author, 'date' => $commit_date, 'flag' => $flag]);
+        return $this;
+    }
+
+    /**
      * Ammend the top commit without altering the message.
      */
     public function amend()
@@ -371,11 +413,27 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Add a tag
+     */
+    public function tag($tag)
+    {
+        $this->git("tag $tag");
+    }
+
+    /**
      * Return the commit message for the sprecified ref
      */
     public function message($ref = 'HEAD')
     {
         return trim(implode("\n", $this->git('log --format=%B -n 1 {ref}', ['ref' => $ref])));
+    }
+
+    /**
+     * Return the commit date for the sprecified ref
+     */
+    public function commitDate($ref = 'HEAD')
+    {
+        return trim(implode("\n", $this->git('log -1 --date=iso --pretty=format:"%cd" {ref}', ['ref' => $ref])));
     }
 
     public function branch($ref = 'HEAD')

@@ -9,6 +9,8 @@ use Symfony\Component\Filesystem\Filesystem;
 /**
  * CopyPlatformAdditions is an update filter that will copy files
  * from the source branch onto the branch being updated.
+ *
+ * See also 'RsyncFromSource'
  */
 class CopyPlatformAdditions implements UpdateFilterInterface, LoggerAwareInterface
 {
