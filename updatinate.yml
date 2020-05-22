@@ -109,6 +109,11 @@ projects:
       project: wp
       version-pattern: '^5'
       update-parameters:
+      update-parameters:
+        rsync:
+          options: '-ravz --delete'
+          exclusions:
+            - .git
         unwanted:
           - wp-config.php
       update-filters:

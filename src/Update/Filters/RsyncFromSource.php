@@ -26,8 +26,7 @@ class RsyncFromSource implements UpdateFilterInterface, LoggerAwareInterface
     public function action($src, $dest, $parameters)
     {
         $parameters += ['rsync' => []];
-        $parameters['rsync'] += ['options' => ['-ravz --delete'], 'exclusions' => []];
-
+        $parameters['rsync'] += ['options' => '-ravz --delete', 'exclusions' => []];
         $options = $parameters['rsync']['options'];
         $exclusions = $parameters['rsync']['exclusions'];
         if (!in_array('.git', $exclusions)) {

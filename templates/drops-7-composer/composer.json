@@ -1,0 +1,95 @@
+{
+    "name": "pantheon-systems/drops-7-composer",
+    "description": "Drops-7 with a composer.json file.",
+    "type": "drupal-core",
+    "license": "GPL-2.0-or-later",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "7.x-dev"
+        }
+    },
+    "keywords": [ "Actively maintained" ],
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Cottser",
+            "homepage": "https://www.drupal.org/user/1167326"
+        },
+        {
+            "name": "David_Rothstein",
+            "homepage": "https://www.drupal.org/user/124982"
+        },
+        {
+            "name": "Dries",
+            "homepage": "https://www.drupal.org/user/1"
+        },
+        {
+            "name": "Drupal",
+            "homepage": "https://www.drupal.org/user/3"
+        },
+        {
+            "name": "Fabianx",
+            "homepage": "https://www.drupal.org/user/693738"
+        },
+        {
+            "name": "Gábor Hojtsy",
+            "homepage": "https://www.drupal.org/user/4166"
+        },
+        {
+            "name": "alexpott",
+            "homepage": "https://www.drupal.org/user/157725"
+        },
+        {
+            "name": "catch",
+            "homepage": "https://www.drupal.org/user/35733"
+        },
+        {
+            "name": "cilefen",
+            "homepage": "https://www.drupal.org/user/1850070"
+        },
+        {
+            "name": "drumm",
+            "homepage": "https://www.drupal.org/user/3064"
+        },
+        {
+            "name": "effulgentsia",
+            "homepage": "https://www.drupal.org/user/78040"
+        },
+        {
+            "name": "larowlan",
+            "homepage": "https://www.drupal.org/user/395439"
+        },
+        {
+            "name": "lauriii",
+            "homepage": "https://www.drupal.org/user/1078742"
+        },
+        {
+            "name": "stefan.r",
+            "homepage": "https://www.drupal.org/user/551886"
+        },
+        {
+            "name": "mlhess",
+            "homepage": "https://www.drupal.org/user/102818"
+        },
+        {
+            "name": "plach",
+            "homepage": "https://www.drupal.org/user/183211"
+        },
+        {
+            "name": "webchick",
+            "homepage": "https://www.drupal.org/user/24967"
+        },
+        {
+            "name": "xjm",
+            "homepage": "https://www.drupal.org/user/65776"
+        },
+        {
+            "name": "yoroy",
+            "homepage": "https://www.drupal.org/user/41502"
+        }
+    ],
+    "homepage": "https://www.drupal.org/project/drupal",
+    "support": {
+        "source": "http://cgit.drupalcode.org/drupal"
+    }
+}
