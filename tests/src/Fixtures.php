@@ -2,11 +2,13 @@
 
 namespace Updatinate;
 
-use Symfony\Component\Filesystem\Filesystem;
-use Hubph\HubphAPI;
-use Updatinate\Git\WorkingCopy;
-use Updatinate\Git\Remote;
 use Consolidation\Config\Util\EnvConfig;
+use Consolidation\Log\Logger;
+use Hubph\HubphAPI;
+use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Filesystem\Filesystem;
+use Updatinate\Git\Remote;
+use Updatinate\Git\WorkingCopy;
 
 class Fixtures
 {
@@ -16,6 +18,8 @@ class Fixtures
     protected $tmpDirs = [];
     protected $prevEnvs = [];
     protected $config;
+    protected $logOutput;
+    protected $logger;
 
     // Our test fixtures' idea of what the current php releases are, frozen in time.
     const PHP_53_CURRENT = '5.3.29';
@@ -53,6 +57,9 @@ class Fixtures
             $fs->remove($tmpDir);
         }
         $this->tmpDirs = [];
+        $this->logger = null;
+        $this->logOutput = null;
+        $this->config = null;
     }
 
     public function seed()
@@ -76,6 +83,28 @@ class Fixtures
             $this->config->addContext('env', $envConfig);
         }
         return $this->config;
+    }
+
+    /**
+     * Fetch everything that has been logged so far and clear the log buffer.
+     */
+    public function fetchLogOutput()
+    {
+        if (!$this->logOutput) {
+            return '';
+        }
+
+        return $this->logOutput->fetch();
+    }
+
+    public function getLogger()
+    {
+        if (!$this->logger) {
+            $this->logOutput = new BufferedOutput();
+            $this->logger = new Logger($this->logOutput);
+        }
+
+        return $this->logger;
     }
 
     public function api($as = 'default')
@@ -272,24 +301,47 @@ class Fixtures
         return $prevEnvs;
     }
 
+    public function getFrameworkFixture($framework_name)
+    {
+        $fixtureTemplate = $this->getFixture("frameworks/$framework_name");
+        $target = $this->mktmpdir();
+
+        $fs = new Filesystem();
+        $fs->mirror($fixtureTemplate, $target);
+
+        // We do not want to store .git directories in our fixtures,
+        // but we do want them for testing. Rather than `git init`,
+        // just make a placeholder directory that we can test for.
+        // Make a fake branch in case we want to track where this came from.
+        mkdir("$target/.git");
+        file_put_contents("$target/.git/HEAD", 'ref: refs/heads/' . $framework_name);
+
+        return $target;
+    }
+
     protected function fixturesDir()
     {
         return dirname(__DIR__) . '/fixtures';
     }
 
+    protected function getFixture($name)
+    {
+        return $this->fixturesDir() . '/' . $name;
+    }
+
     protected function rpmbuildPhpFixture()
     {
-        return $this->fixturesDir() . '/rpmbuild-php';
+        return $this->getFixture('/rpmbuild-php');
     }
 
     protected function phpCookbookFixture()
     {
-        return $this->fixturesDir() . '/php-cookbook';
+        return $this->getFixture('/php-cookbook');
     }
 
     protected function homeDir()
     {
-        return $this->fixturesDir() . '/home';
+        return $this->getFixture('/home');
     }
 
     protected function testDir()

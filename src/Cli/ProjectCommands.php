@@ -170,7 +170,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $project_working_copy->commitBy($comment, 'Pantheon Automation <bot@getpantheon.com>', $commit_date);
             $project_working_copy->tag($version);
 
-            if ($options['push']) {
+            if (!empty($options['push'])) {
                 $this->logger->notice("Push tag {version} to {target}", ['version' => $version, 'target' => $remote_repo->projectWithOrg()]);
                 $project_working_copy->push('origin', $version);
             }
@@ -193,7 +193,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     public function projectUpstreamUpdate($remote, $options = ['as' => 'default', 'pr' => true, 'check' => false])
     {
         $api = $this->api($options['as']);
-        $make_pr = $options['pr'];
+        $make_pr = !empty($options['pr']);
 
         // Get references to the remote repo and the upstream repo
         $upstream = $this->getConfig()->get("projects.$remote.upstream.project");

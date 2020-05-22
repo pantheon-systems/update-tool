@@ -23,7 +23,7 @@ class RenameProject implements UpdateFilterInterface, LoggerAwareInterface
      */
     public function action($src, $dest, $parameters)
     {
-        $parameters += ['project-name' => [$parameters['meta']['name']]];
+        $parameters += ['project-name' => $parameters['meta']['name']];
 
         $composer_json = json_decode(file_get_contents("$dest/composer.json"), true);
         $composer_json['name'] = $parameters['project-name'];
