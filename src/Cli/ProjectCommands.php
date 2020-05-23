@@ -310,15 +310,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $this->logger->notice("Update message: {msg}", ['msg' => $message]);
 
-        $vids = new VersionIdentifiers();
-        $vids->setVvalPattern($version_pattern);
-        $vids->addVidsFromMessage($message);
-
-        // Check to see if there are any open PRs that have already done this
-        // work, or that are old and need to be closed.
-        list($status, $prs) = $api->prCheck($remote_repo->projectWithOrg(), $vids);
+        // Check to see if there is already a matching PR
+        $prs = $api->matchingPRs($remote_repo->projectWithOrg(), $message, '');
         $existingPRList = $prs->prNumbers();
-        if ($status) {
+        if (!empty($existingPRList)) {
             $this->logger->notice("Pull request already exists for available update {latest}; nothing more to do.", ['latest' => $latest]);
             return;
         }
