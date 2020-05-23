@@ -1,5 +1,6 @@
 {
   "main": "updatinate",
   "output": "updatinate.phar",
-  "files": ["updatinate", "VERSION","updatinate.yml"]
+  "files": ["updatinate", "VERSION","updatinate.yml"],
+  "directories": ["src", "templates","vendor"]
 }
