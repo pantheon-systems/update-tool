@@ -359,7 +359,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
         $updated_version = $info->version();
         if ($updated_version != $latest) {
-            throw new \Exception("Update failed. We expected that the updated version of the project should be $latest, but instead it is $updated_version. " . $updated_project->dir());
+            throw new \Exception("Update failed. We expected that the updated version of the project should be '$latest', but instead it is '$updated_version'. " . $updated_project->dir());
         }
 
         // Give folks instructions on what to do with this update.
