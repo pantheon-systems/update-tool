@@ -267,18 +267,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Determine the latest version in the same major series in the upstream
         $latest = $updater->findLatestVersion($major, $tag_prefix, $update_parameters);
 
-        // Show what we are about to do
-        if ($remote_repo->has($latest)) {
-            $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
-        } else {
-            $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
-        }
-
-        // If we are running in check-only mode, exit now, before we do anything.
-        if ($options['check']) {
-            return;
-        }
-
         // Convert $latest to a version number matching $version_pattern,
         // and put the actual tag name in $latestTag.
         $version_pattern = $this->getConfig()->get("projects.$remote.upstream.version-pattern", '#.#.#');
@@ -295,6 +283,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         $this->logger->notice("Latest version of {upstream} {major} is {latest}.", ['upstream' => $upstream, 'major' => $major, 'latest' => $latest]);
+
+        // If we are running in check-only mode, exit now, before we do anything.
+        if ($options['check']) {
+            return;
+        }
 
         // Create a commit message.
         $upstream_label = ucfirst($upstream);
