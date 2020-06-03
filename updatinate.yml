@@ -278,7 +278,6 @@ projects:
         composer-dependencies:
           pantheon-systems/drupal-integrations: ^9.0.0-alpha2
         platform-patches:
-          'install failure': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-1--core-install-error.patch"
           'db version': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-2--mariadb-version.patch"
       update-filters:
         - OptimizeAutoloader
