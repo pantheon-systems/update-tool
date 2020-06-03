@@ -248,7 +248,6 @@ projects:
           - sites/default/settings.pantheon.php
           - sites/default/settings.php
         platform-patches:
-          'install failure': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-1--core-install-error.patch"
           'db version': "https://raw.githubusercontent.com/stevector/drupal-9-project/master/patches/issue-2--mariadb-version.patch"
       update-filters:
         - OptimizeAutoloader
