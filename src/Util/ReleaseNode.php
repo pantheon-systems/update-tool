@@ -89,8 +89,8 @@ class ReleaseNode
 
         $tag_prefix = $config->get("projects.$remote.upstream.tag-prefix", '');
         if (!empty($version)) {
-            if (!$remote_repo->has("$version") && !$remote_repo->has("$tag_prefix$version")) {
-                throw new \Exception("$version is not a valid release.");
+            if (!$remote_repo->has("$version", $major, $stable, $tag_prefix)) {
+                throw new \Exception("$version is not a valid release. Tag prefix is $tag_prefix.");
             }
         } else {
             $major = $config->get("projects.$remote.upstream.major", $major);

@@ -47,7 +47,9 @@ class FilterManager implements LoggerAwareInterface
     {
         foreach ($this->filters as $filter) {
             if ($filter instanceof UpdateFilterInterface) {
+                $this->logger->notice('Apply filter {filter}', ['filter' => get_class($filter)]);
                 $filter->action($src, $dest, $parameters);
+                $this->logger->notice('Filter applied.');
             }
         }
     }
@@ -64,7 +66,9 @@ class FilterManager implements LoggerAwareInterface
     {
         foreach ($this->filters as $filter) {
             if ($filter instanceof PostCommitInterface) {
+                $this->logger->notice('Post-commit action for {filter}', ['filter' => get_class($filter)]);
                 $filter->postCommit($updatedProject, $parameters);
+                $this->logger->notice('Post-commit action complete.');
             }
         }
     }

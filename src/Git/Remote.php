@@ -154,7 +154,6 @@ class Remote implements LoggerAwareInterface
     public function has($tag_to_check, $majorVersion = '[0-9]+', $stable = false, $tag_prefix = '')
     {
         $tags = $this->releases($majorVersion, $stable, $tag_prefix);
-
         return array_key_exists($tag_to_check, $tags);
     }
 
