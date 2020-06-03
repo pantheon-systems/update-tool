@@ -235,7 +235,7 @@ projects:
       major: 9
       update-method: SingleCommit
       update-parameters:
-        allow-pre-release: true
+        allow-pre-release: false
         platform-additions:
           - .circleci
           - .drush-lock-update
