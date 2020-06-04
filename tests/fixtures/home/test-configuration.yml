@@ -31,6 +31,7 @@ projects:
     path: ${working-copy-path}/drops-8
 #    fork: git@github.com:pantheon-fixtures/drops-8-fork-${nonce}.git
     main-branch: default
+    tag-branch: default
     upstream:
       project: drupal
       major: 8

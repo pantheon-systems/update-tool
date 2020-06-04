@@ -415,9 +415,10 @@ class WorkingCopy implements LoggerAwareInterface
     /**
      * Add a tag
      */
-    public function tag($tag)
+    public function tag($tag, $ref = '')
     {
-        $this->git("tag $tag");
+        $this->git("tag $tag $ref");
+        return $this;
     }
 
     /**

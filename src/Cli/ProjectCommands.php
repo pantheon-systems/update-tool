@@ -282,7 +282,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             return;
         }
 
-        $this->logger->notice("Latest version of {upstream} {major} is {latest}.", ['upstream' => $upstream, 'major' => $major, 'latest' => $latest]);
+        $this->logger->notice("{remote} has an available update: {latest}.", ['remote' => $remote, 'latest' => $latest]);
 
         // If we are running in check-only mode, exit now, before we do anything.
         if ($options['check']) {
@@ -335,15 +335,47 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $this->logger->notice("Pull requests will be made in forked repository {fork}", ['fork' => $fork_url]);
         }
 
+        // Check to see if the version we want to update to exists on the main
+        // branch. The lifecycle is new release -> PR -> merge PR back to main
+        // branch. Then we end up here, to tag the new release.
+        $version_info = new VersionTool();
+        $info = $version_info->info($project_working_copy->dir());
+        if (!$info) {
+            throw new \Exception("Could not figure out version from " . $project_working_copy->dir() . "; maybe project failed to clone / download.");
+        }
+        $main_branch_version = $info->version();
+        if ($main_branch_version != $current) {
+            $this->logger->notice("The version on the {main} branch is {version}, but the latest tag is {current}.", ['version' => $main_branch_version, 'current' => $current, 'main' => $main_branch]);
+            $tag_branch = $this->getConfig()->get("projects.$remote.tag-branch", '');
+            if (empty($tag_branch)) {
+                return;
+            }
+            if ($main_branch_version != $latest) {
+                $this->logger->notice("The latest version is {latest}, which is different than {current}, so I don't know what to do. Aborting.", ['latest' => $latest, 'current' => $current]);
+            }
+            $existing_commit_message = $project_working_copy->message($tag_branch);
+            if (strpos($existing_commit_message, $message) === FALSE) {
+                throw new \Exception("The commit message at the top of the {main} branch does not match the commit message we expect.\n\nExpected: $message\n\nActual: $existing_commit_message");
+            }
+            // Tag it up.
+            $project_working_copy
+                ->tag($latest, $tag_branch)
+                ->push('origin', $latest);
+
+            $this->logger->notice("Tagged version {latest}.", ['latest' => $latest]);
+
+            return;
+        }
+
+        // Do the actual update
         $this->logger->notice("Updating via update method {method} using {class}.", ['method' => $update_method, 'class' => get_class($updater)]);
 
         $updated_project = $updater->update($project_working_copy, $update_parameters);
 
         // Confirm that the updated version of the code is now equal to $latest
-        $version_info = new VersionTool();
         $info = $version_info->info($updated_project->dir());
         if (!$info) {
-            throw new \Exception("Could not figure out version from " . $updated_project->dir() . "; maybe project failed to clone / download.");
+            throw new \Exception("Could not figure out version from " . $updated_project->dir() . "; maybe project failed to update correctly.");
         }
         $updated_version = $info->version();
         if ($updated_version != $latest) {
@@ -392,12 +424,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Once the PR has been submitted, bring our cached project
         // back to the main branch.
         $updated_project->checkout($main_branch);
-
-        // TODO: existing script once again checks to see if it should
-        // pre-tag the scaffolding files here, if it didn't do it above, for
-        // instances where the PR is for a pre-release (as beta / RC pull
-        // requests will never be released).
-        // We should probably do this in a separate command.
 
         $updater->complete($update_parameters);
     }
