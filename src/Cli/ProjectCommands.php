@@ -282,7 +282,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             return;
         }
 
-        $this->logger->notice("{remote} has an available update: {latest}.", ['remote' => $remote, 'latest' => $latest]);
+        $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
 
         // If we are running in check-only mode, exit now, before we do anything.
         if ($options['check']) {

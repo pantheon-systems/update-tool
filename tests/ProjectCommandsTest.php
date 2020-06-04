@@ -57,7 +57,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'drops-8']);
-        $this->assertContains('drops-8 has an available update: 8.6.0', $output);
+        $this->assertContains('drops-8 8.5.6 has an available update: 8.6.0', $output);
 
         // TODO: Is there any reasonable test we can do on project:releases?
 
