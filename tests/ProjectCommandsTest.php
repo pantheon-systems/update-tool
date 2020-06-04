@@ -43,11 +43,11 @@ class ProjectCommandsTest extends CommandsTestBase
      */
     public function testDrops8Update()
     {
-        // Closes any leftover PRs in the fixture repository.
-        $this->fixtures()->closeAllOpenPullRequests('drops-8');
+        // For some reason, this is ineffective.
+        // $this->fixtures()->forceReinitializeDrops8Fixture();
 
-        // Create a fork
-//        $drops8_repo = $this->fixtures()->forkTestRepo('drops-8');
+        // Close the open pull requests.
+        $this->fixtures()->closeAllOpenPullRequests('drops-8');
 
         // Verify the latest releast in our drops-8 and drupal fixtures.
         $output = $this->executeExpectOK(['project:latest', 'drops-8']);
@@ -80,6 +80,33 @@ class ProjectCommandsTest extends CommandsTestBase
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'drops-8']);
         $this->assertContains('[notice] Pull request already exists for available update 8.6.0; nothing more to do.', $output);
+
+        // Project has not been updated yet
+        $output = $this->executeExpectOK(['project:latest', 'drops-8']);
+        $this->assertEquals('8.5.6', $output);
+
+        // These tests pass, but they modify the fixture, and the reset
+        // code does not work. So we skip this for now.
+        if (false) {
+            // Since we closed all open pull requests at the beginning, the only
+            // open PRs that should exist now is the one we just created.
+            $this->fixtures()->mergeAllOpenPullRequests('drops-8');
+
+            // Now project has been updated, but it has not been tagged, so it
+            // looks like it has not been updated.
+            $output = $this->executeExpectOK(['project:latest', 'drops-8']);
+            $this->assertEquals('8.5.6', $output);
+
+            $output = $this->executeExpectOK(['project:upstream:update', 'drops-8']);
+            $this->assertContains('[notice] Tagged version 8.6.0.', $output);
+
+            // Now project has been updated and tagged
+            $output = $this->executeExpectOK(['project:latest', 'drops-8']);
+            $this->assertEquals('8.6.0', $output);
+
+            // Reset again at the end. Except it doesn't work, so skip it.
+            $this->fixtures()->forceReinitializeDrops8Fixture();
+        }
     }
 
     /**

@@ -24,7 +24,7 @@ class RemoveDrupalOrgPackagingInfo implements UpdateFilterInterface, LoggerAware
     {
         $base = "$dest/core";
         if (!is_dir($base)) {
-          $base = $dest;
+            $base = $dest;
         }
         $files = Finder::create()
           ->files()

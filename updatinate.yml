@@ -150,6 +150,7 @@ projects:
     repo: git@github.com:pantheon-systems/drops-8.git
     path: ${working-copy-path}/drops-8
     main-branch: default
+    tag-branch: master
     upstream:
       project: drupal
       major: 8
@@ -189,13 +190,20 @@ projects:
           - Push your files back up to Pantheon.
           - Switch back to sftp mode.
           - Visit your site and step through the installation process.
+  # This target must be updated when a new minor version of Drupal comes out.
+  #   - Update the "upstream.major" item to the previous minor branch, e.g. 8.8
+  #   - Reset the branch 'previous-minor' in drops-8:
+  #     - git checkout master
+  #     - git checkout -B previous-minor 8.8.6 # Update to latest previous minor release
+  #     - git push --force origin previous-minor
+  # Then, commit the change to this file and make a new release as described in the README.
   drops-8-previous:
     repo: git@github.com:pantheon-systems/drops-8.git
     path: ${working-copy-path}/drops-8
     main-branch: previous-minor
     upstream:
       project: drupal
-      major: '8\.7'
+      major: '8\.8'
       update-method: SingleCommit
       update-parameters:
         platform-additions:

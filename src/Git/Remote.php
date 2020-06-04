@@ -88,7 +88,7 @@ class Remote implements LoggerAwareInterface
      *
      * @return array
      */
-    public function tags($constraint_arg, $stable, $tag_prefix)
+    public function tags($constraint_arg, $stable = true, $tag_prefix = '')
     {
         $filter = $this->appearsToBeSemver($constraint_arg) ? '' : $constraint_arg;
         $version_constraints = $this->appearsToBeSemver($constraint_arg) ? $constraint_arg : '*';
@@ -108,6 +108,14 @@ class Remote implements LoggerAwareInterface
         // Sort result by keys using natural order
         uksort($result, "strnatcmp");
         return $result;
+    }
+
+    /**
+     * Delete a tag from the remote
+     */
+    public function delete($tag)
+    {
+        $this->git('push --delete {remote} {tag}', ['remote' => $this->remote, 'tag' => $tag]);
     }
 
     protected function satisfies($tag, $version_constraints)

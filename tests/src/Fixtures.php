@@ -133,6 +133,17 @@ class Fixtures
         $api->prClose($remote_repo->org(), $remote_repo->project(), $allPRs);
     }
 
+    public function mergeAllOpenPullRequests($remote_name, $as = 'default')
+    {
+        $api = $this->api($as);
+
+        $remote_url = $this->getConfig()->get("projects.$remote_name.repo");
+        $remote_repo = Remote::create($remote_url, $api);
+
+        $allPRs = $api->allPRs($remote_repo->org() . '/' . $remote_repo->project());
+        $api->prMerge($remote_repo->org(), $remote_repo->project(), $allPRs, '');
+    }
+
     public function forceReinitializePhpFixtures($as = 'default')
     {
         $api = $this->api($as);
@@ -143,6 +154,31 @@ class Fixtures
         $rpmbuild_php_fixture = $this->rpmbuildPhpFixture();
 
         $this->forceReinitialize($rpmbuild_php_url, $rpmbuild_php_dir, $rpmbuild_php_fixture, $api);
+    }
+
+    public function forceReinitializeDrops8Fixture($as = 'default')
+    {
+        $fixture_repo = 'drops-8';
+        $api = $this->api($as);
+
+        $drops_8_url = $this->getConfig()->get("projects.$fixture_repo.repo");
+        $dir = $this->mktmpdir();
+        rmdir($dir);
+
+        $workingCopy = WorkingCopy::clone($drops_8_url, $dir, $api);
+
+        // Remove any extra tags not in the allowed list.
+        $remote = $workingCopy->remote();
+        $tags = $remote->tags('^8');
+        $allowed_tags = ['8.5.1', '8.5.3', '8.5.4', '8.5.5', '8.5.6'];
+        $unwanted_tags = array_diff(array_keys($tags), $allowed_tags);
+        foreach ($unwanted_tags as $unwanted) {
+            $remote->delete($unwanted);
+        }
+
+        // Reset the default branch back to the state of the default-fixture branch
+        $workingCopy->createBranch('default', 'origin/default-fixture', true);
+        $workingCopy->push('', 'default', true);
     }
 
     protected function forceReinitialize($url, $dir, $fixture, $api)
