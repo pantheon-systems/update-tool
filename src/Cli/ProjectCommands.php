@@ -354,7 +354,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
                 $this->logger->notice("The latest version is {latest}, which is different than {current}, so I don't know what to do. Aborting.", ['latest' => $latest, 'current' => $current]);
             }
             $existing_commit_message = $project_working_copy->message($tag_branch);
-            if (strpos($existing_commit_message, $message) === FALSE) {
+            if (strpos($existing_commit_message, $message) === false) {
                 throw new \Exception("The commit message at the top of the {main} branch does not match the commit message we expect.\n\nExpected: $message\n\nActual: $existing_commit_message");
             }
             // Tag it up.
