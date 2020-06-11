@@ -31,6 +31,7 @@ projects:
     repo: git@github.com:pantheon-systems/WordPress.git
     path: ${working-copy-path}/WordPress
     main-branch: default
+    tag-branch: master
     upstream:
       project: WordPress
       major: '[4-9]'
@@ -301,6 +302,7 @@ projects:
     repo: git@github.com:pantheon-systems/drops-7.git
     path: ${working-copy-path}/drops-7
     main-branch: default
+    tag-branch: master
     upstream:
       project: pressflow7
       major: 7
