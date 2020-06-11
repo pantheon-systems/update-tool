@@ -348,21 +348,26 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $this->logger->notice("The version on the {main} branch is {version}, but the latest tag is {current}.", ['version' => $main_branch_version, 'current' => $current, 'main' => $main_branch]);
             $tag_branch = $this->getConfig()->get("projects.$remote.tag-branch", '');
             if (empty($tag_branch)) {
+                $this->logger->notice("This project is not configured to automatically tag; exiting.");
                 return;
             }
             if ($main_branch_version != $latest) {
                 $this->logger->notice("The latest version is {latest}, which is different than {current}, so I don't know what to do. Aborting.", ['latest' => $latest, 'current' => $current]);
             }
+            $project_working_copy->fetch('origin', $tag_branch);
+            $project_working_copy->switchBranch($tag_branch);
             $existing_commit_message = $project_working_copy->message($tag_branch);
             if (strpos($existing_commit_message, $message) === false) {
                 throw new \Exception("The commit message at the top of the {main} branch does not match the commit message we expect.\n\nExpected: $message\n\nActual: $existing_commit_message");
             }
+
             // Tag it up.
             $project_working_copy
                 ->tag($latest, $tag_branch)
                 ->push('origin', $latest);
 
             $this->logger->notice("Tagged version {latest}.", ['latest' => $latest]);
+            $project_working_copy->switchBranch($main_branch);
 
             return;
         }
