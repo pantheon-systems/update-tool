@@ -30,7 +30,7 @@ There are two ways to provide authentication credentials when using the updatina
 - Environment variable: Define `GITHUB_TOKEN` with the apporpriate personal access token.
 - On-disk cache: See [updatinate.yml](updatinate.yml) for the location to store the personal access token. Use the `--as` option to select between different cache locations.
 
-The authentication credentials you will need can be found in the [pantheon-upstream onelogin note](https://pantheon.onelogin.com/notes/58434). 
+The authentication credentials you will need can be found in the production Vault: `secret/securenotes/github_user__pantheon-upstream`
 
 ## Automation
 
