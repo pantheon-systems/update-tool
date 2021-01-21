@@ -244,6 +244,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // We haven't cloned the repo yet, so look at the remote tags to
         // determine our version.
         $current = $remote_repo->latest($major, empty($update_parameters['allow-pre-release']), '');
+        $update_parameters['meta']['current-version'] = $current;
         $this->logger->notice("Considering updates for {project}", ['project' => $remote_repo->projectWithOrg()]);
 
         // Create the filters

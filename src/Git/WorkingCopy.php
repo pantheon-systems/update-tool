@@ -255,7 +255,7 @@ class WorkingCopy implements LoggerAwareInterface
      */
     public function fetch($remote, $branch)
     {
-        $this->git('fetch {remote} {branch}', ['remote' => $remote, 'branch' => $branch]);
+        $this->git('fetch --no-tags {remote} {branch}', ['remote' => $remote, 'branch' => $branch]);
         return $this;
     }
 
@@ -422,6 +422,15 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Apply a patch
+     */
+    public function apply($file)
+    {
+        $this->git('apply < {file}', ['file' => $file]);
+        return $this;
+    }
+
+    /**
      * Return the commit message for the sprecified ref
      */
     public function message($ref = 'HEAD')
@@ -453,6 +462,14 @@ class WorkingCopy implements LoggerAwareInterface
     public function diff()
     {
         return trim(implode("\n", $this->git('diff')));
+    }
+
+    /**
+     * Show a diff between two references (e.g. tags)
+     */
+    public function diffRefs($from, $to)
+    {
+        return trim(implode("\n", $this->git('diff {from} {to}', ['from' => $from, 'to' => $to])));
     }
 
     /**

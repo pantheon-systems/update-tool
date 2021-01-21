@@ -227,9 +227,9 @@ projects:
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
 
         DO NOT MERGE THIS PR.
-        
+
         Instead:
-        
+
         - check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-8)
         - Visit the test site and confirm that the correct version of Drupal was, in fact, installed and tested.
         - Cherry-pick commit ~2 onto the previous-minor branch
@@ -266,7 +266,7 @@ projects:
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
-        
+
         This is experimental. Do not merge.
   drupal-9-branch-web-docroot-wip:
     repo: git@github.com:pantheon-systems/drops-8.git
@@ -296,9 +296,39 @@ projects:
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}}.
-        
+
         This is experimental. Do not merge.
   drops-7:
+    repo: git@github.com:pantheon-systems/drops-7.git
+    path: ${working-copy-path}/drops-7
+    main-branch: default
+    tag-branch: master
+    upstream:
+      project: drupal
+      major: 7
+      version-pattern: '#.#'
+      update-message: Update to Drupal {version}.
+      update-method: DiffPatch
+    pr:
+      instructions: |
+        Update from Drupal {{original-version}} to Drupal {{update-version}}.
+
+        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-7), and then visit the test site and confirm that the correct version of Drupal was, in fact, installed and tested.
+
+        Optionally, you may also create your own test site:
+
+          - Create a new Drupal 7 site on Pantheon.
+          - When site creation is finished, visit dashboard.
+          - Switch to "git" mode.
+          - Clone your site locally.
+          - Apply the files from this PR on top of your local checkout.
+            - git remote add {{project}} {{project-url}}
+            - git fetch {{project}}
+            - git merge {{project}}/{{branch}}
+          - Push your files back up to Pantheon.
+          - Switch back to sftp mode.
+          - Visit your site and step through the installation process.
+  drops-7-from-pressflow:
     repo: git@github.com:pantheon-systems/drops-7.git
     path: ${working-copy-path}/drops-7
     main-branch: default
