@@ -63,7 +63,7 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         $this->updatedProject->fetch('origin', 'refs/tags/' . $parameters['meta']['current-version'] . ':refs/tags/' . $parameters['meta']['current-version']);
 
         // Create the diff file
-        $diffContents = $this->updatedProject->diff_refs($parameters['meta']['current-version'], $this->latest);
+        $diffContents = $this->updatedProject->diffRefs($parameters['meta']['current-version'], $this->latest);
 
         // Apply the diff as a patch
         $tmpfname = tempnam(sys_get_temp_dir(), "diff-patch-" . $parameters['meta']['current-version'] . '-' . $this->latest . '.tmp');

@@ -467,7 +467,7 @@ class WorkingCopy implements LoggerAwareInterface
     /**
      * Show a diff between two references (e.g. tags)
      */
-    public function diff_refs($from, $to)
+    public function diffRefs($from, $to)
     {
         return trim(implode("\n", $this->git('diff {from} {to}', ['from' => $from, 'to' => $to])));
     }
