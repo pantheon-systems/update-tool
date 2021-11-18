@@ -110,7 +110,6 @@ projects:
       project: wp
       version-pattern: '^5'
       update-parameters:
-      update-parameters:
         rsync:
           options: '-ravz --delete'
           exclusions:
@@ -124,42 +123,21 @@ projects:
   wordpress-network:
     repo: git@github.com:pantheon-systems/wordpress-network.git
     path: ${working-copy-path}/wordpress-network
-    main-branch: default
-    tag-branch: master
-    upstream:
-      project: WordPress
-      major: '[4-9]'
-      version-pattern: '#.#.-'
-      update-method: WpCliUpdate
+    source:
+      project: wp
+      version-pattern: '^5'
       update-parameters:
-        # Not used by the WPCliUpdate, but recorded here for documentation purposes
-        platform-additions:
-          - .gitignore
-          - README.md
-          - pantheon.upstream.yml
+        rsync:
+          options: '-ravz --delete'
+          exclusions:
+            - .git
+        unwanted:
           - wp-config.php
-          - wp-content/mu-plugins/pantheon
       update-filters:
-        - CopyPlatformAdditions
-    pr:
-      instructions: |
-        Update from WordPress {{original-version}} to WordPress {{update-version}}.
+        - RsyncFromSource
+        - CopyTemplateAdditions
+        - RemoveUnwanted
 
-        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/wordpress-network), and then visit the test site and confirm that the correct version of WordPress was, in fact, installed and tested.
-
-        Optionally, you may also create your own test site:
-
-          - Create a new WordPress Network site on Pantheon.
-          - When site creation is finished, visit dashboard.
-          - Switch to "git" mode.
-          - Clone your site locally.
-          - Apply the files from this PR on top of your local checkout.
-            - git remote add {{project}} {{project-url}}
-            - git fetch {{project}}
-            - git merge {{project}}/{{branch}}
-          - Push your files back up to Pantheon.
-          - Switch back to sftp mode.
-          - Visit your site and step through the installation process.
   drops-7-composer:
     repo: git@github.com:pantheon-systems/drops-7-composer.git
     path: ${working-copy-path}/drops-7-composer
