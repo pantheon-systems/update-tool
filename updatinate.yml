@@ -137,7 +137,6 @@ projects:
         - RsyncFromSource
         - CopyTemplateAdditions
         - RemoveUnwanted
-
   drops-7-composer:
     repo: git@github.com:pantheon-systems/drops-7-composer.git
     path: ${working-copy-path}/drops-7-composer
