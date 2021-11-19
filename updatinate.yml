@@ -123,20 +123,11 @@ projects:
   wordpress-network:
     repo: git@github.com:pantheon-systems/wordpress-network.git
     path: ${working-copy-path}/wordpress-network
+    main-branch: master
     source:
       project: wp
       version-pattern: '^5'
-      update-parameters:
-        rsync:
-          options: '-ravz --delete'
-          exclusions:
-            - .git
-        unwanted:
-          - wp-config.php
-      update-filters:
-        - RsyncFromSource
-        - CopyTemplateAdditions
-        - RemoveUnwanted
+      branch: master
   drops-7-composer:
     repo: git@github.com:pantheon-systems/drops-7-composer.git
     path: ${working-copy-path}/drops-7-composer
