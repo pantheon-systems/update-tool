@@ -3,6 +3,7 @@
 namespace Updatinate\Cli;
 
 use Composer\Semver\Semver;
+use Composer\Semver\Comparator;
 use Consolidation\Config\Util\Interpolator;
 use Consolidation\OutputFormatters\StructuredData\PropertyList;
 use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
@@ -146,7 +147,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Find versions in the source that have not been created in the target.
         $versions_to_process = [];
-        $previous_version = 'master'; // @todo: what's our best default?
+        // Get main-branch from config, default to master.
+        $previous_version = $this->getConfig()->get("projects.$remote.main-branch") ?? 'master';
         foreach ($source_releases as $source_version => $info) {
             if (array_key_exists($source_version, $existing_releases)) {
                 $this->logger->notice("{version} already exists", ['version' => $source_version]);
@@ -187,26 +189,37 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Create the filters
         $filter_manager = $this->getFilters($this->getConfig()->get("projects.$remote.source.update-filters"));
 
+        $latest_version = '0.0';
         foreach ($versions_to_process as $version => $previous_version) {
+            if (Comparator::greaterThan($version, $latest_version)) {
+                $latest_version = $version;
+            }
             $project_working_copy->switchBranch($previous_version);
+            $new_branch_name = $version . '-dev';
+            $project_working_copy->createBranch($new_branch_name);
             $upstream_working_copy->switchBranch($version);
 
             $this->logger->notice("Processing files from {upstream} {version} over {target} {previous}", ['upstream' => $upstream_repo->projectWithOrg(), 'version' => $version, 'target' => $remote_repo->projectWithOrg(), 'previous' => $previous_version]);
 
-            // Apply the filters
-            $filter_manager->apply($upstream_working_copy->dir(), $project_working_copy->dir(), $update_parameters);
+            $this->applyFiltersAndCommit($filter_manager, $upstream_working_copy, $project_working_copy, $update_parameters);
 
-            // Commit and tag
-            $comment = $upstream_working_copy->message();
-            $commit_date = $upstream_working_copy->commitDate();
-            $project_working_copy->addAll();
-            $project_working_copy->commitBy($comment, 'Pantheon Automation <bot@getpantheon.com>', $commit_date);
+            // Tag the new release.
             $project_working_copy->tag($version);
 
             if (!empty($options['push'])) {
                 $this->logger->notice("Push tag {version} to {target}", ['version' => $version, 'target' => $remote_repo->projectWithOrg()]);
                 $project_working_copy->push('origin', $version);
             }
+        }
+
+        // Add commits to main-branch from latest processed tag.
+        $project_working_copy->switchBranch($previous_version);
+        $upstream_working_copy->switchBranch($latest_version);
+        $this->logger->notice("Processing files from {upstream} {version} over {target} {previous}", ['upstream' => $upstream_repo->projectWithOrg(), 'version' => $latest_version, 'target' => $remote_repo->projectWithOrg(), 'previous' => $previous_version]);
+        $this->applyFiltersAndCommit($filter_manager, $upstream_working_copy, $project_working_copy, $update_parameters);
+        if (!empty($options['push'])) {
+            $this->logger->notice("Push branch {version} to {target}", ['version' => $previous_version, 'target' => $remote_repo->projectWithOrg()]);
+            $project_working_copy->push('origin', $previous_version);
         }
     }
 
@@ -434,6 +447,22 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $updater->complete($update_parameters);
     }
+
+    /**
+     * Apply specified filters to the working copy and commit the changes.
+     */
+    protected function applyFiltersAndCommit($filter_manager, $upstream_working_copy, $project_working_copy, $update_parameters)
+    {
+        // Apply the filters.
+        $filter_manager->apply($upstream_working_copy->dir(), $project_working_copy->dir(), $update_parameters);
+
+        // Commit changes.
+        $comment = $upstream_working_copy->message();
+        $commit_date = $upstream_working_copy->commitDate();
+        $project_working_copy->addAll();
+        $project_working_copy->commitBy($comment, 'Pantheon Automation <bot@getpantheon.com>', $commit_date);
+    }
+
 
     protected function getFilters($filters)
     {
