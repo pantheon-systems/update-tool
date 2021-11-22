@@ -118,6 +118,89 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
+     * @command project:derivative:pull
+     */
+    public function projectDerivativePull($remote, $options = ['as' => 'default', 'push' => true, 'check' => false])
+    {
+        $api = $this->api($options['as']);
+
+        $upstream = $this->getConfig()->get("projects.$remote.source.project");
+        if (empty($upstream)) {
+            throw new \Exception('Derivative project cannot be updated; it is missing a source.');
+        }
+
+        $remote_repo = $this->createRemote($remote, $api);
+        $upstream_repo = $this->createRemote($upstream, $api);
+
+        $update_parameters = $this->getConfig()->get("projects.$remote.source.update-parameters", []);
+        $update_parameters['meta']['name'] = $remote_repo->projectWithOrg();
+
+        $version_pattern = $this->getConfig()->get("projects.$remote.source.version-pattern", '#.#.#');
+        $versionPatternRegex = $this->versionPatternRegex($version_pattern);
+
+        $source_releases = $upstream_repo->tags($versionPatternRegex, empty($update_parameters['allow-pre-release']), '');
+        $existing_releases = $remote_repo->tags($versionPatternRegex, empty($update_parameters['allow-pre-release']), '');
+
+        $this->logger->notice("Finding missing derived tags for {project}", ['project' => $remote_repo->projectWithOrg()]);
+
+        // Find versions in the source that have not been created in the target.
+        $versions_to_process = [];
+        // Get main-branch from config, default to master.
+        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
+        $previous_version = $main_branch;
+        foreach ($source_releases as $source_version => $info) {
+            if (array_key_exists($source_version, $existing_releases)) {
+                $this->logger->notice("{version} already exists", ['version' => $source_version]);
+            } else {
+                $this->logger->notice("{version} needs to be created", ['version' => $source_version]);
+                $versions_to_process[$source_version] = $previous_version;
+            }
+            $previous_version = $source_version;
+        }
+
+        if (empty($versions_to_process)) {
+            $this->logger->notice("Everything is up-to-date.");
+            return;
+        }
+
+        // If we are running in check-only mode, exit now, before we do anything.
+        if ($options['check']) {
+            return;
+        }
+
+        $project_url = $this->getConfig()->get("projects.$remote.repo");
+        $project_dir = $this->getConfig()->get("projects.$remote.path");
+
+        $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
+        $upstream_branch = $this->getConfig()->get("projects.$remote.source.branch", $main_branch);
+        $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
+
+        $this->logger->notice("Cloning repository for {remote} and fetching needed branch and tags", ['remote' => $remote]);
+
+        $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
+        $project_working_copy->addRemote($upstream_url, 'upstream');
+        $project_working_copy->fetch($upstream_branch, 'upstream');
+        $project_working_copy->fetchTags('upstream');
+
+        foreach ($versions_to_process as $version => $previous_version) {
+            $project_working_copy->switchBranch($version);
+
+            if (!empty($options['push'])) {
+                $this->logger->notice("Push tag {version} to {target}", ['version' => $version, 'target' => $remote_repo->projectWithOrg()]);
+                $project_working_copy->push('origin', $version);
+            }
+        }
+
+        // Add commits to main-branch from corresponding branch in upstream.
+        $project_working_copy->switchBranch($main_branch);
+        $project_working_copy->pull('upstream', $upstream_branch);
+        if (!empty($options['push'])) {
+            $this->logger->notice("Push branch {version} to {target}", ['version' => $main_branch, 'target' => $remote_repo->projectWithOrg()]);
+            $project_working_copy->push('origin', $main_branch);
+        }
+    }
+
+    /**
      * @command project:derivative:update
      */
     public function projectDerivativeUpdate($remote, $options = ['as' => 'default', 'push' => true, 'check' => false])

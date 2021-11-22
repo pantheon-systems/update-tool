@@ -110,7 +110,6 @@ projects:
       project: wp
       version-pattern: '^5'
       update-parameters:
-      update-parameters:
         rsync:
           options: '-ravz --delete'
           exclusions:
@@ -121,6 +120,14 @@ projects:
         - RsyncFromSource
         - CopyTemplateAdditions
         - RemoveUnwanted
+  wordpress-network:
+    repo: git@github.com:pantheon-systems/wordpress-network.git
+    path: ${working-copy-path}/wordpress-network
+    main-branch: master
+    source:
+      project: wp
+      version-pattern: '^5'
+      branch: master
   drops-7-composer:
     repo: git@github.com:pantheon-systems/drops-7-composer.git
     path: ${working-copy-path}/drops-7-composer
