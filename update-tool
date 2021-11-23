@@ -33,8 +33,8 @@ $commandClasses = [
   \UpdateTool\Cli\CICommands::class,
 ];
 $selfUpdateRepository = 'pantheon-systems/update-tool';
-$configPrefix = 'UPDATINATE';
-$configFilePath = getenv($configPrefix . '_CONFIG') ?: (file_exists('updatinate.yml') ? 'updatinate.yml' : getenv('HOME') . '/.updatinate/updatinate.yml');
+$configPrefix = 'UPDATETOOL';
+$configFilePath = getenv($configPrefix . '_CONFIG') ?: (file_exists('update-tool.yml') ? 'update-tool.yml' : getenv('HOME') . '/.update-tool/update-tool.yml');
 
 // Define our Runner, and pass it the command classes we provide.
 $runner = new \Robo\Runner($commandClasses);

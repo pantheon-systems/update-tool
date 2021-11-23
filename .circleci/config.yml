@@ -15,12 +15,12 @@ jobs:
       - run: composer install
       - run: git config --global user.email "bot@getpantheon.com"
       - run: git config --global user.name "Pantheon Automation"
-      - run: ./updatinate whoami
+      - run: ./update-tool whoami
       - run: composer phar:build
       - persist_to_workspace:
           root: /updatinator
           paths:
-            - updatinate.phar
+            - update-tool.phar
       - run: composer test
   publish_phar:
     docker:
@@ -33,7 +33,7 @@ jobs:
           command: |
             go get github.com/tcnksm/ghr
             VERSION=$CIRCLE_TAG
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/updatinate.phar
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/update-tool.phar
 
 workflows:
   version: 2

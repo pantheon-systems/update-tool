@@ -38,7 +38,7 @@ trait CIUtilsTrait
     {
         $headers = [
             'Accept' => 'application/json',
-            'User-Agent' => 'pantheon/updatinate',
+            'User-Agent' => 'pantheon/update-tool',
         ];
 
         $client = new \GuzzleHttp\Client();

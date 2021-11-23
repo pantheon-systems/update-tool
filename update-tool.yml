@@ -1,9 +1,9 @@
 cache-path: ${env.HOME}/.config/pantheon-upstream
 working-copy-path: ${env.HOME}/pantheon/update-working-copies
 log:
-  path: ${env.HOME}/.updatinate/pr.log
+  path: ${env.HOME}/.update-tool/pr.log
 github:
-  default-user: updatinate
+  default-user: update-tool
   personal-auth-token:
     # This is a read-only token for pantheon-upstream
     pantheon-upstream:
