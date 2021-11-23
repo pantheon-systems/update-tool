@@ -1,6 +1,6 @@
 <?php
 
-namespace Updatinate;
+namespace UpdateTool;
 
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -22,8 +22,8 @@ class ProjectCommandsTest extends CommandsTestBase
     public function setUp()
     {
         $commandClasses = [
-            \Updatinate\Cli\ProjectCommands::class,
-            \Updatinate\Cli\TestUtilCommands::class,
+            \UpdateTool\Cli\ProjectCommands::class,
+            \UpdateTool\Cli\TestUtilCommands::class,
             \Hubph\Cli\HubphCommands::class,
         ];
 

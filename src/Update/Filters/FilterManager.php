@@ -1,11 +1,11 @@
 <?php
 
-namespace Updatinate\Update\Filters;
+namespace UpdateTool\Update\Filters;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
-use Updatinate\Git\WorkingCopy;
+use UpdateTool\Git\WorkingCopy;
 
 /**
  * Manage a collection of filters.
@@ -24,7 +24,7 @@ class FilterManager implements LoggerAwareInterface
     public function getFilters($filter_classnames)
     {
         foreach ((array)$filter_classnames as $filter_class) {
-            $filter_fqcn = "\\Updatinate\\Update\\Filters\\$filter_class";
+            $filter_fqcn = "\\UpdateTool\\Update\\Filters\\$filter_class";
             $filter = new $filter_fqcn();
             if ($filter instanceof LoggerAwareInterface) {
                 $filter->setLogger($this->logger);

@@ -1,5 +1,5 @@
 {
-    "name": "pantheon-systems/updatinate",
+    "name": "pantheon-systems/update-tool",
     "description": "Template project for PHP libraries.",
     "license": "MIT",
     "authors": [
@@ -10,12 +10,12 @@
     ],
     "autoload": {
         "psr-4": {
-            "Updatinate\\": "src"
+            "UpdateTool\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Updatinate\\": "tests/src"
+            "UpdateTool\\": "tests/src"
         }
     },
     "require": {

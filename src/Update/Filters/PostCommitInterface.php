@@ -1,11 +1,11 @@
 <?php
 
-namespace Updatinate\Update\Filters;
+namespace UpdateTool\Update\Filters;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
-use Updatinate\Git\WorkingCopy;
+use UpdateTool\Git\WorkingCopy;
 
 /**
  * Update filters modify the destination after it is updated.

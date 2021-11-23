@@ -1,11 +1,11 @@
 <?php
 
-namespace Updatinate\Git;
+namespace UpdateTool\Git;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
-use Updatinate\Util\ExecWithRedactionTrait;
+use UpdateTool\Util\ExecWithRedactionTrait;
 
 class WorkingCopy implements LoggerAwareInterface
 {

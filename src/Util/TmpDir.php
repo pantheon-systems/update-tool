@@ -1,5 +1,5 @@
 <?php
-namespace Updatinate\Util;
+namespace UpdateTool\Util;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
@@ -30,7 +30,7 @@ class TmpDir
         $fs->remove($tmpDir);
         $fs->mkdir($tmpDir);
         if (empty(static::$tmpDirs)) {
-            register_shutdown_function(['\Updatinate\Util\TmpDir', 'cleanup']);
+            register_shutdown_function(['\UpdateTool\Util\TmpDir', 'cleanup']);
         }
         static::$tmpDirs[] = $tmpDir;
         return $tmpDir;

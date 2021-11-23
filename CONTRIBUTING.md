@@ -1,6 +1,6 @@
-# Contributing to Updatinate
+# Contributing to UpdateTool
 
-Thank you for your interest in contributing to Updatinate! Here are some of the guidelines you should follow to make the most of your efforts:
+Thank you for your interest in contributing to UpdateTool! Here are some of the guidelines you should follow to make the most of your efforts:
 
 ## Code Style Guidelines
 

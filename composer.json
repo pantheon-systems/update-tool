@@ -1,5 +1,5 @@
 {
-    "name": "pantheon-systems/updatinate",
+    "name": "pantheon-systems/update-tool",
     "description": "Template project for PHP libraries.",
     "license": "MIT",
     "authors": [
@@ -10,12 +10,12 @@
     ],
     "autoload": {
         "psr-4": {
-            "Updatinate\\": "src"
+            "UpdateTool\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Updatinate\\": "tests/src"
+            "UpdateTool\\": "tests/src"
         }
     },
     "require": {
@@ -35,13 +35,13 @@
         "squizlabs/php_codesniffer": "^2.8"
     },
     "bin": [
-        "updatinate"
+        "update-tool"
     ],
     "scripts": {
         "phar:build": [
-            "rm -Rf ./updatinate.phar",
+            "rm -Rf ./update-tool.phar",
             "php -d phar.readonly=off vendor/bin/phar-composer.phar build .",
-            "chmod +x updatinate.phar"
+            "chmod +x update-tool.phar"
         ],
         "cs": "phpcs --standard=PSR2 -n src",
         "cbf": "phpcbf --standard=PSR2 -n src",

@@ -1,9 +1,9 @@
 <?php
 
-namespace Updatinate\Update\Methods;
+namespace UpdateTool\Update\Methods;
 
-use Updatinate\Git\WorkingCopy;
-use Updatinate\Update\Filters\FilterManager;
+use UpdateTool\Git\WorkingCopy;
+use UpdateTool\Update\Filters\FilterManager;
 use Consolidation\Config\ConfigInterface;
 
 /**

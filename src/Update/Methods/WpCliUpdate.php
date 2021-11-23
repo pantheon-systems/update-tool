@@ -1,14 +1,14 @@
 <?php
 
-namespace Updatinate\Update\Methods;
+namespace UpdateTool\Update\Methods;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
-use Updatinate\Git\WorkingCopy;
-use Updatinate\Util\TmpDir;
-use Updatinate\Util\ExecWithRedactionTrait;
+use UpdateTool\Git\WorkingCopy;
+use UpdateTool\Util\TmpDir;
+use UpdateTool\Util\ExecWithRedactionTrait;
 use Consolidation\Config\ConfigInterface;
 
 /**

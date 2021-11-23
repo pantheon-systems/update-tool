@@ -24,17 +24,17 @@ $classLoader = require $autoloaderPath;
 
 // Customization variables
 $argv = $_SERVER['argv'];
-$appName = "Updatinate";
+$appName = "UpdateTool";
 $appVersion = trim(file_get_contents(__DIR__ . '/VERSION'));
 $commandClasses = [
   \Hubph\Cli\HubphCommands::class,
-  \Updatinate\Cli\PhpCommands::class,
-  \Updatinate\Cli\ProjectCommands::class,
-  \Updatinate\Cli\CICommands::class,
+  \UpdateTool\Cli\PhpCommands::class,
+  \UpdateTool\Cli\ProjectCommands::class,
+  \UpdateTool\Cli\CICommands::class,
 ];
-$selfUpdateRepository = 'pantheon-systems/updatinate';
-$configPrefix = 'UPDATINATE';
-$configFilePath = getenv($configPrefix . '_CONFIG') ?: (file_exists('updatinate.yml') ? 'updatinate.yml' : getenv('HOME') . '/.updatinate/updatinate.yml');
+$selfUpdateRepository = 'pantheon-systems/update-tool';
+$configPrefix = 'UPDATETOOL';
+$configFilePath = getenv($configPrefix . '_CONFIG') ?: (file_exists('update-tool.yml') ? 'update-tool.yml' : getenv('HOME') . '/.update-tool/update-tool.yml');
 
 // Define our Runner, and pass it the command classes we provide.
 $runner = new \Robo\Runner($commandClasses);

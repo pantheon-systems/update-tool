@@ -1,14 +1,14 @@
-# Updatinate
+# Update Tools
 
-Fast and smart. Updatinate checks for available software updates and creates pull requests.
+Fast and smart. Update Tool checks for available software updates and creates pull requests.
 
-[![Travis CI](https://travis-ci.org/pantheon-systems/updatinate.svg?branch=master)](https://travis-ci.org/pantheon-systems/updatinate)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/?branch=master)
-[![Coverage Status](https://coveralls.io/repos/github/pantheon-systems/updatinate/badge.svg?branch=master)](https://coveralls.io/github/pantheon-systems/updatinate?branch=master) 
+[![Travis CI](https://travis-ci.org/pantheon-systems/update-tool.svg?branch=master)](https://travis-ci.org/pantheon-systems/update-tool)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/pantheon-systems/update-tool/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/pantheon-systems/update-tool/?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/pantheon-systems/update-tool/badge.svg?branch=master)](https://coveralls.io/github/pantheon-systems/update-tool?branch=master) 
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
 
 <table><tr width="25%"><td><img alt="Detinator" src="docs/images/roadrunner.png"/></td><td width="75%" valign="top">
-The Updatinate tool is a lightweight collection of commands that know how to create 
+The Update Tool is a lightweight collection of commands that know how to create 
 pull requests from various data sources that inform us of the most recent available
 version of certain software components on our platform. These commands are executed
 periodically via `cron`, as managed by the 
@@ -25,10 +25,10 @@ The following commands are available:
 
 ## Authentication
 
-There are two ways to provide authentication credentials when using the updatinate commands.
+There are two ways to provide authentication credentials when using the Update Tool commands.
 
 - Environment variable: Define `GITHUB_TOKEN` with the apporpriate personal access token.
-- On-disk cache: See [updatinate.yml](updatinate.yml) for the location to store the personal access token. Use the `--as` option to select between different cache locations.
+- On-disk cache: See [update-tool.yml](update-tool.yml) for the location to store the personal access token. Use the `--as` option to select between different cache locations.
 
 The authentication credentials you will need can be found in the production Vault: `secret/securenotes/github_user__pantheon-upstream`
 
@@ -54,10 +54,10 @@ The test suite may be run locally by way of some simple composer scripts:
 
 ### Releasing
 
-To release a new version of the updatinate tool, run:
+To release a new version of the Update Tool, run:
 
 - `composer release`
 
 This will release a stable version of whatever is indicated in the VERSION file. e.g. if VERSION contains `1.0.3-dev`, then version `1.0.3` will be tagged and released, and the VERSION file will be updated to `1.0.4-dev`. To release version `1.1.0` instead, manually edit the VERSION file to `1.1.0-dev` and then run `composer release`.
 
-The updatinate.phar file will be uploaded to GitHub on every release. Rebuild [pantheon-systems/docker-updatinator](https://github.com/pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
+The update-tool.phar file will be uploaded to GitHub on every release. Rebuild [pantheon-systems/docker-updatinator](https://github.com/pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Updatinate;
+namespace UpdateTool;
 
 interface CommandTesterInterface
 {

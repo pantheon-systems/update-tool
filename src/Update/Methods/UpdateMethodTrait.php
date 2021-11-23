@@ -1,9 +1,9 @@
 <?php
 
-namespace Updatinate\Update\Methods;
+namespace UpdateTool\Update\Methods;
 
 use Hubph\HubphAPI;
-use Updatinate\Update\Filters\FilterManager;
+use UpdateTool\Update\Filters\FilterManager;
 
 /**
  * Not sure why this is a trait; it should probably be a base class.

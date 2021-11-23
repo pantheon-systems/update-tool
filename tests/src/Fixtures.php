@@ -1,14 +1,14 @@
 <?php
 
-namespace Updatinate;
+namespace UpdateTool;
 
 use Consolidation\Config\Util\EnvConfig;
 use Consolidation\Log\Logger;
 use Hubph\HubphAPI;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Filesystem\Filesystem;
-use Updatinate\Git\Remote;
-use Updatinate\Git\WorkingCopy;
+use UpdateTool\Git\Remote;
+use UpdateTool\Git\WorkingCopy;
 
 class Fixtures
 {
