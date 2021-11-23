@@ -32,7 +32,7 @@ $commandClasses = [
   \UpdateTool\Cli\ProjectCommands::class,
   \UpdateTool\Cli\CICommands::class,
 ];
-$selfUpdateRepository = 'pantheon-systems/updatinate';
+$selfUpdateRepository = 'pantheon-systems/update-tool';
 $configPrefix = 'UPDATINATE';
 $configFilePath = getenv($configPrefix . '_CONFIG') ?: (file_exists('updatinate.yml') ? 'updatinate.yml' : getenv('HOME') . '/.updatinate/updatinate.yml');
 
