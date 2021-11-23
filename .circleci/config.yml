@@ -39,7 +39,7 @@ workflows:
   push:
     jobs:
       - test
-      - publish_phar
+      - publish_phar:
           requires:
             - test
           filters:
