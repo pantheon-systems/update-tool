@@ -1,6 +1,6 @@
 <?php
 
-namespace Updatinate\Update\Filters;
+namespace UpdateTool\Update\Filters;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;

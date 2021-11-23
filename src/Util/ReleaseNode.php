@@ -1,8 +1,8 @@
 <?php
-namespace Updatinate\Util;
+namespace UpdateTool\Util;
 
 use Consolidation\Config\ConfigInterface;
-use Updatinate\Git\Remote;
+use UpdateTool\Git\Remote;
 
 /**
  * ReleaseNote facilitates looking up the URL of the page that describes

@@ -1,6 +1,6 @@
 <?php
 
-namespace Updatinate\Cli;
+namespace UpdateTool\Cli;
 
 use Composer\Semver\Semver;
 use Composer\Semver\Comparator;
@@ -13,10 +13,10 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Robo\Common\ConfigAwareTrait;
 use Robo\Contract\ConfigAwareInterface;
-use Updatinate\Git\Remote;
-use Updatinate\Git\WorkingCopy;
-use Updatinate\Update\Filters\FilterManager;
-use Updatinate\Util\ReleaseNode;
+use UpdateTool\Git\Remote;
+use UpdateTool\Git\WorkingCopy;
+use UpdateTool\Update\Filters\FilterManager;
+use UpdateTool\Util\ReleaseNode;
 use VersionTool\VersionTool;
 
 /**
@@ -586,7 +586,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
     protected function getUpdater($update_method, $api)
     {
-        $update_class = "\\Updatinate\\Update\\Methods\\$update_method";
+        $update_class = "\\UpdateTool\\Update\\Methods\\$update_method";
         if (!class_exists($update_class)) {
             return false;
         }

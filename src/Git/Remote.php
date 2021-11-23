@@ -1,12 +1,12 @@
 <?php
 
-namespace Updatinate\Git;
+namespace UpdateTool\Git;
 
 use Composer\Semver\Semver;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
-use Updatinate\Util\ExecWithRedactionTrait;
+use UpdateTool\Util\ExecWithRedactionTrait;
 
 class Remote implements LoggerAwareInterface
 {

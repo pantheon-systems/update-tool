@@ -1,12 +1,12 @@
 <?php
 
-namespace Updatinate\Update\Filters;
+namespace UpdateTool\Update\Filters;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
-use Updatinate\Util\ExecWithRedactionTrait;
-use Updatinate\Util\TmpDir;
+use UpdateTool\Util\ExecWithRedactionTrait;
+use UpdateTool\Util\TmpDir;
 
 /**
  * RenameProject changes the name of the project in its composer.json file

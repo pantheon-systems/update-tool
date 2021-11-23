@@ -24,13 +24,13 @@ $classLoader = require $autoloaderPath;
 
 // Customization variables
 $argv = $_SERVER['argv'];
-$appName = "Updatinate";
+$appName = "UpdateTool";
 $appVersion = trim(file_get_contents(__DIR__ . '/VERSION'));
 $commandClasses = [
   \Hubph\Cli\HubphCommands::class,
-  \Updatinate\Cli\PhpCommands::class,
-  \Updatinate\Cli\ProjectCommands::class,
-  \Updatinate\Cli\CICommands::class,
+  \UpdateTool\Cli\PhpCommands::class,
+  \UpdateTool\Cli\ProjectCommands::class,
+  \UpdateTool\Cli\CICommands::class,
 ];
 $selfUpdateRepository = 'pantheon-systems/updatinate';
 $configPrefix = 'UPDATINATE';

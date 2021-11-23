@@ -1,5 +1,5 @@
 <?php
-namespace Updatinate\Util;
+namespace UpdateTool\Util;
 
 trait CIUtilsTrait
 {

@@ -1,12 +1,12 @@
 <?php
 
-namespace Updatinate\Update\Methods;
+namespace UpdateTool\Update\Methods;
 
 use Consolidation\Config\ConfigInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
-use Updatinate\Git\WorkingCopy;
+use UpdateTool\Git\WorkingCopy;
 
 /**
  * MergeUpstreamBranch is an update method that takes all of the changes from

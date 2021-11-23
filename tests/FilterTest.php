@@ -1,11 +1,11 @@
 <?php
 
-namespace Updatinate;
+namespace UpdateTool;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Updatinate\Update\Filters\RsyncFromSource;
-use Updatinate\Update\Filters\RenameProject;
+use UpdateTool\Update\Filters\RsyncFromSource;
+use UpdateTool\Update\Filters\RenameProject;
 
 class FilterTest extends TestCase implements CommandTesterInterface
 {

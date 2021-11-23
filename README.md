@@ -1,6 +1,6 @@
-# Updatinate
+# Update Tools
 
-Fast and smart. Updatinate checks for available software updates and creates pull requests.
+Fast and smart. Update Tool checks for available software updates and creates pull requests.
 
 [![Travis CI](https://travis-ci.org/pantheon-systems/updatinate.svg?branch=master)](https://travis-ci.org/pantheon-systems/updatinate)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/pantheon-systems/updatinate/?branch=master)
@@ -8,7 +8,7 @@ Fast and smart. Updatinate checks for available software updates and creates pul
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
 
 <table><tr width="25%"><td><img alt="Detinator" src="docs/images/roadrunner.png"/></td><td width="75%" valign="top">
-The Updatinate tool is a lightweight collection of commands that know how to create 
+The Update Tool is a lightweight collection of commands that know how to create 
 pull requests from various data sources that inform us of the most recent available
 version of certain software components on our platform. These commands are executed
 periodically via `cron`, as managed by the 
@@ -25,7 +25,7 @@ The following commands are available:
 
 ## Authentication
 
-There are two ways to provide authentication credentials when using the updatinate commands.
+There are two ways to provide authentication credentials when using the Update Tool commands.
 
 - Environment variable: Define `GITHUB_TOKEN` with the apporpriate personal access token.
 - On-disk cache: See [updatinate.yml](updatinate.yml) for the location to store the personal access token. Use the `--as` option to select between different cache locations.
@@ -54,7 +54,7 @@ The test suite may be run locally by way of some simple composer scripts:
 
 ### Releasing
 
-To release a new version of the updatinate tool, run:
+To release a new version of the Update Tool, run:
 
 - `composer release`
 

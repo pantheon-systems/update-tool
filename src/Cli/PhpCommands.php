@@ -1,12 +1,12 @@
 <?php
 
-namespace Updatinate\Cli;
+namespace UpdateTool\Cli;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Robo\Contract\ConfigAwareInterface;
 use Robo\Common\ConfigAwareTrait;
-use Updatinate\Git\WorkingCopy;
+use UpdateTool\Git\WorkingCopy;
 use Hubph\VersionIdentifiers;
 use Hubph\HubphAPI;
 

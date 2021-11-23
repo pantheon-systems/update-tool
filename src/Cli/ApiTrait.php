@@ -1,6 +1,6 @@
 <?php
 
-namespace Updatinate\Cli;
+namespace UpdateTool\Cli;
 
 use Hubph\HubphAPI;
 use Symfony\Component\Filesystem\Filesystem;

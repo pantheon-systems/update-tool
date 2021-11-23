@@ -1,6 +1,6 @@
 <?php
 
-namespace Updatinate;
+namespace UpdateTool;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -16,8 +16,8 @@ class WhoamiTest extends TestCase implements CommandTesterInterface
     {
         if (!$this->fixtures) {
             $commandClasses = [
-                \Updatinate\Cli\PhpCommands::class,
-                \Updatinate\Cli\TestUtilCommands::class,
+                \UpdateTool\Cli\PhpCommands::class,
+                \UpdateTool\Cli\TestUtilCommands::class,
                 \Hubph\Cli\HubphCommands::class,
             ];
 

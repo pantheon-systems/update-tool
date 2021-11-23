@@ -1,6 +1,6 @@
 <?php
 
-namespace Updatinate;
+namespace UpdateTool;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
