@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/pantheon-public/docker-updatinator:1.x
+      options: --user root
     needs: [ checkout ]
     name: Basic Tests
     defaults:
