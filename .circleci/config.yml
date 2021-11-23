@@ -44,3 +44,4 @@ workflows:
             - test
           filters:
             tags:
+              only: /.*/
