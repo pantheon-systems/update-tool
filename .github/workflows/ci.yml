@@ -8,7 +8,7 @@ jobs:
       image: quay.io/pantheon-public/php-ci:v7.4
     name: Checkout & build Phar
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.UPDATINATE_GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
