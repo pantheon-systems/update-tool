@@ -6,9 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     container: quay.io/pantheon-public/php-ci:v7.4
     name: Checkout
-    defaults:
-      run:
-        working-directory: /updatinator
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -23,6 +20,9 @@ jobs:
       image: quay.io/pantheon-public/docker-updatinator:1.x
     needs: [ checkout ]
     name: Basic Tests
+    defaults:
+      run:
+        working-directory: /updatinator
     env:
       GITHUB_TOKEN: ${{ secrets.UPDATINATE_GITHUB_TOKEN }}
     steps:
