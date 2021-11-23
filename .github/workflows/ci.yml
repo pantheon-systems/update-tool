@@ -34,12 +34,12 @@ jobs:
           path: /updatinator
       - name: Full Composer Install
         run: composer install
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
       - name: Configure git email
         run: git config --global user.email "bot@getpantheon.com"
       - name: Configure git name
         run: git config --global user.name "Pantheon Automation"
+      - name: Fix permissions
+        run: chmod +x updatinate
       - name: Run whoami
         run: ./updatinate whoami
       - name: Run composer test
