@@ -39,7 +39,7 @@ jobs:
     name: Release
     container:
       image: quay.io/pantheon-public/php-ci:1.x
-    needs: [ functional ]
+    needs: [ checkout_build ]
     if: ${{ startsWith(github.ref, 'refs/tags/')  && github.repository == 'pantheon-systems/updatinate' }}
     steps:
       - name: Download updatinate.phar as artifact
