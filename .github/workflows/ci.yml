@@ -1,0 +1,54 @@
+name: Updatinate
+on: push
+jobs:
+  # Checkout in separate job because docker image is alpine based and checkout action doesn't work.
+  checkout_build:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pantheon-public/php-ci:v7.4
+    name: Checkout & build Phar
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Save repo content as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: full-workspace
+          path: ${{ github.workspace }}
+      - name: Full Composer Install
+        run: composer install
+      - name: Configure git email
+        run: git config --global user.email "bot@getpantheon.com"
+      - name: Configure git name
+        run: git config --global user.name "Pantheon Automation"
+      - name: Run whoami
+        run: ./updatinate whoami
+      - name: Run composer test
+        run: composer test
+      - name: Phar Build
+        run: composer phar:build
+      - name: Save updatinate.phar as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: updatinate-phar
+          path: updatinate.phar
+          if-no-files-found: error
+
+  release:
+    runs-on: ubuntu-latest
+    name: Release
+    container:
+      image: quay.io/pantheon-public/php-ci:1.x
+    needs: [ functional ]
+    if: ${{ startsWith(github.ref, 'refs/tags/')  && github.repository == 'pantheon-systems/updatinate' }}
+    steps:
+      - name: Download updatinate.phar as artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: updatinate-phar
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: updatinate.phar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
