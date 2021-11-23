@@ -42,6 +42,8 @@ jobs:
         run: chmod +x updatinate
       - name: Run whoami
         run: ./updatinate whoami
+      - name: Setup tmate
+        uses: mxschmitt/action-tmate@v3
       - name: Run composer test
         run: composer test
       - name: Phar Build
