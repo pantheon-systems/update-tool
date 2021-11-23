@@ -19,8 +19,8 @@ jobs:
       - run: composer test
       - run: composer phar:build
       - store_artifacts:
-        path: updatinate.phar
-        destination: updatinate.phar
+          path: updatinate.phar
+          destination: updatinate.phar
   publish_phar:
     docker:
       - image: circleci/golang:1.8
