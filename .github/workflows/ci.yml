@@ -35,8 +35,6 @@ jobs:
         run: composer install
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
-        with:
-          sudo: false
       - name: Configure git email
         run: git config --global user.email "bot@getpantheon.com"
       - name: Configure git name
