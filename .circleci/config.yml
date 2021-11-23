@@ -18,9 +18,9 @@ jobs:
       - run: ./updatinate whoami
       - run: composer phar:build
       - persist_to_workspace:
-        root: /updatinator
-        paths:
-          - updatinate.phar
+          root: /updatinator
+          paths:
+            - updatinate.phar
       - run: composer test
   publish_phar:
     docker:
