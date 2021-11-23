@@ -27,7 +27,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: full-workspace
-          path: ${{ github.workspace }}
+          path: /updatinator
       - name: Full Composer Install
         run: composer install
       - name: Configure git email
