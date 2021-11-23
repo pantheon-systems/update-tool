@@ -39,7 +39,10 @@ workflows:
   version: 2
   push:
     jobs:
-      - test
+      - test:
+          filters:
+            tags:
+              only: /.*/
       - publish_phar:
           requires:
             - test
