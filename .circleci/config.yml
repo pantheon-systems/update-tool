@@ -16,7 +16,7 @@ jobs:
       - run: git config --global user.email "bot@getpantheon.com"
       - run: git config --global user.name "Pantheon Automation"
       - run: ./updatinate whoami
-      - run: php -d phar.readonly=off /usr/local/bin/composer phar:build
+      - run: composer phar:build
       - store_artifacts:
           path: updatinate.phar
           destination: updatinate.phar

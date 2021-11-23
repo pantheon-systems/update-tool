@@ -40,7 +40,7 @@
     "scripts": {
         "phar:build": [
             "rm -Rf ./updatinate.phar",
-            "vendor/bin/phar-composer.phar build .",
+            "php -d phar.readonly=off vendor/bin/phar-composer.phar build .",
             "chmod +x updatinate.phar"
         ],
         "cs": "phpcs --standard=PSR2 -n src",
