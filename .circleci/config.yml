@@ -16,10 +16,35 @@ jobs:
       - run: git config --global user.email "bot@getpantheon.com"
       - run: git config --global user.name "Pantheon Automation"
       - run: ./updatinate whoami
+      - run: composer phar:build
+      - persist_to_workspace:
+          root: /updatinator
+          paths:
+            - updatinate.phar
       - run: composer test
+  publish_phar:
+    docker:
+      - image: circleci/golang:1.8
+    steps:
+      - attach_workspace:
+          at: ./artifacts
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get github.com/tcnksm/ghr
+            VERSION=$CIRCLE_TAG
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/updatinate.phar
 
 workflows:
   version: 2
   push:
     jobs:
       - test
+      - publish_phar:
+          requires:
+            - test
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
