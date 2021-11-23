@@ -16,11 +16,11 @@ jobs:
       - run: git config --global user.email "bot@getpantheon.com"
       - run: git config --global user.name "Pantheon Automation"
       - run: ./updatinate whoami
-      - run: composer test
       - run: php -d phar.readonly=off /usr/local/bin/composer phar:build
       - store_artifacts:
           path: updatinate.phar
           destination: updatinate.phar
+      - run: composer test
   publish_phar:
     docker:
       - image: circleci/golang:1.8
