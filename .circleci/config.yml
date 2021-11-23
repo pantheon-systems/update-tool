@@ -40,6 +40,9 @@ workflows:
   push:
     jobs:
       - test
+        filters:
+          tags:
+            only: /.*/
       - publish_phar:
           requires:
             - test
