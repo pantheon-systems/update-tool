@@ -48,6 +48,8 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Close the open pull requests.
         $this->fixtures()->closeAllOpenPullRequests('drops-8');
+        // Make sure github API has enough time to realize the PR has been closed
+        sleep(5);
 
         // Verify the latest releast in our drops-8 and drupal fixtures.
         $output = $this->executeExpectOK(['project:latest', 'drops-8']);
@@ -117,6 +119,9 @@ class ProjectCommandsTest extends CommandsTestBase
     {
         // Closes any leftover PRs in the fixture repository.
         $this->fixtures()->closeAllOpenPullRequests('wp');
+
+        // Make sure github API has enough time to realize the PR has been closed
+        sleep(5);
 
         // Create a fork
 //        $wp_repo = $this->fixtures()->forkTestRepo('wp');
