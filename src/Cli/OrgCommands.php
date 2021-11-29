@@ -141,9 +141,13 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $badges = SupportLevel::getSupportLevelBadges();
         foreach ($lines as $line) {
             foreach ($badges as $key => $badge) {
-                if (strpos($line, $badge) !== false) {
-                    $support_level = $key;
-                    break 2;
+                // Get the badge text from the badge markup.
+                preg_match('/^\[\!\[([A-Za-z\s\d]+)\]\(https:\/\/img.shields.io/', $badge, $matches);
+                if (!empty($matches[1])) {
+                    if (strpos($line, $matches[1]) !== false) {
+                        $support_level = $key;
+                        break 2;
+                    }
                 }
             }
         }
