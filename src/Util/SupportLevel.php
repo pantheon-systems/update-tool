@@ -8,6 +8,8 @@ namespace UpdateTool\Util;
 class SupportLevel
 {
 
+    const SUPPORT_LEVEL_BADGE_LABEL_REGEX = '/^\[\!\[([A-Za-z\s\d]+)\]\(https:\/\/img.shields.io/';
+
     /**
      * Get right badge markdown.
      */
@@ -52,7 +54,7 @@ class SupportLevel
         $badges = self::getSupportLevelBadges();
         $labels = [];
         foreach ($badges as $key => $badge) {
-            preg_match('/^\[\!\[([A-Za-z\s\d]+)\]\(https:\/\/img.shields.io/', $badge, $matches);
+            preg_match(self::SUPPORT_LEVEL_BADGE_LABEL_REGEX, $badge, $matches);
             if (!empty($matches[1])) {
                 $labels[$key] = $matches[1];
             }
