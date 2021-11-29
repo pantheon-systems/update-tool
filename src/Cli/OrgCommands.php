@@ -18,6 +18,7 @@ use Hubph\VersionIdentifiers;
 use Hubph\PullRequests;
 use Hubph\Git\WorkingCopy;
 use Hubph\Git\Remote;
+use UpdateTool\Util\SupportLevel;
 
 class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
@@ -62,7 +63,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      *   codeowners: Code Owners
      *   owners_src: Owners Source
      *   ownerTeam: Owning Team
-     * @default-fields full_name,codeowners,owners_src
+     *   support_level: Support Level
+     * @default-fields full_name,codeowners,owners_src,support_level
      * @default-string-field full_name
      *
      * @return Consolidation\OutputFormatters\StructuredData\RowsOfFields
@@ -111,6 +113,15 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $repo['ownerTeam'] = str_replace("@$org/", "", $codeowners[0]);
             }
 
+            try {
+                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
+                if (!empty($data['content'])) {
+                    $content = base64_decode($data['content']);
+                    $repo['support_level'] = static::getSupportLevel($content);
+                }
+            } catch (\Exception $e) {
+            }
+
             $reposResult[$resultKey] = $repo;
         }
 
@@ -118,6 +129,32 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $this->addTableRenderFunction($data);
 
         return $data;
+    }
+
+    /**
+     * Get support level from README.md contents.
+     */
+    protected static function getSupportLevel($readme_contents)
+    {
+        $support_level = null;
+        $lines = explode("\n", $readme_contents);
+        $badges = SupportLevel::getSupportLevelBadges();
+        foreach ($lines as $line) {
+            foreach ($badges as $key => $badge) {
+                // Get the badge text from the badge markup.
+                preg_match('/^\[\!\[([A-Za-z\s\d]+)\]\(https:\/\/img.shields.io/', $badge, $matches);
+                if (!empty($matches[1])) {
+                    if (strpos($line, $matches[1]) !== false) {
+                        $support_level = $key;
+                        break 2;
+                    }
+                }
+            }
+        }
+        if ($support_level) {
+            return SupportLevel::getSupportLevelLabel($support_level);
+        }
+        return null;
     }
 
     protected static function inferOwners($api, $org, $project, $codeowners, $ownerSource)
