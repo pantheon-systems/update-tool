@@ -1,11 +1,12 @@
 <?php
-namespace UpdateTool\Util;
 
+namespace UpdateTool\Util;
 
 /**
  * Support level related functions.
  */
-class SupportLevel {
+class SupportLevel
+{
 
     /**
      * Get right badge markdown.
@@ -56,5 +57,4 @@ class SupportLevel {
         $badges = self::getBadgesLabels();
         return $badges[$level] ?? '';
     }
-
 }
