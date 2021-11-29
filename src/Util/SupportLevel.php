@@ -14,7 +14,18 @@ class SupportLevel
     public static function getSupportLevelBadge($level)
     {
         $badges = self::getSupportLevelBadges();
-        return $badges[$level] ?? '';
+        $badge_contents = $badges[$level] ?? '';
+        if (!$badge_contents) {
+            // Try badge label.
+            $labels = self::getBadgesLabels();
+            foreach ($labels as $badge_name => $label) {
+                if (strpos($label, $level) !== false) {
+                    $badge_contents = $badges[$badge_name];
+                    break;
+                }
+            }
+        }
+        return $badge_contents;
     }
 
     /**
@@ -38,15 +49,15 @@ class SupportLevel
      */
     public static function getBadgesLabels()
     {
-        return [
-            'ea' => 'Early Access',
-            'la' => 'Limited Availability',
-            'active' => 'Actively Maintained',
-            'minimal' => 'Minimal Support',
-            'unsupported' => 'Unsupported',
-            'unofficial' => 'Unofficial',
-            'deprecated' => 'Deprecated',
-        ];
+        $badges = self::getSupportLevelBadges();
+        $labels = [];
+        foreach ($badges as $key => $badge) {
+            preg_match('/^\[\!\[([A-Za-z\s\d]+)\]\(https:\/\/img.shields.io/', $badge, $matches);
+            if (!empty($matches[1])) {
+                $labels[$key] = $matches[1];
+            }
+        }
+        return $labels;
     }
 
     /**
