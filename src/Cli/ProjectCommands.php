@@ -540,7 +540,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     public function projectUpdateInfo($project, $options = [
         'as' => 'default',
         'codeowners' => '',
-        'badge' => '',
+        'support-level-badge' => '',
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
         'pr-title' => 'Update project information.',
@@ -551,8 +551,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         if (count(explode('/', $project)) != 2) {
             throw new \Exception("Invalid project name: $project");
         }
-        if (empty($options['codeowners']) && empty($options['badge'])) {
-            throw new \Exception("Must specify at least one of --codeowners or --badge");
+        if (empty($options['codeowners']) && empty($options['support-level-badge'])) {
+            throw new \Exception("Must specify at least one of --codeowners or --support-level-badge");
         }
         $url = "git@github.com:$project.git";
         $remote = new Remote($url);
@@ -576,10 +576,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $workingCopy->add("$dir/CODEOWNERS");
         }
 
-        if (!empty($options['badge'])) {
-            $badge = $options['badge'];
-            if (!$badge) {
-                throw new \Exception("You should provide a value for the badge.");
+        if (!empty($options['support-level-badge'])) {
+            $support_level_badge = $options['support-level-badge'];
+            $badge_contents = $this->getSupportLevelBadge($support_level_badge);
+            if (!$badge_contents) {
+                throw new \Exception("Invalid support level badge: $support_level_badge.");
             }
             if (file_exists("$dir/README.md")) {
                 $readme_contents = file_get_contents("$dir/README.md");
@@ -592,7 +593,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             [$badge_insert_line, $empty_line_after] = $this->getBadgeInsertLine($lines);
 
             // Insert badge contents and empty line after it.
-            $insert = [$badge];
+            $insert = [$badge_contents];
             if ($empty_line_after) {
                 $insert[] = '';
             }
@@ -613,7 +614,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     /**
      * Get line number where to insert the badge.
      */
-    protected function getBadgeInsertLine($readme_lines, $number_of_lines_to_search = 5) {
+    protected function getBadgeInsertLine($readme_lines, $number_of_lines_to_search = 5)
+    {
         $first_empty_line = -1;
         $last_badge_line = -1;
         $badge_insert_line = -1;
@@ -657,6 +659,23 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             }
         }
         return [$badge_insert_line, $empty_line_after];
+    }
+
+    /**
+     * Get right badge markdown.
+     */
+    protected function getSupportLevelBadge($level)
+    {
+        $badges = [
+            'ea' => '[![Early Access](https://img.shields.io/badge/pantheon-EARLY_ACCESS-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/early-access?q=org%3Apantheon-systems)',
+            'la' => '[![Limited Availability](https://img.shields.io/badge/pantheon-LIMITED_AVAILABILTY-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/limited-availability?q=org%3Apantheon-systems)',
+            'actively-supported' => '[![Actively Maintained](https://img.shields.io/badge/pantheon-actively_maintained-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/actively-maintained?q=org%3Apantheon-systems)',
+            'minimally-supported' => '[![Minimal Support](https://img.shields.io/badge/pantheon-minimal_support-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/minimal-support?q=org%3Apantheon-systems)',
+            'unsupported' => '[![Unsupported](https://img.shields.io/badge/pantheon-unsupported-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unsupported?q=org%3Apantheon-systems)',
+            'unofficial' => '[![Unofficial](https://img.shields.io/badge/pantheon-unofficial-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unofficial?q=org%3Apantheon-systems)',
+            'deprecated' => '[![Deprecated](https://img.shields.io/badge/pantheon-deprecated-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unofficial?q=org%3Apantheon-systems)',
+        ];
+        return $badges[$level] ?? '';
     }
 
     /**
