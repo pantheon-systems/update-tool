@@ -18,6 +18,7 @@ use UpdateTool\Git\WorkingCopy;
 use UpdateTool\Update\Filters\FilterManager;
 use UpdateTool\Util\ReleaseNode;
 use VersionTool\VersionTool;
+use UpdateTool\Util\SupportLevel;
 
 /**
  * Commands used to manipulate projects directly with git
@@ -578,7 +579,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         if (!empty($options['support-level-badge'])) {
             $support_level_badge = $options['support-level-badge'];
-            $badge_contents = $this->getSupportLevelBadge($support_level_badge);
+            $badge_contents = SupportLevel::getSupportLevelBadge($support_level_badge);
             if (!$badge_contents) {
                 throw new \Exception("Invalid support level badge: $support_level_badge.");
             }
@@ -659,23 +660,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             }
         }
         return [$badge_insert_line, $empty_line_after];
-    }
-
-    /**
-     * Get right badge markdown.
-     */
-    protected function getSupportLevelBadge($level)
-    {
-        $badges = [
-            'ea' => '[![Early Access](https://img.shields.io/badge/pantheon-EARLY_ACCESS-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/early-access?q=org%3Apantheon-systems)',
-            'la' => '[![Limited Availability](https://img.shields.io/badge/pantheon-LIMITED_AVAILABILTY-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/limited-availability?q=org%3Apantheon-systems)',
-            'actively-supported' => '[![Actively Maintained](https://img.shields.io/badge/pantheon-actively_maintained-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/actively-maintained?q=org%3Apantheon-systems)',
-            'minimally-supported' => '[![Minimal Support](https://img.shields.io/badge/pantheon-minimal_support-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/minimal-support?q=org%3Apantheon-systems)',
-            'unsupported' => '[![Unsupported](https://img.shields.io/badge/pantheon-unsupported-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unsupported?q=org%3Apantheon-systems)',
-            'unofficial' => '[![Unofficial](https://img.shields.io/badge/pantheon-unofficial-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unofficial?q=org%3Apantheon-systems)',
-            'deprecated' => '[![Deprecated](https://img.shields.io/badge/pantheon-deprecated-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unofficial?q=org%3Apantheon-systems)',
-        ];
-        return $badges[$level] ?? '';
     }
 
     /**
