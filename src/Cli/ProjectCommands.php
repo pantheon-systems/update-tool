@@ -585,8 +585,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             }
             if (file_exists("$dir/README.md")) {
                 $readme_contents = file_get_contents("$dir/README.md");
-            }
-            else {
+            } else {
                 $readme_contents = '';
             }
 

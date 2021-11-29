@@ -26,32 +26,6 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     use LoggerAwareTrait;
 
     /**
-     * @command repo:convert-data
-     */
-    public function repoConvertData($path, $options = ['format' => 'json'])
-    {
-        $repos = json_decode(file_get_contents($path), true);
-
-        $reposResult = [];
-        foreach ($repos as $key => $spec) {
-            list($org, $project) = explode('/', $spec['full_name'], 2);
-            $spec['org'] = $org;
-
-            $repo = [
-                'kind' => 'repository',
-                'metadata' => [
-                    'name' => $project,
-                ],
-                'spec' => $spec,
-            ];
-
-            $reposResult[] = $repo;
-        }
-
-        return $reposResult;
-    }
-
-    /**
      * @command org:analyze
      * @param $org The org to list
      * @filter-output
