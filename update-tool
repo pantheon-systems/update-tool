@@ -31,6 +31,7 @@ $commandClasses = [
   \UpdateTool\Cli\PhpCommands::class,
   \UpdateTool\Cli\ProjectCommands::class,
   \UpdateTool\Cli\CICommands::class,
+  \UpdateTool\Cli\OrgCommands::class,
 ];
 $selfUpdateRepository = 'pantheon-systems/update-tool';
 $configPrefix = 'UPDATETOOL';
