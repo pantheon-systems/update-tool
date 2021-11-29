@@ -532,6 +532,152 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
+     * @command project:update-info
+     * @param $project The github project to update info for.
+     *
+     * @return Consolidation\OutputFormatters\StructuredData\RowsOfFields
+     */
+    public function projectUpdateInfo($project, $options = [
+        'as' => 'default',
+        'codeowners' => '',
+        'support-level-badge' => '',
+        'branch-name' => 'project-update-info',
+        'commit-message' => 'Update project information.',
+        'pr-title' => 'Update project information.',
+        'pr-body' => '',
+        'base-branch' => 'master',
+    ])
+    {
+        if (count(explode('/', $project)) != 2) {
+            throw new \Exception("Invalid project name: $project");
+        }
+        if (empty($options['codeowners']) && empty($options['support-level-badge'])) {
+            throw new \Exception("Must specify at least one of --codeowners or --support-level-badge");
+        }
+        $url = "git@github.com:$project.git";
+        $remote = new Remote($url);
+        $api = $this->api($options['as']);
+        $dir = sys_get_temp_dir() . '/hubph/' . $remote->project();
+        $baseBranch = $options['base-branch'];
+        $workingCopy = WorkingCopy::cloneBranch($url, $dir, $baseBranch, $api);
+
+        if ($this->logger) {
+            $workingCopy->setLogger($this->logger);
+        }
+
+        $branchName = $options['branch-name'];
+        $workingCopy->createBranch($branchName);
+        $workingCopy->switchBranch($branchName);
+
+        if (!empty($options['codeowners'])) {
+            $codeowners = $options['codeowners'];
+            // Append given CODEOWNERS line.
+            file_put_contents("$dir/CODEOWNERS", '* ' . $codeowners . "\n", FILE_APPEND);
+            $workingCopy->add("$dir/CODEOWNERS");
+        }
+
+        if (!empty($options['support-level-badge'])) {
+            $support_level_badge = $options['support-level-badge'];
+            $badge_contents = $this->getSupportLevelBadge($support_level_badge);
+            if (!$badge_contents) {
+                throw new \Exception("Invalid support level badge: $support_level_badge.");
+            }
+            if (file_exists("$dir/README.md")) {
+                $readme_contents = file_get_contents("$dir/README.md");
+            } else {
+                $readme_contents = '';
+            }
+
+            $lines = explode("\n", $readme_contents);
+            [$badge_insert_line, $empty_line_after] = $this->getBadgeInsertLine($lines);
+
+            // Insert badge contents and empty line after it.
+            $insert = [$badge_contents];
+            if ($empty_line_after) {
+                $insert[] = '';
+            }
+            array_splice($lines, $badge_insert_line, 0, $insert);
+            $readme_contents = implode("\n", $lines);
+            file_put_contents("$dir/README.md", $readme_contents);
+            $workingCopy->add("$dir/README.md");
+        }
+
+        $commit_message = $options['commit-message'];
+        $workingCopy->commit($commit_message);
+        $workingCopy->push('origin', $branchName);
+        $message = $options['pr-title'];
+        $body = $options['pr-body'];
+        $workingCopy->pr($message, $body, $baseBranch, $branchName);
+    }
+
+    /**
+     * Get line number where to insert the badge.
+     */
+    protected function getBadgeInsertLine($readme_lines, $number_of_lines_to_search = 5)
+    {
+        $first_empty_line = -1;
+        $last_badge_line = -1;
+        $badge_insert_line = -1;
+        $empty_line_after = true;
+        foreach ($readme_lines as $line_number => $line) {
+            if ($first_empty_line == -1 && empty(trim($line))) {
+                $first_empty_line = $line_number;
+            }
+            // Is this line a badge?
+            if (preg_match('/\[\!\[[A-Za-z0-9\s]+\]\(.*\)/', $line)) {
+                $last_badge_line = $line_number;
+                // Is this line the License badge?
+                if (preg_match('/\[\!\[License]\(.*\)/', $line)) {
+                    if ($line_number) {
+                        $badge_insert_line = $line_number;
+                    } else {
+                        $badge_insert_line = 0;
+                    }
+                    $empty_line_after = false;
+                }
+            } else {
+                if ($last_badge_line != -1) {
+                    // We already found the badges, exit foreach.
+                    break;
+                } elseif ($line_number > $number_of_lines_to_search) {
+                    // We've searched enough lines, exit foreach.
+                    break;
+                }
+            }
+        }
+        if ($badge_insert_line === -1) {
+            if ($last_badge_line !== -1) {
+                // If we found badges, we'll insert this badge after the last badge.
+                $badge_insert_line = $last_badge_line + 1;
+            } elseif ($first_empty_line !== -1) {
+                // If we didn't find any badges, we'll insert this badge at the first empty line.
+                $badge_insert_line = $first_empty_line + 1;
+            } else {
+                // Final fallback: insert badge in the second line of the file.
+                $badge_insert_line = 1;
+            }
+        }
+        return [$badge_insert_line, $empty_line_after];
+    }
+
+    /**
+     * Get right badge markdown.
+     */
+    protected function getSupportLevelBadge($level)
+    {
+        $badges = [
+            'ea' => '[![Early Access](https://img.shields.io/badge/pantheon-EARLY_ACCESS-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/early-access?q=org%3Apantheon-systems)',
+            'la' => '[![Limited Availability](https://img.shields.io/badge/pantheon-LIMITED_AVAILABILTY-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/limited-availability?q=org%3Apantheon-systems)',
+            'active' => '[![Actively Maintained](https://img.shields.io/badge/pantheon-actively_maintained-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/actively-maintained?q=org%3Apantheon-systems)',
+            'minimal' => '[![Minimal Support](https://img.shields.io/badge/pantheon-minimal_support-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/minimal-support?q=org%3Apantheon-systems)',
+            'unsupported' => '[![Unsupported](https://img.shields.io/badge/pantheon-unsupported-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unsupported?q=org%3Apantheon-systems)',
+            'unofficial' => '[![Unofficial](https://img.shields.io/badge/pantheon-unofficial-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unofficial?q=org%3Apantheon-systems)',
+            'deprecated' => '[![Deprecated](https://img.shields.io/badge/pantheon-deprecated-yellow?logo=pantheon&color=FFDC28&style=for-the-badge)](https://github.com/topics/unofficial?q=org%3Apantheon-systems)',
+        ];
+        return $badges[$level] ?? '';
+    }
+
+    /**
      * Apply specified filters to the working copy and commit the changes.
      */
     protected function applyFiltersAndCommit($filter_manager, $upstream_working_copy, $project_working_copy, $update_parameters)
