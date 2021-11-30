@@ -117,5 +117,4 @@ trait ProjectUpdateTrait
         }
         return [$badge_insert_line, $empty_line_after];
     }
-
 }

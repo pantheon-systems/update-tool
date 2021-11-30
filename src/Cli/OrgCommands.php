@@ -138,7 +138,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         } catch (\Exception $e) {
         }
 
-       return static::inferOwners($api, $org, $repoName, $codeowners, $ownerSource);
+        return static::inferOwners($api, $org, $repoName, $codeowners, $ownerSource);
     }
 
     /**
@@ -213,7 +213,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     /**
      * Validate project full name. Throw exception if invalid.
      */
-    protected function validateProjectFullName($projectFullName) {
+    protected function validateProjectFullName($projectFullName)
+    {
         if (empty($projectFullName)) {
             return false;
         }
@@ -227,7 +228,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     /**
      * Validate project support level. Throw exception if invalid.
      */
-    protected function validateProjectSupportLevel($projectSupportLevel) {
+    protected function validateProjectSupportLevel($projectSupportLevel)
+    {
         $labels = SupportLevel::getBadgesLabels();
         foreach ($labels as $key => $label) {
             if ($projectSupportLevel === $label) {
