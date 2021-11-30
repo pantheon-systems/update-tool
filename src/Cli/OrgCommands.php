@@ -19,11 +19,13 @@ use Hubph\PullRequests;
 use Hubph\Git\WorkingCopy;
 use Hubph\Git\Remote;
 use UpdateTool\Util\SupportLevel;
+use UpdateTool\Util\ProjectUpdateTrait;
 
 class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
     use LoggerAwareTrait;
+    use ProjectUpdateTrait;
 
     /**
      * @command org:analyze
@@ -149,6 +151,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'update-support-level-badge' => false,
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
+        'pr-body' => '',
     ])
     {
         $api = $this->api($options['as']);
@@ -163,7 +166,11 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         if (file_exists($csv_file)) {
             $csv = new \SplFileObject($csv_file);
             $csv->setFlags(\SplFileObject::READ_CSV);
-            foreach ($csv as $row) {
+            foreach ($csv as $row_id => $row) {
+                // Skip header row.
+                if ($row_id == 0) {
+                    continue;
+                }
                 $projectUpdateSupportLevel = $updateSupportLevelBadge;
                 $projectUpdateCodeowners = $updateCodeowners;
                 $projectFullName = $row[3];
@@ -174,24 +181,28 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $ownerSource = '';
                 if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch) && !empty($projectOrg)) {
                     // If empty or invalid support level, we won't update it here.
-                    if ($updateSupportLevelBadge && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
+                    if ($projectUpdateSupportLevel && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
                         $projectUpdateSupportLevel = false;
                     }
-                    if ($updateCodeowners) {
+                    if ($projectUpdateCodeowners) {
                         list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
                         if (empty($codeowners)) {
                             // @todo: Should we decide a course of action based on $ownerSource?
                             $projectUpdateCodeowners = false;
+                        } else {
+                            $codeowners = implode('\n', $codeowners);
                         }
                     }
                 } else {
                     $projectUpdateSupportLevel = false;
                     $projectUpdateCodeowners = false;
                 }
-                // @todo: Convert project:update-info to a trait.
-                // @todo: Based on project variables:
-                // - Invoke project:update-info trait and pass the right variables.
-                var_dump($row);
+                if ($projectUpdateSupportLevel || $projectUpdateCodeowners) {
+                    if (!$projectUpdateSupportLevel) {
+                        $projectSupportLevel = null;
+                    }
+                    $this->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $this->logger, $projectSupportLevel, $codeowners);
+                }
                 break;
             }
         } else {

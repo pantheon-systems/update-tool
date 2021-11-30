@@ -24,7 +24,7 @@ trait ProjectUpdateTrait
         }
         $url = "git@github.com:$project.git";
         $remote = new Remote($url);
-        $dir = sys_get_temp_dir() . '/hubph/' . $remote->project();
+        $dir = sys_get_temp_dir() . '/update-tool/' . $remote->project();
         $workingCopy = WorkingCopy::cloneBranch($url, $dir, $baseBranch, $api);
 
         $workingCopy->setLogger($logger);
