@@ -89,20 +89,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $reposResult = [];
         foreach ($repos as $key => $repo) {
             $resultKey = $repo['id'];
-            $codeowners = [];
-            $ownerSource = '';
 
-            try {
-                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'CODEOWNERS');
-                if (!empty($data['content'])) {
-                    $content = base64_decode($data['content']);
-                    $ownerSource = 'file';
-                    $codeowners = static::filterGlobalCodeOwners($content);
-                }
-            } catch (\Exception $e) {
-            }
-
-            list($codeowners, $ownerSource) = static::inferOwners($api, $org, $repo['name'], $codeowners, $ownerSource);
+            list($codeowners, $ownerSource) = $this->guessCodeowners($api, $org, $repo['name']);
 
             $repo['codeowners'] = $codeowners;
             $repo['owners_src'] = $ownerSource;
@@ -129,6 +117,115 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $this->addTableRenderFunction($data);
 
         return $data;
+    }
+
+    /**
+     * Guess codeowners content.
+     */
+    public function guessCodeOwners($api, $org, $repoName)
+    {
+        $codeowners = [];
+        $ownerSource = '';
+        try {
+            $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repoName, 'CODEOWNERS');
+            if (!empty($data['content'])) {
+                $content = base64_decode($data['content']);
+                $ownerSource = 'file';
+                $codeowners = static::filterGlobalCodeOwners($content);
+            }
+        } catch (\Exception $e) {
+        }
+
+       return static::inferOwners($api, $org, $repoName, $codeowners, $ownerSource);
+    }
+
+    /**
+     * @command org:update-projects-info
+     * @param $csv_file The path to csv file that contains projects information.
+     */
+    public function orgUpdateProjectsInfo($csv_file, $options = [
+        'as' => 'default',
+        'update-codeowners' => false,
+        'update-support-level-badge' => false,
+        'branch-name' => 'project-update-info',
+        'commit-message' => 'Update project information.',
+    ])
+    {
+        $api = $this->api($options['as']);
+        $updateCodeowners = $options['update-codeowners'];
+        $updateSupportLevelBadge = $options['update-support-level-badge'];
+        if (!$updateCodeowners && !$updateSupportLevelBadge) {
+            throw new \Exception("Either --update-codeowners or --update-support-level-badge must be specified.");
+        }
+        $prTitle = '[UpdateTool - Project Information] Update project information.';
+        $branchName = $options['branch-name'];
+        $commitMessage = $options['commit-message'];
+        if (file_exists($csv_file)) {
+            $csv = new \SplFileObject($csv_file);
+            $csv->setFlags(\SplFileObject::READ_CSV);
+            foreach ($csv as $row) {
+                $projectUpdateSupportLevel = $updateSupportLevelBadge;
+                $projectUpdateCodeowners = $updateCodeowners;
+                $projectFullName = $row[3];
+                $projectOrg = $row[5];
+                $projectSupportLevel = $row[23];
+                $projectDefaultBranch = $row[97];
+                $codeowners = '';
+                $ownerSource = '';
+                if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch) && !empty($projectOrg)) {
+                    // If empty or invalid support level, we won't update it here.
+                    if ($updateSupportLevelBadge && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
+                        $projectUpdateSupportLevel = false;
+                    }
+                    if ($updateCodeowners) {
+                        list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
+                        if (empty($codeowners)) {
+                            // @todo: Should we decide a course of action based on $ownerSource?
+                            $projectUpdateCodeowners = false;
+                        }
+                    }
+                } else {
+                    $projectUpdateSupportLevel = false;
+                    $projectUpdateCodeowners = false;
+                }
+                // @todo: Convert project:update-info to a trait.
+                // @todo: Based on project variables:
+                // - Invoke project:update-info trait and pass the right variables.
+                var_dump($row);
+                break;
+            }
+        } else {
+            throw new \Exception("File $csv_file does not exist.");
+        }
+    }
+
+    /**
+     * Validate project full name. Throw exception if invalid.
+     */
+    protected function validateProjectFullName($projectFullName) {
+        if (empty($projectFullName)) {
+            return false;
+        }
+        $parts = explode('/', $projectFullName);
+        if (count($parts) != 2) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Validate project support level. Throw exception if invalid.
+     */
+    protected function validateProjectSupportLevel($projectSupportLevel) {
+        $labels = SupportLevel::getBadgesLabels();
+        foreach ($labels as $key => $label) {
+            if ($projectSupportLevel === $label) {
+                return true;
+            } elseif ($projectSupportLevel === $key) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
