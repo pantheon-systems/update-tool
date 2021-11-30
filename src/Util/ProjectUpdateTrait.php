@@ -2,14 +2,11 @@
 
 namespace UpdateTool\Util;
 
-use UpdateTool\Cli\ApiTrait;
 use UpdateTool\Git\Remote;
 use UpdateTool\Git\WorkingCopy;
 
 trait ProjectUpdateTrait
 {
-
-    use ApiTrait;
 
     /**
      * Update project info (codeowners and support level badge).
