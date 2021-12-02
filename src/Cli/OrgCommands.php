@@ -211,6 +211,25 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     }
 
     /**
+     * @command org:update-projects-merge-prs
+     * @param $csv_file The path to csv file that contains projects information.
+     */
+    public function orgUpdateProjectsMergePrs($csv_file, $options = [
+        'as' => 'default',
+        'branch-name' => 'project-update-info',
+        'pr-title' => 'Update to Drupal',
+    ])
+    {
+        $api = $this->api($options['as']);
+        $prs = $api->matchingPRs('pantheon-systems/drops-7', $options['pr-title']);
+        var_dump($prs->prNumbers());
+        foreach ($prs as $key => $pr) {
+            var_dump($pr);
+            var_dump($key);
+        }
+    }
+
+    /**
      * Validate project full name. Throw exception if invalid.
      */
     protected function validateProjectFullName($projectFullName)
