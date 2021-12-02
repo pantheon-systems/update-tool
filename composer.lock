@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bc696eb72668f4f43734c61307b8b049",
+    "content-hash": "775a950030adaf8728aa899d27a4e444",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -754,37 +754,37 @@
         },
         {
             "name": "g1a/hubph",
-            "version": "0.4.0",
+            "version": "0.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/g1a/hubph.git",
-                "reference": "9d727fbe20745f1333e8a433061cf519a0e71d38"
+                "reference": "06654e21a9a0e97712f756713a81e7f84738f603"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/g1a/hubph/zipball/9d727fbe20745f1333e8a433061cf519a0e71d38",
-                "reference": "9d727fbe20745f1333e8a433061cf519a0e71d38",
+                "url": "https://api.github.com/repos/g1a/hubph/zipball/06654e21a9a0e97712f756713a81e7f84738f603",
+                "reference": "06654e21a9a0e97712f756713a81e7f84738f603",
                 "shasum": ""
             },
             "require": {
-                "consolidation/filter-via-dot-access-data": "^1",
-                "consolidation/robo": "^2.0.5",
+                "consolidation/filter-via-dot-access-data": "^1 || ^2",
+                "consolidation/robo": "^2.0.5 || ^3",
                 "knplabs/github-api": "^2.14",
                 "php": ">=7.1.3",
                 "php-http/guzzle6-adapter": "^1.1",
-                "symfony/console": "^2.8|^3|^4|^5",
-                "symfony/filesystem": "^2.8|^3|^4.4"
+                "symfony/console": "^2.8 || ^3 || ^4 || ^5",
+                "symfony/filesystem": "^2.8 || ^3 || ^4.4"
             },
             "require-dev": {
                 "g1a/composer-test-scenarios": "^2",
                 "phpunit/phpunit": "^5",
                 "satooshi/php-coveralls": "^2",
-                "squizlabs/php_codesniffer": "^2.8"
+                "squizlabs/php_codesniffer": "^3.6.1"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "0.x-dev"
+                    "dev-main": "0.x-dev"
                 }
             },
             "autoload": {
@@ -805,9 +805,9 @@
             "description": "Template project for PHP libraries.",
             "support": {
                 "issues": "https://github.com/g1a/hubph/issues",
-                "source": "https://github.com/g1a/hubph/tree/0.4.0"
+                "source": "https://github.com/g1a/hubph/tree/0.6.1"
             },
-            "time": "2020-06-13T02:39:52+00:00"
+            "time": "2021-12-02T00:43:18+00:00"
         },
         {
             "name": "grasmash/expander",

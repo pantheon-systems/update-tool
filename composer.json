@@ -23,7 +23,7 @@
         "composer/semver": "^2.0",
         "consolidation/robo": "^2.0.5",
         "consolidation/version-tool": "^0.1.9",
-        "g1a/hubph": "^0.4",
+        "g1a/hubph": "^0.6",
         "php-http/guzzle6-adapter": "^1.1",
         "symfony/console": "^2.8|^3|^4",
         "tm/tooly-composer-script": "^1.4"
