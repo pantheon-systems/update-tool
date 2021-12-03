@@ -45,8 +45,8 @@ trait ProjectUpdateTrait
         $workingCopy->setLogger($logger);
 
         if (!$existingPrFound) {
-          $workingCopy->createBranch($branchName);
-          $workingCopy->switchBranch($branchName);
+            $workingCopy->createBranch($branchName);
+            $workingCopy->switchBranch($branchName);
         }
         $codeowners_changed = false;
         $readme_changed = false;
