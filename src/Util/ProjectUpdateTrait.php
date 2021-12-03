@@ -4,6 +4,7 @@ namespace UpdateTool\Util;
 
 use UpdateTool\Git\Remote;
 use UpdateTool\Git\WorkingCopy;
+use UpdateTool\Util\SupportLevel;
 
 trait ProjectUpdateTrait
 {
@@ -30,6 +31,7 @@ trait ProjectUpdateTrait
         $workingCopy->switchBranch($branchName);
 
         if (!empty($codeowners)) {
+            // @todo Idempotency.
             // Append given CODEOWNERS line.
             file_put_contents("$dir/CODEOWNERS", '* ' . $codeowners . "\n", FILE_APPEND);
             $workingCopy->add("$dir/CODEOWNERS");
@@ -46,18 +48,20 @@ trait ProjectUpdateTrait
                 $readme_contents = '';
             }
 
-            $lines = explode("\n", $readme_contents);
-            [$badge_insert_line, $empty_line_after] = $this->getBadgeInsertLine($lines);
+            if (!SupportLevel::compareSupportLevelFromReadmeAndBadge($readme_contents, $badge_contents)) {
+                $lines = explode("\n", $readme_contents);
+                [$badge_insert_line, $empty_line_after] = $this->getBadgeInsertLine($lines, $badge_contents);
 
-            // Insert badge contents and empty line after it.
-            $insert = [$badge_contents];
-            if ($empty_line_after) {
-                $insert[] = '';
+                // Insert badge contents and empty line after it.
+                $insert = [$badge_contents];
+                if ($empty_line_after) {
+                    $insert[] = '';
+                }
+                array_splice($lines, $badge_insert_line, 0, $insert);
+                $readme_contents = implode("\n", $lines);
+                file_put_contents("$dir/README.md", $readme_contents);
+                $workingCopy->add("$dir/README.md");
             }
-            array_splice($lines, $badge_insert_line, 0, $insert);
-            $readme_contents = implode("\n", $lines);
-            file_put_contents("$dir/README.md", $readme_contents);
-            $workingCopy->add("$dir/README.md");
         }
 
         $workingCopy->commit($commitMessage);
@@ -68,7 +72,7 @@ trait ProjectUpdateTrait
     /**
      * Get line number where to insert the badge.
      */
-    protected function getBadgeInsertLine($readme_lines, $number_of_lines_to_search = 5)
+    protected function getBadgeInsertLine($readme_lines, $badge_contents = '', $number_of_lines_to_search = 5)
     {
         $first_empty_line = -1;
         $last_badge_line = -1;
