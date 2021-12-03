@@ -14,6 +14,7 @@ trait ProjectUpdateTrait
      */
     protected function updateProjectInfo($api, $project, $baseBranch, $branchName, $commitMessage, $prTitle, $prBody, $logger, $supportLevelBadge = '', $codeowners = '')
     {
+        $branchToClone = $baseBranch;
         if (count(explode('/', $project)) != 2) {
             throw new \Exception("Invalid project name: $project");
         }
@@ -23,12 +24,30 @@ trait ProjectUpdateTrait
         $url = "git@github.com:$project.git";
         $remote = new Remote($url);
         $dir = sys_get_temp_dir() . '/update-tool/' . $remote->project();
-        $workingCopy = WorkingCopy::cloneBranch($url, $dir, $baseBranch, $api);
+
+        $existingPrFound = false;
+
+        $prs = $api->matchingPRs($project, $prTitle)->prNumbers();
+        if (count($prs) === 1) {
+            $prNumber = reset($prs);
+            $parts = explode('/', $project);
+            $fullPr = $api->prGet($parts[0], $parts[1], $prNumber);
+            if ($fullPr) {
+                $branchToClone = $fullPr['head']['ref'];
+                $branchName = $branchToClone;
+                $existingPrFound = true;
+            }
+        }
+
+
+        $workingCopy = WorkingCopy::cloneBranch($url, $dir, $branchToClone, $api);
 
         $workingCopy->setLogger($logger);
 
-        $workingCopy->createBranch($branchName);
-        $workingCopy->switchBranch($branchName);
+        if (!$existingPrFound) {
+          $workingCopy->createBranch($branchName);
+          $workingCopy->switchBranch($branchName);
+        }
         $codeowners_changed = false;
         $readme_changed = false;
 
@@ -74,7 +93,9 @@ trait ProjectUpdateTrait
         if ($codeowners_changed || $readme_changed) {
             $workingCopy->commit($commitMessage);
             $workingCopy->push('origin', $branchName);
-            $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+            if (!$existingPrFound) {
+                $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+            }
         }
     }
 
