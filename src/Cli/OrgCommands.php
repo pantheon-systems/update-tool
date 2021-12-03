@@ -201,7 +201,11 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     if (!$projectUpdateSupportLevel) {
                         $projectSupportLevel = null;
                     }
-                    $this->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $this->logger, $projectSupportLevel, $codeowners);
+                    try {
+                      $this->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $this->logger, $projectSupportLevel, $codeowners);
+                    } catch (\Exception $e) {
+                        $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
+                    }
                 }
                 break;
             }
