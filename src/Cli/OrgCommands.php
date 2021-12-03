@@ -107,7 +107,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
                 if (!empty($data['content'])) {
                     $content = base64_decode($data['content']);
-                    $repo['support_level'] = static::getSupportLevel($content);
+                    $repo['support_level'] = SupportLevel::getSupportLevelFromContent($content);
                 }
             } catch (\Exception $e) {
             }
@@ -201,7 +201,11 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     if (!$projectUpdateSupportLevel) {
                         $projectSupportLevel = null;
                     }
-                    $this->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $this->logger, $projectSupportLevel, $codeowners);
+                    try {
+                        $this->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $this->logger, $projectSupportLevel, $codeowners);
+                    } catch (\Exception $e) {
+                        $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
+                    }
                 }
                 break;
             }
@@ -258,32 +262,6 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             }
         }
         return false;
-    }
-
-    /**
-     * Get support level from README.md contents.
-     */
-    protected static function getSupportLevel($readme_contents)
-    {
-        $support_level = null;
-        $lines = explode("\n", $readme_contents);
-        $badges = SupportLevel::getSupportLevelBadges();
-        foreach ($lines as $line) {
-            foreach ($badges as $key => $badge) {
-                // Get the badge text from the badge markup.
-                preg_match(SupportLevel::SUPPORT_LEVEL_BADGE_LABEL_REGEX, $badge, $matches);
-                if (!empty($matches[1])) {
-                    if (strpos($line, $matches[1]) !== false) {
-                        $support_level = $key;
-                        break 2;
-                    }
-                }
-            }
-        }
-        if ($support_level) {
-            return SupportLevel::getSupportLevelLabel($support_level);
-        }
-        return null;
     }
 
     protected static function inferOwners($api, $org, $project, $codeowners, $ownerSource)

@@ -70,4 +70,40 @@ class SupportLevel
         $badges = self::getBadgesLabels();
         return $badges[$level] ?? '';
     }
+
+    /**
+     * Get support level from README.md contents.
+     */
+    public static function getSupportLevelFromContent($readme_contents)
+    {
+        $support_level = null;
+        $lines = explode("\n", $readme_contents);
+        $badges = SupportLevel::getSupportLevelBadges();
+        foreach ($lines as $line) {
+            foreach ($badges as $key => $badge) {
+                // Get the badge text from the badge markup.
+                preg_match(self::SUPPORT_LEVEL_BADGE_LABEL_REGEX, $badge, $matches);
+                if (!empty($matches[1])) {
+                    if (strpos($line, $matches[1]) !== false) {
+                        $support_level = $key;
+                        break 2;
+                    }
+                }
+            }
+        }
+        if ($support_level) {
+            return self::getSupportLevelLabel($support_level);
+        }
+        return null;
+    }
+
+    /**
+     * Compare support label from readme and badge.
+     */
+    public static function compareSupportLevelFromReadmeAndBadge($readme_contents, $badge_contents)
+    {
+        $support_level_from_readme = self::getSupportLevelFromContent($readme_contents);
+        $support_level_from_badge = self::getSupportLevelFromContent($badge_contents);
+        return $support_level_from_badge === $support_level_from_readme;
+    }
 }

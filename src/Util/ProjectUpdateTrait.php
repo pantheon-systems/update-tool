@@ -4,6 +4,7 @@ namespace UpdateTool\Util;
 
 use UpdateTool\Git\Remote;
 use UpdateTool\Git\WorkingCopy;
+use UpdateTool\Util\SupportLevel;
 
 trait ProjectUpdateTrait
 {
@@ -13,6 +14,7 @@ trait ProjectUpdateTrait
      */
     protected function updateProjectInfo($api, $project, $baseBranch, $branchName, $commitMessage, $prTitle, $prBody, $logger, $supportLevelBadge = '', $codeowners = '')
     {
+        $branchToClone = $baseBranch;
         if (count(explode('/', $project)) != 2) {
             throw new \Exception("Invalid project name: $project");
         }
@@ -22,17 +24,45 @@ trait ProjectUpdateTrait
         $url = "git@github.com:$project.git";
         $remote = new Remote($url);
         $dir = sys_get_temp_dir() . '/update-tool/' . $remote->project();
-        $workingCopy = WorkingCopy::cloneBranch($url, $dir, $baseBranch, $api);
+
+        $existingPrFound = false;
+
+        $prs = $api->matchingPRs($project, $prTitle)->prNumbers();
+        if (count($prs) === 1) {
+            $prNumber = reset($prs);
+            $parts = explode('/', $project);
+            $fullPr = $api->prGet($parts[0], $parts[1], $prNumber);
+            if ($fullPr) {
+                $branchToClone = $fullPr['head']['ref'];
+                $branchName = $branchToClone;
+                $existingPrFound = true;
+            }
+        }
+
+
+        $workingCopy = WorkingCopy::cloneBranch($url, $dir, $branchToClone, $api);
 
         $workingCopy->setLogger($logger);
 
-        $workingCopy->createBranch($branchName);
-        $workingCopy->switchBranch($branchName);
+        if (!$existingPrFound) {
+            $workingCopy->createBranch($branchName);
+            $workingCopy->switchBranch($branchName);
+        }
+        $codeowners_changed = false;
+        $readme_changed = false;
 
         if (!empty($codeowners)) {
             // Append given CODEOWNERS line.
-            file_put_contents("$dir/CODEOWNERS", '* ' . $codeowners . "\n", FILE_APPEND);
-            $workingCopy->add("$dir/CODEOWNERS");
+            $string_to_add = '* ' . $codeowners . "\n";
+            $codeowners_content = '';
+            if (file_exists("$dir/CODEOWNERS")) {
+                $codeowners_content = file_get_contents("$dir/CODEOWNERS");
+            }
+            if (strpos($codeowners_content, $string_to_add) === false) {
+                file_put_contents("$dir/CODEOWNERS", $string_to_add, FILE_APPEND);
+                $workingCopy->add("$dir/CODEOWNERS");
+                $codeowners_changed = true;
+            }
         }
 
         if (!empty($supportLevelBadge)) {
@@ -46,29 +76,36 @@ trait ProjectUpdateTrait
                 $readme_contents = '';
             }
 
-            $lines = explode("\n", $readme_contents);
-            [$badge_insert_line, $empty_line_after] = $this->getBadgeInsertLine($lines);
+            if (!SupportLevel::compareSupportLevelFromReadmeAndBadge($readme_contents, $badge_contents)) {
+                $lines = explode("\n", $readme_contents);
+                [$badge_insert_line, $empty_line_after] = $this->getBadgeInsertLine($lines, $badge_contents);
 
-            // Insert badge contents and empty line after it.
-            $insert = [$badge_contents];
-            if ($empty_line_after) {
-                $insert[] = '';
+                // Insert badge contents and empty line after it.
+                $insert = [$badge_contents];
+                if ($empty_line_after) {
+                    $insert[] = '';
+                }
+                array_splice($lines, $badge_insert_line, 0, $insert);
+                $readme_contents = implode("\n", $lines);
+                file_put_contents("$dir/README.md", $readme_contents);
+                $workingCopy->add("$dir/README.md");
+                $readme_changed = true;
             }
-            array_splice($lines, $badge_insert_line, 0, $insert);
-            $readme_contents = implode("\n", $lines);
-            file_put_contents("$dir/README.md", $readme_contents);
-            $workingCopy->add("$dir/README.md");
         }
 
-        $workingCopy->commit($commitMessage);
-        $workingCopy->push('origin', $branchName);
-        $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+        if ($codeowners_changed || $readme_changed) {
+            $workingCopy->commit($commitMessage);
+            $workingCopy->push('origin', $branchName);
+            if (!$existingPrFound) {
+                $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+            }
+        }
     }
 
     /**
      * Get line number where to insert the badge.
      */
-    protected function getBadgeInsertLine($readme_lines, $number_of_lines_to_search = 5)
+    protected function getBadgeInsertLine($readme_lines, $badge_contents = '', $number_of_lines_to_search = 5)
     {
         $first_empty_line = -1;
         $last_badge_line = -1;
