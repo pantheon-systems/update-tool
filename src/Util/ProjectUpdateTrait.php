@@ -29,12 +29,18 @@ trait ProjectUpdateTrait
 
         $workingCopy->createBranch($branchName);
         $workingCopy->switchBranch($branchName);
+        $codeowners_changed = false;
+        $readme_changed = false;
 
         if (!empty($codeowners)) {
-            // @todo Idempotency.
             // Append given CODEOWNERS line.
-            file_put_contents("$dir/CODEOWNERS", '* ' . $codeowners . "\n", FILE_APPEND);
-            $workingCopy->add("$dir/CODEOWNERS");
+            $string_to_add = '* ' . $codeowners . "\n";
+            $codeownners_content = file_get_contents("$dir/CODEOWNERS");
+            if (strpos($codeownners_content, $string_to_add) === false) {
+                file_put_contents("$dir/CODEOWNERS", $string_to_add, FILE_APPEND);
+                $workingCopy->add("$dir/CODEOWNERS");
+                $codeowners_changed = true;
+            }
         }
 
         if (!empty($supportLevelBadge)) {
@@ -61,12 +67,15 @@ trait ProjectUpdateTrait
                 $readme_contents = implode("\n", $lines);
                 file_put_contents("$dir/README.md", $readme_contents);
                 $workingCopy->add("$dir/README.md");
+                $readme_changed = true;
             }
         }
 
-        $workingCopy->commit($commitMessage);
-        $workingCopy->push('origin', $branchName);
-        $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+        if ($codeowners_changed || $readme_changed) {
+            $workingCopy->commit($commitMessage);
+            $workingCopy->push('origin', $branchName);
+            $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+        }
     }
 
     /**
