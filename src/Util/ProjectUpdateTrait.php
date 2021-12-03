@@ -54,8 +54,11 @@ trait ProjectUpdateTrait
         if (!empty($codeowners)) {
             // Append given CODEOWNERS line.
             $string_to_add = '* ' . $codeowners . "\n";
-            $codeownners_content = file_get_contents("$dir/CODEOWNERS");
-            if (strpos($codeownners_content, $string_to_add) === false) {
+            $codeowners_content = '';
+            if (file_exists("$dir/CODEOWNERS")) {
+                $codeowners_content = file_get_contents("$dir/CODEOWNERS");
+            }
+            if (strpos($codeowners_content, $string_to_add) === false) {
                 file_put_contents("$dir/CODEOWNERS", $string_to_add, FILE_APPEND);
                 $workingCopy->add("$dir/CODEOWNERS");
                 $codeowners_changed = true;
