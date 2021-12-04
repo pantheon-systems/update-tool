@@ -171,6 +171,10 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 if ($row_id == 0) {
                     continue;
                 }
+                if (empty($row[0])) {
+                    // Empty line, probably EOF. Break loop.
+                    break;
+                }
                 $projectUpdateSupportLevel = $updateSupportLevelBadge;
                 $projectUpdateCodeowners = $updateCodeowners;
                 $projectFullName = $row[3];
@@ -220,16 +224,49 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      */
     public function orgUpdateProjectsMergePrs($csv_file, $options = [
         'as' => 'default',
-        'branch-name' => 'project-update-info',
-        'pr-title' => 'Update to Drupal',
+        'age' => 30,
+        'pr-title' => '[UpdateTool - Project Information]',
     ])
     {
         $api = $this->api($options['as']);
-        $prs = $api->matchingPRs('pantheon-systems/drops-7', $options['pr-title']);
-        var_dump($prs->prNumbers());
-        foreach ($prs as $key => $pr) {
-            var_dump($pr);
-            var_dump($key);
+        $prTitle = $options['pr-title'];
+        $age = $options['age'];
+
+        if (file_exists($csv_file)) {
+            $csv = new \SplFileObject($csv_file);
+            $csv->setFlags(\SplFileObject::READ_CSV);
+            foreach ($csv as $row_id => $row) {
+                // Skip header row.
+                if ($row_id == 0) {
+                    continue;
+                }
+                if (empty($row[0])) {
+                    // Empty line, probably EOF. Break loop.
+                    break;
+                }
+                $projectFullName = $row[3];
+                $projectOrg = $row[5];
+                $projectSupportLevel = $row[23];
+                if ($this->validateProjectFullName($projectFullName) && !empty($projectOrg)) {
+                    // Skip if support level if not set or invalid.
+                    if (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel)) {
+                        $this->logger->notice("Skipping $projectFullName because support level is not set or invalid.");
+                        continue;
+                    } elseif ($projectSupportLevel === 'Actively Maintained') {
+                        // Skip if support level is Actively Maintained because maintainers are supposed to look at it.
+                        $this->logger->notice("Skipping $projectFullName because support level is actively maintained.");
+                        continue;
+                    }
+                }
+                $prs = $api->matchingPRs($projectFullName, $prTitle);
+                foreach ($prs as $key => $pr) {
+                    $updated = $pr['updated_at'];
+                    var_dump($updated);
+                    // @todo compare age (last updated) and decide whether to merge or not.
+                }
+            }
+        } else {
+            throw new \Exception("File $csv_file does not exist.");
         }
     }
 
