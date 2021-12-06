@@ -244,6 +244,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     // Empty line, probably EOF. Break loop.
                     break;
                 }
+                $projectName = $row[2];
                 $projectFullName = $row[3];
                 $projectOrg = $row[5];
                 $projectSupportLevel = $row[23];
@@ -259,10 +260,20 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     }
                 }
                 $prs = $api->matchingPRs($projectFullName, $prTitle);
+                $current_date = new \DateTime();
                 foreach ($prs as $key => $pr) {
+                    $prNumber = $pr['number'];
+                    $pr = $api->prGet($projectOrg, $projectName, $prNumber);
                     $updated = $pr['updated_at'];
-                    var_dump($updated);
-                    // @todo compare age (last updated) and decide whether to merge or not.
+                    $date = new \DateTime($updated);
+                    $interval = $current_date->diff($date);
+                    $days = (int) $interval->format('%a');
+                    if ($days >= $age) {
+                        $prSha = $pr['head']['sha'];
+                        // This PR is ready to merge.
+                        $this->logger->notice("Merging PR #$prNumber in $projectFullName because it is old enough.");
+                        $api->gitHubAPI()->api('pull_request')->merge($projectOrg, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectFullName", $prSha);
+                    }
                 }
             }
         } else {
