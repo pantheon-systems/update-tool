@@ -142,6 +142,19 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     }
 
     /**
+     * Get right column number based on column title.
+     */
+    public function getColumnNumber($columnTitle, $headerRow)
+    {
+        foreach ($headerRow as $key => $value) {
+            if ($value == $columnTitle) {
+                return $key;
+            }
+        }
+        throw new \Exception("Column $columnTitle not found in given header row.");
+    }
+
+    /**
      * @command org:update-projects-info
      * @param $csv_file The path to csv file that contains projects information.
      */
@@ -166,17 +179,25 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         if (file_exists($csv_file)) {
             $csv = new \SplFileObject($csv_file);
             $csv->setFlags(\SplFileObject::READ_CSV);
+            $projectFullNameIndex = -1;
+            $projectOrgIndex = -1;
+            $projectSupportLevelIndex = -1;
+            $projectDefaultBranchIndex = -1;
             foreach ($csv as $row_id => $row) {
-                // Skip header row.
+                // Get column indexes if header row.
                 if ($row_id == 0) {
+                    $projectFullNameIndex = $this->getColumnNumber('full_name', $row);
+                    $projectOrgIndex = $this->getColumnNumber('owner/login', $row);
+                    $projectSupportLevelIndex = $this->getColumnNumber('Support Level', $row);
+                    $projectDefaultBranchIndex = $this->getColumnNumber('default_branch', $row);
                     continue;
                 }
                 $projectUpdateSupportLevel = $updateSupportLevelBadge;
                 $projectUpdateCodeowners = $updateCodeowners;
-                $projectFullName = $row[3];
-                $projectOrg = $row[5];
-                $projectSupportLevel = $row[23];
-                $projectDefaultBranch = $row[97];
+                $projectFullName = $row[$projectFullNameIndex];
+                $projectOrg = $row[$projectOrgIndex];
+                $projectSupportLevel = $row[$projectSupportLevelIndex];
+                $projectDefaultBranch = $row[$projectDefaultBranchIndex];
                 $codeowners = '';
                 $ownerSource = '';
                 if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch) && !empty($projectOrg)) {
@@ -186,8 +207,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     }
                     if ($projectUpdateCodeowners) {
                         list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
-                        if (empty($codeowners)) {
-                            // @todo: Should we decide a course of action based on $ownerSource?
+                        if (empty($codeowners) || $ownerSource === 'file') {
+                            // @todo: Add codeowners-only-api and codeowners-only-guess options and implement them.
                             $projectUpdateCodeowners = false;
                         } else {
                             $codeowners = implode('\n', $codeowners);
