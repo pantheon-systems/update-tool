@@ -19,13 +19,12 @@ use Hubph\PullRequests;
 use Hubph\Git\WorkingCopy;
 use Hubph\Git\Remote;
 use UpdateTool\Util\SupportLevel;
-use UpdateTool\Util\ProjectUpdateTrait;
+use UpdateTool\Util\ProjectUpdate;
 
 class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
     use LoggerAwareTrait;
-    use ProjectUpdateTrait;
 
     /**
      * @command org:analyze
@@ -176,6 +175,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $prTitle = '[UpdateTool - Project Information] Update project information.';
         $branchName = $options['branch-name'];
         $commitMessage = $options['commit-message'];
+        $projectUpdate = new ProjectUpdate($this->logger);
+
         if (file_exists($csv_file)) {
             $csv = new \SplFileObject($csv_file);
             $csv->setFlags(\SplFileObject::READ_CSV);
@@ -223,7 +224,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                         $projectSupportLevel = null;
                     }
                     try {
-                        $this->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $this->logger, $projectSupportLevel, $codeowners);
+                        $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $projectSupportLevel, $codeowners);
                     } catch (\Exception $e) {
                         $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
                     }

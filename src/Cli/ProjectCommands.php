@@ -19,7 +19,7 @@ use UpdateTool\Update\Filters\FilterManager;
 use UpdateTool\Util\ReleaseNode;
 use VersionTool\VersionTool;
 use UpdateTool\Util\SupportLevel;
-use UpdateTool\Util\ProjectUpdateTrait;
+use UpdateTool\Util\ProjectUpdate;
 
 /**
  * Commands used to manipulate projects directly with git
@@ -29,7 +29,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     use ConfigAwareTrait;
     use LoggerAwareTrait;
     use ApiTrait;
-    use ProjectUpdateTrait;
 
     /**
      * Show the list of available versions already released for the specified project.
@@ -552,7 +551,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     ])
     {
         $api = $this->api($options['as']);
-        $this->updateProjectInfo($api, $project, $options['base-branch'], $options['branch-name'], $options['commit-message'], $options['pr-title'], $options['pr-body'], $this->logger, $options['support-level-badge'], $options['codeowners']);
+        $projectUpdate = new ProjectUpdate($this->logger);
+        $projectUpdate->updateProjectInfo($api, $project, $options['base-branch'], $options['branch-name'], $options['commit-message'], $options['pr-title'], $options['pr-body'], $options['support-level-badge'], $options['codeowners']);
     }
 
     /**
