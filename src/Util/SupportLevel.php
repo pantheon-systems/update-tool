@@ -74,25 +74,31 @@ class SupportLevel
     /**
      * Get support level from README.md contents.
      */
-    public static function getSupportLevelFromContent($readme_contents)
+    public static function getSupportLevelsFromContent($contents, $return_only_first = false)
     {
         $support_level = null;
-        $lines = explode("\n", $readme_contents);
+        $lines = explode("\n", $contents);
         $badges = SupportLevel::getSupportLevelBadges();
+        $support_levels = [];
         foreach ($lines as $line) {
             foreach ($badges as $key => $badge) {
                 // Get the badge text from the badge markup.
                 preg_match(self::SUPPORT_LEVEL_BADGE_LABEL_REGEX, $badge, $matches);
                 if (!empty($matches[1])) {
                     if (strpos($line, $matches[1]) !== false) {
-                        $support_level = $key;
-                        break 2;
+                        $support_levels[$key] = $key;
                     }
                 }
             }
         }
-        if ($support_level) {
-            return self::getSupportLevelLabel($support_level);
+        if ($support_levels) {
+            foreach ($support_levels as $key => $support_level) {
+                $support_levels[$key] = self::getSupportLevelLabel($support_level);
+            }
+            if ($return_only_first) {
+                return reset($support_levels);
+            }
+            return $support_levels;
         }
         return null;
     }
@@ -102,8 +108,8 @@ class SupportLevel
      */
     public static function compareSupportLevelFromReadmeAndBadge($readme_contents, $badge_contents)
     {
-        $support_level_from_readme = self::getSupportLevelFromContent($readme_contents);
-        $support_level_from_badge = self::getSupportLevelFromContent($badge_contents);
-        return $support_level_from_badge === $support_level_from_readme;
+        $support_levels_from_readme = self::getSupportLevelsFromContent($readme_contents);
+        $support_levels_from_badge = self::getSupportLevelsFromContent($badge_contents);
+        return (bool) count(array_intersect($support_levels_from_readme, $support_levels_from_badge));
     }
 }

@@ -106,7 +106,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
                 if (!empty($data['content'])) {
                     $content = base64_decode($data['content']);
-                    $repo['support_level'] = SupportLevel::getSupportLevelFromContent($content);
+                    $repo['support_level'] = SupportLevel::getSupportLevelsFromContent($content, true);
                 }
             } catch (\Exception $e) {
             }
@@ -160,6 +160,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     public function orgUpdateProjectsInfo($csv_file, $options = [
         'as' => 'default',
         'update-codeowners' => false,
+        'codeowners-only-api' => false,
+        'codeowners-only-guess' => false,
         'update-support-level-badge' => false,
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
@@ -168,9 +170,17 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     {
         $api = $this->api($options['as']);
         $updateCodeowners = $options['update-codeowners'];
+        $codeownersOnlyApi = $options['codeowners-only-api'];
+        $codeownersOnlyGuess = $options['codeowners-only-guess'];
         $updateSupportLevelBadge = $options['update-support-level-badge'];
         if (!$updateCodeowners && !$updateSupportLevelBadge) {
             throw new \Exception("Either --update-codeowners or --update-support-level-badge must be specified.");
+        }
+        if (!$updateCodeowners && ($codeownersOnlyApi || $codeownersOnlyGuess)) {
+            throw new \Exception("--codeowners-only-api and --codeowners-only-guess can only be used with --update-codeowners.");
+        }
+        if ($codeownersOnlyGuess && $codeownersOnlyApi) {
+            throw new \Exception("--codeowners-only-api and --codeowners-only-guess can't be used together.");
         }
         $prTitle = '[UpdateTool - Project Information] Update project information.';
         $branchName = $options['branch-name'];
@@ -209,10 +219,15 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     if ($projectUpdateCodeowners) {
                         list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
                         if (empty($codeowners) || $ownerSource === 'file') {
-                            // @todo: Add codeowners-only-api and codeowners-only-guess options and implement them.
                             $projectUpdateCodeowners = false;
                         } else {
-                            $codeowners = implode('\n', $codeowners);
+                            if ($codeownersOnlyApi && $ownerSource !== 'api') {
+                                $projectUpdateCodeowners = false;
+                            } elseif ($codeownersOnlyGuess && $ownerSource !== 'guess') {
+                                $projectUpdateCodeowners = false;
+                            } else {
+                                $codeowners = implode('\n', $codeowners);
+                            }
                         }
                     }
                 } else {
