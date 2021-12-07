@@ -5,14 +5,23 @@ namespace UpdateTool\Util;
 use UpdateTool\Git\Remote;
 use UpdateTool\Git\WorkingCopy;
 use UpdateTool\Util\SupportLevel;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 
-trait ProjectUpdateTrait
+class ProjectUpdate implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->setLogger($logger);
+    }
 
     /**
      * Update project info (codeowners and support level badge).
      */
-    protected function updateProjectInfo($api, $project, $baseBranch, $branchName, $commitMessage, $prTitle, $prBody, $logger, $supportLevelBadge = '', $codeowners = '')
+    public function updateProjectInfo($api, $project, $baseBranch, $branchName, $commitMessage, $prTitle, $prBody, $supportLevelBadge = '', $codeowners = '')
     {
         $branchToClone = $baseBranch;
         if (count(explode('/', $project)) != 2) {
@@ -42,7 +51,7 @@ trait ProjectUpdateTrait
 
         $workingCopy = WorkingCopy::cloneBranch($url, $dir, $branchToClone, $api);
 
-        $workingCopy->setLogger($logger);
+        $workingCopy->setLogger($this->logger);
 
         if (!$existingPrFound) {
             $workingCopy->createBranch($branchName);
@@ -77,6 +86,7 @@ trait ProjectUpdateTrait
             }
 
             if (!SupportLevel::compareSupportLevelFromReadmeAndBadge($readme_contents, $badge_contents)) {
+                $line_deleted = SupportLevel::deleteSupportLevelBadgesFromReadme($readme_contents, $supportLevelBadge);
                 $lines = explode("\n", $readme_contents);
                 [$badge_insert_line, $empty_line_after] = $this->getBadgeInsertLine($lines, $badge_contents);
 
@@ -85,7 +95,8 @@ trait ProjectUpdateTrait
                 if ($empty_line_after) {
                     $insert[] = '';
                 }
-                array_splice($lines, $badge_insert_line, 0, $insert);
+                $length = $line_deleted ? 1 : 0;
+                array_splice($lines, $badge_insert_line, $length, $insert);
                 $readme_contents = implode("\n", $lines);
                 file_put_contents("$dir/README.md", $readme_contents);
                 $workingCopy->add("$dir/README.md");

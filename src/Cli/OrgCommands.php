@@ -19,13 +19,12 @@ use Hubph\PullRequests;
 use Hubph\Git\WorkingCopy;
 use Hubph\Git\Remote;
 use UpdateTool\Util\SupportLevel;
-use UpdateTool\Util\ProjectUpdateTrait;
+use UpdateTool\Util\ProjectUpdate;
 
 class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
     use LoggerAwareTrait;
-    use ProjectUpdateTrait;
 
     /**
      * @command org:analyze
@@ -107,7 +106,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
                 if (!empty($data['content'])) {
                     $content = base64_decode($data['content']);
-                    $repo['support_level'] = SupportLevel::getSupportLevelFromContent($content);
+                    $repo['support_level'] = SupportLevel::getSupportLevelsFromContent($content, true);
                 }
             } catch (\Exception $e) {
             }
@@ -142,12 +141,27 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     }
 
     /**
+     * Get right column number based on column title.
+     */
+    public function getColumnNumber($columnTitle, $headerRow)
+    {
+        foreach ($headerRow as $key => $value) {
+            if ($value == $columnTitle) {
+                return $key;
+            }
+        }
+        throw new \Exception("Column $columnTitle not found in given header row.");
+    }
+
+    /**
      * @command org:update-projects-info
      * @param $csv_file The path to csv file that contains projects information.
      */
     public function orgUpdateProjectsInfo($csv_file, $options = [
         'as' => 'default',
         'update-codeowners' => false,
+        'codeowners-only-api' => false,
+        'codeowners-only-guess' => false,
         'update-support-level-badge' => false,
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
@@ -156,19 +170,37 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     {
         $api = $this->api($options['as']);
         $updateCodeowners = $options['update-codeowners'];
+        $codeownersOnlyApi = $options['codeowners-only-api'];
+        $codeownersOnlyGuess = $options['codeowners-only-guess'];
         $updateSupportLevelBadge = $options['update-support-level-badge'];
         if (!$updateCodeowners && !$updateSupportLevelBadge) {
             throw new \Exception("Either --update-codeowners or --update-support-level-badge must be specified.");
         }
+        if (!$updateCodeowners && ($codeownersOnlyApi || $codeownersOnlyGuess)) {
+            throw new \Exception("--codeowners-only-api and --codeowners-only-guess can only be used with --update-codeowners.");
+        }
+        if ($codeownersOnlyGuess && $codeownersOnlyApi) {
+            throw new \Exception("--codeowners-only-api and --codeowners-only-guess can't be used together.");
+        }
         $prTitle = '[UpdateTool - Project Information] Update project information.';
         $branchName = $options['branch-name'];
         $commitMessage = $options['commit-message'];
+        $projectUpdate = new ProjectUpdate($this->logger);
+
         if (file_exists($csv_file)) {
             $csv = new \SplFileObject($csv_file);
             $csv->setFlags(\SplFileObject::READ_CSV);
+            $projectFullNameIndex = -1;
+            $projectOrgIndex = -1;
+            $projectSupportLevelIndex = -1;
+            $projectDefaultBranchIndex = -1;
             foreach ($csv as $row_id => $row) {
-                // Skip header row.
+                // Get column indexes if header row.
                 if ($row_id == 0) {
+                    $projectFullNameIndex = $this->getColumnNumber('full_name', $row);
+                    $projectOrgIndex = $this->getColumnNumber('owner/login', $row);
+                    $projectSupportLevelIndex = $this->getColumnNumber('Support Level', $row);
+                    $projectDefaultBranchIndex = $this->getColumnNumber('default_branch', $row);
                     continue;
                 }
                 if (empty($row[0])) {
@@ -177,10 +209,10 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 }
                 $projectUpdateSupportLevel = $updateSupportLevelBadge;
                 $projectUpdateCodeowners = $updateCodeowners;
-                $projectFullName = $row[3];
-                $projectOrg = $row[5];
-                $projectSupportLevel = $row[23];
-                $projectDefaultBranch = $row[97];
+                $projectFullName = $row[$projectFullNameIndex];
+                $projectOrg = $row[$projectOrgIndex];
+                $projectSupportLevel = $row[$projectSupportLevelIndex];
+                $projectDefaultBranch = $row[$projectDefaultBranchIndex];
                 $codeowners = '';
                 $ownerSource = '';
                 if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch) && !empty($projectOrg)) {
@@ -190,11 +222,16 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     }
                     if ($projectUpdateCodeowners) {
                         list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
-                        if (empty($codeowners)) {
-                            // @todo: Should we decide a course of action based on $ownerSource?
+                        if (empty($codeowners) || $ownerSource === 'file') {
                             $projectUpdateCodeowners = false;
                         } else {
-                            $codeowners = implode('\n', $codeowners);
+                            if ($codeownersOnlyApi && $ownerSource !== 'api') {
+                                $projectUpdateCodeowners = false;
+                            } elseif ($codeownersOnlyGuess && $ownerSource !== 'guess') {
+                                $projectUpdateCodeowners = false;
+                            } else {
+                                $codeowners = implode('\n', $codeowners);
+                            }
                         }
                     }
                 } else {
@@ -206,7 +243,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                         $projectSupportLevel = null;
                     }
                     try {
-                        $this->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $this->logger, $projectSupportLevel, $codeowners);
+                        $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $projectSupportLevel, $codeowners);
                     } catch (\Exception $e) {
                         $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
                     }
