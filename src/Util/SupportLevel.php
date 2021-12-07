@@ -9,6 +9,7 @@ class SupportLevel
 {
 
     const SUPPORT_LEVEL_BADGE_LABEL_REGEX = '/^\[\!\[([A-Za-z\s\d]+)\]\(https:\/\/img.shields.io/';
+    const CURRENT_SUPPORT_LEVEL_BADGE_LABEL_REGEX = '/^\[\!\[NAME\]\(https:\/\/img\.shields\.io.*$/m';
 
     /**
      * Get right badge markdown.
@@ -100,7 +101,7 @@ class SupportLevel
             }
             return $support_levels;
         }
-        return null;
+        return [];
     }
 
     /**
@@ -110,6 +111,27 @@ class SupportLevel
     {
         $support_levels_from_readme = self::getSupportLevelsFromContent($readme_contents);
         $support_levels_from_badge = self::getSupportLevelsFromContent($badge_contents);
-        return (bool) count(array_intersect($support_levels_from_readme, $support_levels_from_badge));
+
+        return count($support_levels_from_readme) === 1 && count(array_intersect($support_levels_from_readme, $support_levels_from_badge));
+    }
+
+    /**
+     * Delete all support badges in README but the one given.
+     */
+    public static function deleteSupportLevelBadgesFromReadme(&$readme_contents, $preserve_badge = null)
+    {
+        $support_levels_from_readme = self::getSupportLevelsFromContent($readme_contents);
+        foreach ($support_levels_from_readme as $support_level) {
+            if ($support_level !== $preserve_badge) {
+                $pattern = str_replace('NAME', $support_level, self::CURRENT_SUPPORT_LEVEL_BADGE_LABEL_REGEX);
+                // Delete support level badge.
+                $return = preg_replace($pattern, '', $readme_contents);
+                if ($return) {
+                    $readme_contents = $return;
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

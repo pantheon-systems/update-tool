@@ -86,6 +86,7 @@ class ProjectUpdate implements LoggerAwareInterface
             }
 
             if (!SupportLevel::compareSupportLevelFromReadmeAndBadge($readme_contents, $badge_contents)) {
+                $line_deleted = SupportLevel::deleteSupportLevelBadgesFromReadme($readme_contents, $supportLevelBadge);
                 $lines = explode("\n", $readme_contents);
                 [$badge_insert_line, $empty_line_after] = $this->getBadgeInsertLine($lines, $badge_contents);
 
@@ -94,7 +95,8 @@ class ProjectUpdate implements LoggerAwareInterface
                 if ($empty_line_after) {
                     $insert[] = '';
                 }
-                array_splice($lines, $badge_insert_line, 0, $insert);
+                $length = $line_deleted ? 1 : 0;
+                array_splice($lines, $badge_insert_line, $length, $insert);
                 $readme_contents = implode("\n", $lines);
                 file_put_contents("$dir/README.md", $readme_contents);
                 $workingCopy->add("$dir/README.md");
