@@ -166,6 +166,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
         'pr-body' => '',
+        'pr-title' => '[UpdateTool - Project Information] Update project information.',
     ])
     {
         $api = $this->api($options['as']);
@@ -182,7 +183,6 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         if ($codeownersOnlyGuess && $codeownersOnlyApi) {
             throw new \Exception("--codeowners-only-api and --codeowners-only-guess can't be used together.");
         }
-        $prTitle = '[UpdateTool - Project Information] Update project information.';
         $branchName = $options['branch-name'];
         $commitMessage = $options['commit-message'];
         $projectUpdate = new ProjectUpdate($this->logger);
@@ -243,7 +243,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                         $projectSupportLevel = null;
                     }
                     try {
-                        $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $prTitle, $options['pr-body'], $projectSupportLevel, $codeowners);
+                        $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $options['pr-title'], $options['pr-body'], $projectSupportLevel, $codeowners);
                     } catch (\Exception $e) {
                         $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
                     }
