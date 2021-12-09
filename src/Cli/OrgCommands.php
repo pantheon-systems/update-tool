@@ -19,6 +19,7 @@ use Hubph\PullRequests;
 use Hubph\Git\WorkingCopy;
 use Hubph\Git\Remote;
 use UpdateTool\Util\SupportLevel;
+use UpdateTool\Util\ProjectUpdate;
 
 class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
@@ -89,20 +90,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $reposResult = [];
         foreach ($repos as $key => $repo) {
             $resultKey = $repo['id'];
-            $codeowners = [];
-            $ownerSource = '';
 
-            try {
-                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'CODEOWNERS');
-                if (!empty($data['content'])) {
-                    $content = base64_decode($data['content']);
-                    $ownerSource = 'file';
-                    $codeowners = static::filterGlobalCodeOwners($content);
-                }
-            } catch (\Exception $e) {
-            }
-
-            list($codeowners, $ownerSource) = static::inferOwners($api, $org, $repo['name'], $codeowners, $ownerSource);
+            list($codeowners, $ownerSource) = $this->guessCodeowners($api, $org, $repo['name']);
 
             $repo['codeowners'] = $codeowners;
             $repo['owners_src'] = $ownerSource;
@@ -117,7 +106,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
                 if (!empty($data['content'])) {
                     $content = base64_decode($data['content']);
-                    $repo['support_level'] = static::getSupportLevel($content);
+                    $repo['support_level'] = SupportLevel::getSupportLevelsFromContent($content, true);
                 }
             } catch (\Exception $e) {
             }
@@ -132,29 +121,165 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     }
 
     /**
-     * Get support level from README.md contents.
+     * Guess codeowners content.
      */
-    protected static function getSupportLevel($readme_contents)
+    public function guessCodeOwners($api, $org, $repoName)
     {
-        $support_level = null;
-        $lines = explode("\n", $readme_contents);
-        $badges = SupportLevel::getSupportLevelBadges();
-        foreach ($lines as $line) {
-            foreach ($badges as $key => $badge) {
-                // Get the badge text from the badge markup.
-                preg_match('/^\[\!\[([A-Za-z\s\d]+)\]\(https:\/\/img.shields.io/', $badge, $matches);
-                if (!empty($matches[1])) {
-                    if (strpos($line, $matches[1]) !== false) {
-                        $support_level = $key;
-                        break 2;
-                    }
-                }
+        $codeowners = [];
+        $ownerSource = '';
+        try {
+            $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repoName, 'CODEOWNERS');
+            if (!empty($data['content'])) {
+                $content = base64_decode($data['content']);
+                $ownerSource = 'file';
+                $codeowners = static::filterGlobalCodeOwners($content);
+            }
+        } catch (\Exception $e) {
+        }
+
+        return static::inferOwners($api, $org, $repoName, $codeowners, $ownerSource);
+    }
+
+    /**
+     * Get right column number based on column title.
+     */
+    public function getColumnNumber($columnTitle, $headerRow)
+    {
+        foreach ($headerRow as $key => $value) {
+            if ($value == $columnTitle) {
+                return $key;
             }
         }
-        if ($support_level) {
-            return SupportLevel::getSupportLevelLabel($support_level);
+        throw new \Exception("Column $columnTitle not found in given header row.");
+    }
+
+    /**
+     * @command org:update-projects-info
+     * @param $csv_file The path to csv file that contains projects information.
+     */
+    public function orgUpdateProjectsInfo($csv_file, $options = [
+        'as' => 'default',
+        'update-codeowners' => false,
+        'codeowners-only-api' => false,
+        'codeowners-only-guess' => false,
+        'update-support-level-badge' => false,
+        'branch-name' => 'project-update-info',
+        'commit-message' => 'Update project information.',
+        'pr-body' => '',
+        'pr-title' => '[UpdateTool - Project Information] Update project information.',
+    ])
+    {
+        $api = $this->api($options['as']);
+        $updateCodeowners = $options['update-codeowners'];
+        $codeownersOnlyApi = $options['codeowners-only-api'];
+        $codeownersOnlyGuess = $options['codeowners-only-guess'];
+        $updateSupportLevelBadge = $options['update-support-level-badge'];
+        if (!$updateCodeowners && !$updateSupportLevelBadge) {
+            throw new \Exception("Either --update-codeowners or --update-support-level-badge must be specified.");
         }
-        return null;
+        if (!$updateCodeowners && ($codeownersOnlyApi || $codeownersOnlyGuess)) {
+            throw new \Exception("--codeowners-only-api and --codeowners-only-guess can only be used with --update-codeowners.");
+        }
+        if ($codeownersOnlyGuess && $codeownersOnlyApi) {
+            throw new \Exception("--codeowners-only-api and --codeowners-only-guess can't be used together.");
+        }
+        $branchName = $options['branch-name'];
+        $commitMessage = $options['commit-message'];
+        $projectUpdate = new ProjectUpdate($this->logger);
+
+        if (file_exists($csv_file)) {
+            $csv = new \SplFileObject($csv_file);
+            $csv->setFlags(\SplFileObject::READ_CSV);
+            $projectFullNameIndex = -1;
+            $projectOrgIndex = -1;
+            $projectSupportLevelIndex = -1;
+            $projectDefaultBranchIndex = -1;
+            foreach ($csv as $row_id => $row) {
+                // Get column indexes if header row.
+                if ($row_id == 0) {
+                    $projectFullNameIndex = $this->getColumnNumber('full_name', $row);
+                    $projectOrgIndex = $this->getColumnNumber('owner/login', $row);
+                    $projectSupportLevelIndex = $this->getColumnNumber('Support Level', $row);
+                    $projectDefaultBranchIndex = $this->getColumnNumber('default_branch', $row);
+                    continue;
+                }
+                $projectUpdateSupportLevel = $updateSupportLevelBadge;
+                $projectUpdateCodeowners = $updateCodeowners;
+                $projectFullName = $row[$projectFullNameIndex];
+                $projectOrg = $row[$projectOrgIndex];
+                $projectSupportLevel = $row[$projectSupportLevelIndex];
+                $projectDefaultBranch = $row[$projectDefaultBranchIndex];
+                $codeowners = '';
+                $ownerSource = '';
+                if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch) && !empty($projectOrg)) {
+                    // If empty or invalid support level, we won't update it here.
+                    if ($projectUpdateSupportLevel && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
+                        $projectUpdateSupportLevel = false;
+                    }
+                    if ($projectUpdateCodeowners) {
+                        list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
+                        if (empty($codeowners) || $ownerSource === 'file') {
+                            $projectUpdateCodeowners = false;
+                        } else {
+                            if ($codeownersOnlyApi && $ownerSource !== 'api') {
+                                $projectUpdateCodeowners = false;
+                            } elseif ($codeownersOnlyGuess && $ownerSource !== 'guess') {
+                                $projectUpdateCodeowners = false;
+                            } else {
+                                $codeowners = implode('\n', $codeowners);
+                            }
+                        }
+                    }
+                } else {
+                    $projectUpdateSupportLevel = false;
+                    $projectUpdateCodeowners = false;
+                }
+                if ($projectUpdateSupportLevel || $projectUpdateCodeowners) {
+                    if (!$projectUpdateSupportLevel) {
+                        $projectSupportLevel = null;
+                    }
+                    try {
+                        $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $options['pr-title'], $options['pr-body'], $projectSupportLevel, $codeowners);
+                    } catch (\Exception $e) {
+                        $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
+                    }
+                }
+                break;
+            }
+        } else {
+            throw new \Exception("File $csv_file does not exist.");
+        }
+    }
+
+    /**
+     * Validate project full name. Throw exception if invalid.
+     */
+    protected function validateProjectFullName($projectFullName)
+    {
+        if (empty($projectFullName)) {
+            return false;
+        }
+        $parts = explode('/', $projectFullName);
+        if (count($parts) != 2) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Validate project support level. Throw exception if invalid.
+     */
+    protected function validateProjectSupportLevel($projectSupportLevel)
+    {
+        $labels = SupportLevel::getBadgesLabels();
+        foreach ($labels as $key => $label) {
+            if ($projectSupportLevel === $label) {
+                return true;
+            } elseif ($projectSupportLevel === $key) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected static function inferOwners($api, $org, $project, $codeowners, $ownerSource)
