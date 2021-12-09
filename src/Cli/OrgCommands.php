@@ -262,11 +262,13 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     public function orgUpdateProjectsMergePrs($csv_file, $options = [
         'as' => 'default',
         'age' => 30,
-        'pr-title' => '[UpdateTool - Project Information]',
+        'pr-title-query' => '[UpdateTool - Project Information]',
+        'pr-title-pattern' => '',
     ])
     {
         $api = $this->api($options['as']);
-        $prTitle = $options['pr-title'];
+        $prTitleQuery = $options['pr-title-query'];
+        $prTitlePattern = $options['pr-title-pattern'];
         $age = $options['age'];
 
         if (file_exists($csv_file)) {
@@ -296,7 +298,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                         continue;
                     }
                 }
-                $prs = $api->matchingPRs($projectFullName, $prTitle);
+                $prs = $api->matchingPRs($projectFullName, $prTitleQuery, $prTitlePattern);
                 $current_date = new \DateTime();
                 foreach ($prs as $key => $pr) {
                     $prNumber = $pr['number'];
