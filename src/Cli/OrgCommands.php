@@ -257,9 +257,9 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
     /**
      * @command org:update-projects-merge-prs
-     * @param $csv_file The path to csv file that contains projects information.
+     * @param $user The Github user (org) to search PRs for.
      */
-    public function orgUpdateProjectsMergePrs($csv_file, $options = [
+    public function orgUpdateProjectsMergePrs($user, $options = [
         'as' => 'default',
         'age' => 30,
         'pr-title-query' => '[UpdateTool - Project Information]',
@@ -271,52 +271,33 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $prTitlePattern = $options['pr-title-pattern'];
         $age = $options['age'];
 
-        if (file_exists($csv_file)) {
-            $csv = new \SplFileObject($csv_file);
-            $csv->setFlags(\SplFileObject::READ_CSV);
-            foreach ($csv as $row_id => $row) {
-                // Skip header row.
-                if ($row_id == 0) {
+        $prs = $api->matchingPRsInUser($user, $prTitleQuery, $prTitlePattern);
+        $current_date = new \DateTime();
+        // @todo: Disregard "Actively Maintained" PRs.
+        foreach ($prs as $pr) {
+            $prNumber = $pr['number'];
+            $prUrl = $pr['html_url'];
+            preg_match('/https:\/\/github.com\/' . $user . '\/(.+)\/pull\/' . $prNumber . '/', $prUrl, $matches);
+            if (empty($matches[1])) {
+                $this->logger->warning("Failed to parse project name from $prUrl.");
+                continue;
+            }
+            $projectName = $matches[1];
+            $pr = $api->prGet($user, $projectName, $prNumber);
+            $updated = $pr['created_at'];
+            $date = new \DateTime($updated);
+            $interval = $current_date->diff($date);
+            $days = (int) $interval->format('%a');
+            if ($days >= $age) {
+                if (count($api->prGetComments($user, $projectName, $prNumber)) > 0) {
+                    $this->logger->warning("Skipping PR $prNumber in $projectName because it has comments or reviews.");
                     continue;
                 }
-                if (empty($row[0])) {
-                    // Empty line, probably EOF. Break loop.
-                    break;
-                }
-                $projectName = $row[2];
-                $projectFullName = $row[3];
-                $projectOrg = $row[5];
-                $projectSupportLevel = $row[23];
-                if ($this->validateProjectFullName($projectFullName) && !empty($projectOrg)) {
-                    // Skip if support level if not set or invalid.
-                    if (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel)) {
-                        $this->logger->notice("Skipping $projectFullName because support level is not set or invalid.");
-                        continue;
-                    } elseif ($projectSupportLevel === 'Actively Maintained') {
-                        // Skip if support level is Actively Maintained because maintainers are supposed to look at it.
-                        $this->logger->notice("Skipping $projectFullName because support level is actively maintained.");
-                        continue;
-                    }
-                }
-                $prs = $api->matchingPRs($projectFullName, $prTitleQuery, $prTitlePattern);
-                $current_date = new \DateTime();
-                foreach ($prs as $key => $pr) {
-                    $prNumber = $pr['number'];
-                    $pr = $api->prGet($projectOrg, $projectName, $prNumber);
-                    $updated = $pr['updated_at'];
-                    $date = new \DateTime($updated);
-                    $interval = $current_date->diff($date);
-                    $days = (int) $interval->format('%a');
-                    if ($days >= $age) {
-                        $prSha = $pr['head']['sha'];
-                        // This PR is ready to merge.
-                        $this->logger->notice("Merging PR #$prNumber in $projectFullName because it is old enough.");
-                        $api->gitHubAPI()->api('pull_request')->merge($projectOrg, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectFullName", $prSha);
-                    }
-                }
+                $prSha = $pr['head']['sha'];
+                // This PR is ready to merge.
+                $this->logger->notice("Merging PR #$prNumber in $projectFullName because it is old enough.");
+                $api->gitHubAPI()->api('pull_request')->merge($projectOrg, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectFullName", $prSha);
             }
-        } else {
-            throw new \Exception("File $csv_file does not exist.");
         }
     }
 
