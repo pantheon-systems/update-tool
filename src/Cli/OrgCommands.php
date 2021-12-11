@@ -264,6 +264,9 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'age' => 30,
         'pr-title-query' => '[UpdateTool - Project Information]',
         'pr-title-pattern' => '',
+        'diff-include-pattern' => '',
+        'diff-exclude-pattern' => '',
+        'dry-run' => false,
     ])
     {
         $api = $this->api($options['as']);
@@ -273,7 +276,6 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         $prs = $api->matchingPRsInUser($user, $prTitleQuery, $prTitlePattern);
         $current_date = new \DateTime();
-        // @todo: Disregard "Actively Maintained" PRs.
         foreach ($prs as $pr) {
             $prNumber = $pr['number'];
             $prUrl = $pr['html_url'];
@@ -293,10 +295,23 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     $this->logger->warning("Skipping PR $prNumber in $projectName because it has comments or reviews.");
                     continue;
                 }
+                $diff = $api->prGetDiff($user, $projectName, $prNumber);
+                if ($options['diff-include-pattern'] && !preg_match('/' . $options['diff-include-pattern'] . '/', $diff)) {
+                    $this->logger->warning("Skipping PR $prNumber in $projectName because it does not match diff-include-pattern.");
+                    continue;
+                }
+                if ($options['diff-exclude-pattern'] && preg_match('/' . $options['diff-exclude-pattern'] . '/', $diff)) {
+                    $this->logger->warning("Skipping PR $prNumber in $projectName because it matches diff-exclude-pattern.");
+                    continue;
+                }
                 $prSha = $pr['head']['sha'];
                 // This PR is ready to merge.
-                $this->logger->notice("Merging PR #$prNumber in $projectFullName because it is old enough.");
-                $api->gitHubAPI()->api('pull_request')->merge($projectOrg, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectFullName", $prSha);
+                if (!$options['dry-run']) {
+                    $this->logger->notice("Merging PR #$prNumber in $projectName because it is old enough.");
+                    $api->gitHubAPI()->api('pull_request')->merge($projectOrg, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectFullName", $prSha);
+                } else {
+                    $this->logger->notice("PR #$prNumber in $projectName would be merged if no dry-run because it is old enough.");
+                }
             }
         }
     }
