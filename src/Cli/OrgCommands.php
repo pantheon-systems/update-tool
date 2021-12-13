@@ -203,6 +203,10 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     $projectDefaultBranchIndex = $this->getColumnNumber('default_branch', $row);
                     continue;
                 }
+                if (empty($row[0])) {
+                    // Empty line, probably EOF. Break loop.
+                    break;
+                }
                 $projectUpdateSupportLevel = $updateSupportLevelBadge;
                 $projectUpdateCodeowners = $updateCodeowners;
                 $projectFullName = $row[$projectFullNameIndex];
@@ -248,6 +252,67 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             }
         } else {
             throw new \Exception("File $csv_file does not exist.");
+        }
+    }
+
+    /**
+     * @command org:update-projects-merge-prs
+     * @param $user The Github user (org) to search PRs for.
+     */
+    public function orgUpdateProjectsMergePrs($user, $options = [
+        'as' => 'default',
+        'age' => 30,
+        'pr-title-query' => '[UpdateTool - Project Information]',
+        'pr-title-pattern' => '',
+        'diff-include-pattern' => '',
+        'diff-exclude-pattern' => '',
+        'dry-run' => false,
+    ])
+    {
+        $api = $this->api($options['as']);
+        $prTitleQuery = $options['pr-title-query'];
+        $prTitlePattern = $options['pr-title-pattern'];
+        $age = $options['age'];
+
+        $prs = $api->matchingPRsInUser($user, $prTitleQuery, $prTitlePattern);
+        $current_date = new \DateTime();
+        foreach ($prs as $pr) {
+            $prNumber = $pr['number'];
+            $prUrl = $pr['html_url'];
+            preg_match('/https:\/\/github.com\/' . $user . '\/(.+)\/pull\/' . $prNumber . '/', $prUrl, $matches);
+            if (empty($matches[1])) {
+                $this->logger->warning("Failed to parse project name from $prUrl.");
+                continue;
+            }
+            $projectName = $matches[1];
+            $pr = $api->prGet($user, $projectName, $prNumber);
+            $updated = $pr['created_at'];
+            $date = new \DateTime($updated);
+            $interval = $current_date->diff($date);
+            $days = (int) $interval->format('%a');
+            if ($days >= $age) {
+                if (count($api->prGetComments($user, $projectName, $prNumber)) > 0) {
+                    $this->logger->warning("Skipping PR $prNumber in $projectName because it has comments or reviews.");
+                    continue;
+                }
+                $diff = $api->prGetDiff($user, $projectName, $prNumber);
+                if ($options['diff-include-pattern'] && !preg_match('/' . $options['diff-include-pattern'] . '/', $diff)) {
+                    $this->logger->warning("Skipping PR $prNumber in $projectName because it does not match diff-include-pattern.");
+                    continue;
+                }
+                if ($options['diff-exclude-pattern'] && preg_match('/' . $options['diff-exclude-pattern'] . '/', $diff)) {
+                    $this->logger->warning("Skipping PR $prNumber in $projectName because it matches diff-exclude-pattern.");
+                    continue;
+                }
+                $prSha = $pr['head']['sha'];
+                // This PR is ready to merge.
+                if (!$options['dry-run']) {
+                    $this->logger->notice("Merging PR #$prNumber in $projectName because it is old enough.");
+                    $api->gitHubAPI()->api('pull_request')->merge($projectOrg, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectFullName", $prSha);
+                } else {
+                    $this->logger->notice("PR #$prNumber in $projectName would be merged if no dry-run because it is old enough.");
+                }
+            }
         }
     }
 
