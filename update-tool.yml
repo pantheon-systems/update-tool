@@ -128,6 +128,10 @@ projects:
       project: wp
       version-pattern: '^5'
       branch: master
+  cos-clis:
+    repo: git@github.com:pantheon-systems/cos-framework-clis.git
+    path: ${working-copy-path}/cos-framework-clis
+    main-branch: master
   drops-7-composer:
     repo: git@github.com:pantheon-systems/drops-7-composer.git
     path: ${working-copy-path}/drops-7-composer
