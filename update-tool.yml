@@ -18,6 +18,8 @@ github:
       path: ${env.HOME}/.github-token
 php-net:
   download-url: https://php.net/distributions/php-{version}.tar.gz
+wp-cli-gh:
+  download-url: https://github.com/wp-cli/wp-cli/releases/download/v{version}/wp-cli-{version}.phar
 
 projects:
   cos-php:
@@ -27,6 +29,10 @@ projects:
   rpmbuild-php:
     repo: git@github.com:pantheon-systems/rpmbuild-php.git
     path: ${working-copy-path}/rpmbuild-php
+  cos-clis:
+    repo: git@github.com:pantheon-systems/cos-framework-clis.git
+    path: ${working-copy-path}/cos-framework-clis
+    main-branch: master
   wp:
     repo: git@github.com:pantheon-systems/WordPress.git
     path: ${working-copy-path}/WordPress
@@ -128,10 +134,6 @@ projects:
       project: wp
       version-pattern: '^5'
       branch: master
-  cos-clis:
-    repo: git@github.com:pantheon-systems/cos-framework-clis.git
-    path: ${working-copy-path}/cos-framework-clis
-    main-branch: master
   drops-7-composer:
     repo: git@github.com:pantheon-systems/drops-7-composer.git
     path: ${working-copy-path}/drops-7-composer
