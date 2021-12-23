@@ -10,6 +10,9 @@ use Hubph\HubphAPI;
 use Hubph\Git\WorkingCopy;
 use Hubph\Git\Remote;
 
+/**
+ * Commands used to interact with Terminus releases.
+ */
 class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
@@ -57,7 +60,7 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
 
         file_put_contents($terminusDir . 'terminus.phar', file_get_contents($downloadUrl));
         if (!file_exists($terminusDir . 'terminus.phar')) {
-            throw new \Exception("Failed to download terminus.phar from release $terminusRelease");
+            throw new \Exception(sprintf('Failed to download terminus.phar from release %s.', $terminusRelease));
         }
         chmod($terminusDir . 'terminus.phar', 0755);
 
@@ -67,7 +70,7 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
         $branchNamePrefix = $options['branch-name-prefix'];
         $branchName = $branchNamePrefix . date('Ymd');
 
-        $url = "git@github.com:$githubRepo.git";
+        $url = 'git@github.com:' . $githubRepo . '.git';
         $remote = new Remote($url);
         $dir = sys_get_temp_dir() . '/update-tool/' . $remote->project();
         $workingCopy = WorkingCopy::cloneBranch($url, $dir, $baseBranch, $api);
@@ -76,9 +79,9 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
 
         if ($updateCommands) {
             $this->logger->info('Updating Terminus commands...');
-            exec("cd $dir && $terminusDir/terminus.phar list --format=json > source/data/commands.json", $output, $return);
+            exec(sprintf("cd %s && %s/terminus.phar list --format=json > source/data/commands.json", $dir, $terminusDir), $output, $return);
             if ($return != 0) {
-                throw new \Exception("Failed to list terminus commands.");
+                throw new \Exception(sprintf('Failed to list terminus commands. Output: %s', implode("\n", $output)));
             }
 
             $commands = json_decode(file_get_contents($dir . '/source/data/commands.json'), true);
@@ -122,6 +125,9 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
         }
     }
 
+    /**
+     * Get all releases for a given repo.
+     */
     protected function getAllReleases($api, $repo)
     {
         [$username, $repository] = explode('/', $repo);
@@ -129,6 +135,9 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
         return $releases;
     }
 
+    /**
+     * Get the latest release for a given repo.
+     */
     protected function getLatestRelease($api, $repo)
     {
         [$username, $repository] = explode('/', $repo);
@@ -136,6 +145,9 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
         return $release['tag_name'];
     }
 
+    /**
+     * Get the API object.
+     */
     protected function api($as = 'default')
     {
         $api = new HubphAPI($this->getConfig());
