@@ -83,9 +83,11 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
         $remote = new Remote($url);
         $dir = sys_get_temp_dir() . '/update-tool/' . $remote->project();
         $workingCopy = WorkingCopy::cloneBranch($url, $dir, $baseBranch, $api);
+        $workingCopy->setLogger($this->logger);
         $workingCopy->createBranch($branchName, $baseBranch, true);
 
         if ($updateCommands) {
+            $this->logger->info('Updating Terminus commands...');
             exec("cd $dir && $terminusDir/terminus.phar list --format=json > source/data/commands.json", $output, $return);
             if ($return != 0) {
                 throw new \Exception("Failed to list terminus commands.");
@@ -94,33 +96,50 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
             $commands = json_decode(file_get_contents($dir . '/source/data/commands.json'), true);
             $commandsJson = json_encode($commands, JSON_PRETTY_PRINT);
 
-            // @todo Fix some stuff!
-        /**
-         * echo "Ajusting output..."
-sed -i 's/site_env/site>\.<env/g' source/data/commands.json
-sed -i 's/drush_command/command/g' source/data/commands.json
-sed -i 's/wp_command/command/g' source/data/commands.json
-         */
+            // Adjust output.
+            $commandsJson = str_replace(
+                [
+                'site_env',
+                'drush_command',
+                'wp_command',
+                ],
+                [
+                    'site.env',
+                    'command',
+                    'command',
+                ],
+                $commandsJson
+            );
 
             file_put_contents($dir . '/source/data/commands.json', $commandsJson);
         }
         if ($updateReleases) {
-            /**
-             * 
-echo "Update Terminus releases"
-curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/pantheon-systems/terminus/releases > source/data/terminusReleases.json
-head source/data/terminusReleases.json
-             */
+            $this->logger->info('Updating Terminus releases...');
+            $releases = $this->getAllReleases($api, $terminusRepo);
+            $releasesJson = json_encode($releases, JSON_PRETTY_PRINT);
+            file_put_contents($dir . '/source/data/terminusReleases.json', $releasesJson);
         }
+
+        $this->logger->info('Committing changes...');
+        $commitMessage = $options['commit-message'];
+        $workingCopy->add("$dir/source/data");
+        $workingCopy->commit($commitMessage);
 
         $dryRun = $options['dry-run'];
         if (!$dryRun) {
-            $commitMessage = $options['commit-message'];
-            $prBody = $options['pr-body'];
             $prTitle = $options['pr-title'];
-            // @todo commit and create PR.
+            $prBody = $options['pr-body'];
+            $workingCopy->push('origin', $branchName);
+            $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
         }
 
+    }
+
+    protected function getAllReleases($api, $repo)
+    {
+        [$username, $repository] = explode('/', $repo);
+        $releases = $api->gitHubAPI()->repo()->releases()->all($username, $repository);
+        return $releases;
     }
 
     protected function getLatestRelease($api, $repo)
