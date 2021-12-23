@@ -2,30 +2,18 @@
 
 namespace UpdateTool\Cli;
 
-use Consolidation\AnnotatedCommand\CommandData;
-use Consolidation\Filter\FilterOutputData;
-use Consolidation\Filter\LogicalOpFactory;
-use Consolidation\OutputFormatters\Options\FormatterOptions;
-use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
-use Consolidation\OutputFormatters\StructuredData\PropertyList;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Robo\Common\ConfigAwareTrait;
 use Robo\Contract\ConfigAwareInterface;
-use Consolidation\AnnotatedCommand\CommandError;
 use Hubph\HubphAPI;
-use Hubph\VersionIdentifiers;
-use Hubph\PullRequests;
 use Hubph\Git\WorkingCopy;
 use Hubph\Git\Remote;
-use UpdateTool\Util\SupportLevel;
-use UpdateTool\Util\ProjectUpdate;
 
 class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
     use LoggerAwareTrait;
-
 
     /**
      * Update terminus commands and releases in documentation repo.
@@ -132,7 +120,6 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
             $workingCopy->push('origin', $branchName);
             $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
         }
-
     }
 
     protected function getAllReleases($api, $repo)
