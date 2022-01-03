@@ -90,7 +90,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
             // Adjust output.
             $commandsJson = str_replace(
                 [
-                '<site_env>',
+                'site_env',
                 'drush_command',
                 'wp_command',
                 ],
