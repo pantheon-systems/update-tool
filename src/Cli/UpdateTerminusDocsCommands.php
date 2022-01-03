@@ -13,7 +13,7 @@ use Hubph\Git\Remote;
 /**
  * Commands used to interact with Terminus releases.
  */
-class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
+class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
     use LoggerAwareTrait;
@@ -90,12 +90,12 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
             // Adjust output.
             $commandsJson = str_replace(
                 [
-                'site_env',
+                '<site_env>',
                 'drush_command',
                 'wp_command',
                 ],
                 [
-                    'site.env',
+                    '<site>.<env>',
                     'command',
                     'command',
                 ],
@@ -109,6 +109,11 @@ class TerminusCommands extends \Robo\Tasks implements ConfigAwareInterface, Logg
             $releases = $this->getAllReleases($api, $terminusRepo);
             $releasesJson = json_encode($releases, JSON_PRETTY_PRINT);
             file_put_contents($dir . '/source/data/terminusReleases.json', $releasesJson);
+        }
+
+        if (!$workingCopy->status()) {
+            $this->logger->info('Nothing to do...');
+            return;
         }
 
         $this->logger->info('Committing changes...');
