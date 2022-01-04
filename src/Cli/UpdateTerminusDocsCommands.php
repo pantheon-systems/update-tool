@@ -42,7 +42,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
         $updateCommands = $options['update-commands'];
         $updateReleases = $options['update-releases'];
         if (!$updateCommands && !$updateReleases) {
-            throw new \Exception("Either commands or releases must be updated.");
+            throw new \Exception("Both --no-update-commands and --no-update-releases specified; nothing to do.");
         }
 
         $terminusRepo = $options['terminus-repo'];
@@ -79,9 +79,9 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
 
         if ($updateCommands) {
             $this->logger->info('Updating Terminus commands...');
-            exec(sprintf("cd %s && %s/terminus.phar list --format=json > source/data/commands.json", $dir, $terminusDir), $output, $return);
-            if ($return != 0) {
-                throw new \Exception(sprintf('Failed to list terminus commands. Output: %s', implode("\n", $output)));
+            exec(sprintf("cd %s && %s/terminus.phar list --format=json > source/data/commands.json", $dir, $terminusDir), $output, $exitCode);
+            if ($exitCode) {
+                throw new \Exception(sprintf('Failed to list terminus commands. Exit code: %s. Output: %s.', $exitCode, implode("\n", $output)));
             }
 
             $commands = json_decode(file_get_contents($dir . '/source/data/commands.json'), true);
@@ -118,7 +118,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
         }
 
         if (!$workingCopy->status()) {
-            $this->logger->info('Nothing to do...');
+            $this->logger->info('Nothing to update.');
             return;
         }
 
