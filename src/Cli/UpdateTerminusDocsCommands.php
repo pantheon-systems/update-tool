@@ -68,7 +68,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
         $baseBranch = $options['base-branch'];
 
         $branchNamePrefix = $options['branch-name-prefix'];
-        $branchName = $branchNamePrefix . date('Ymd');
+        $branchName = $branchNamePrefix . date('YmdHi');
 
         $url = 'git@github.com:' . $githubRepo . '.git';
         $remote = new Remote($url);
