@@ -108,11 +108,18 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
             $this->logger->info('Updating Terminus releases...');
             $releases = $this->getAllReleases($api, $terminusRepo);
             // Cleanup releases download count.
-            foreach ($releases as &$release) {
+            foreach ($releases as $key => &$release) {
+                $tag_name = $release['tag_name'];
+                if (!preg_match('/^[0-9]+\.[0-9]+\.[0-9]+$/', $tag_name)) {
+                    unset($releases[$key]);
+                    continue;
+                }
                 if (isset($release['assets'][0]['download_count'])) {
                     $release['assets'][0]['download_count'] = 0;
                 }
             }
+            // Reset the keys after deleting some releases.
+            $releases = array_values($releases);
             $releasesJson = json_encode($releases, JSON_PRETTY_PRINT);
             file_put_contents($dir . '/source/data/terminusReleases.json', $releasesJson);
         }
