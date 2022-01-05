@@ -478,7 +478,7 @@ class WorkingCopy implements LoggerAwareInterface
      * @param string $message
      * @return $this
      */
-    public function pr($message, $body = '', $base = 'master', $head = '', $forked_org = '')
+    public function pr($message, $body = '', $base = 'master', $head = '', $forked_org = '', &$response = null)
     {
         if (empty($head)) {
             $head = $this->branch();
@@ -490,7 +490,7 @@ class WorkingCopy implements LoggerAwareInterface
 
         $this->logger->notice('Create pull request for {org_project} using {head} from {base}', ['org_project' => $this->projectWithOrg(), 'head' => $head, 'base' => $base]);
 
-        $result = $this->api->prCreate($this->org(), $this->project(), $message, $body, $base, $head);
+        $result = $this->api->prCreate($this->org(), $this->project(), $message, $body, $base, $head, $response);
 
         return $this;
     }
