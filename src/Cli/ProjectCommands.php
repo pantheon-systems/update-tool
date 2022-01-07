@@ -519,11 +519,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         // Push and make the PR. Close similar PRs.
-        $updated_project
+        $pr = $updated_project
             ->forcePush()
-            ->pr($message, $body, $main_branch, '', '', $response);
+            ->pr($message, $body, $main_branch);
 
-        $comment = sprintf('Superseeded by #%s.', $response['number']);
+        $comment = sprintf('Superseeded by #%s.', $pr['number']);
 
         // These PRs may be closed now, as they are replaced by the new PR.
         $api->prClose($project_working_copy->org(), $project_working_copy->project(), $prs, $comment);
