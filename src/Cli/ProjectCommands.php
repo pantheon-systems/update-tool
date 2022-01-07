@@ -298,13 +298,13 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         // Add commits to main-branch from latest processed tag.
-        $project_working_copy->switchBranch($previous_version);
+        $project_working_copy->switchBranch($main_branch);
         $upstream_working_copy->switchBranch($latest_version);
         $this->logger->notice("Processing files from {upstream} {version} over {target} {previous}", ['upstream' => $upstream_repo->projectWithOrg(), 'version' => $latest_version, 'target' => $remote_repo->projectWithOrg(), 'previous' => $previous_version]);
         $this->applyFiltersAndCommit($filter_manager, $upstream_working_copy, $project_working_copy, $update_parameters);
         if (!empty($options['push'])) {
-            $this->logger->notice("Push branch {version} to {target}", ['version' => $previous_version, 'target' => $remote_repo->projectWithOrg()]);
-            $project_working_copy->push('origin', $previous_version);
+            $this->logger->notice("Push branch {version} to {target}", ['version' => $main_branch, 'target' => $remote_repo->projectWithOrg()]);
+            $project_working_copy->push('origin', $main_branch);
         }
     }
 
