@@ -66,7 +66,7 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
         }
 
         $preamble = $this->preamble();
-        $message = "{$preamble}wp-cli-$updated_version";
+        $message = "{$preamble}WP-CLI version $updated_version";
 
         // Determine if there are any PRs already open that we should
         // close. There should be no more than one. If its contents are the
@@ -176,11 +176,11 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
 
         $next_version = $version;
         // If our versions do not match, check that the latest version exists before continuing.
-        if ( $version !== $latest_version ) {
+        if ($version !== $latest_version) {
             $next_version = $version;
             $try_version = $this->versionExists($latest_version);
 
-            if ( ! empty ( $try_version ) ) {
+            if (!empty($try_version)) {
                 $next_version = $latest_version;
             }
         }
