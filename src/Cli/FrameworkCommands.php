@@ -66,7 +66,7 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
         }
 
         $preamble = $this->preamble();
-        $message = "{$preamble}{wp-cli-$updated_version}";
+        $message = "{$preamble}wp-cli-$updated_version";
 
         // Determine if there are any PRs already open that we should
         // close. There should be no more than one. If its contents are the
@@ -127,17 +127,6 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
     }
 
     /**
-     * Increment the patch number of a semver version string.
-     */
-    protected function nextVersion($version)
-    {
-        $parts = explode('.', $version);
-        $parts[count($parts) - 1]++;
-
-        return implode('.', $parts);
-    }
-
-    /**
      * Check the github repo at wp-cli/wp-cli and see if there is a .phar
      * file available for the specified wp-cli version.
      */
@@ -180,12 +169,22 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
         if (!$this->versionExists($version)) {
             return false;
         }
+
+        // Check for latest tag on GH.
+        $apiUrl = $this->getConfig()->get('wp-cli-gh.api-url');
+        $latest_version = trim(exec("curl -sL '$apiUrl' | jq -r '.tag_name'"), 'v');
+
         $next_version = $version;
-        $try_version = $this->nextVersion($version);
-        while ($this->versionExists($try_version)) {
-            $next_version = $try_version;
-            $try_version = $this->nextVersion($next_version);
+        // If our versions do not match, check that the latest version exists before continuing.
+        if ( $version !== $latest_version ) {
+            $next_version = $version;
+            $try_version = $this->versionExists($latest_version);
+
+            if ( ! empty ( $try_version ) ) {
+                $next_version = $latest_version;
+            }
         }
+
         return $next_version;
     }
 }

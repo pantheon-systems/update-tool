@@ -19,6 +19,7 @@ github:
 php-net:
   download-url: https://php.net/distributions/php-{version}.tar.gz
 wp-cli-gh:
+  api-url: https://api.github.com/repos/wp-cli/wp-cli/releases/latest
   download-url: https://github.com/wp-cli/wp-cli/releases/download/v{version}/wp-cli-{version}.phar
 
 projects:
