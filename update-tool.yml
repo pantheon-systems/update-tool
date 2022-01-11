@@ -18,15 +18,19 @@ github:
       path: ${env.HOME}/.github-token
 php-net:
   download-url: https://php.net/distributions/php-{version}.tar.gz
+wp-cli-gh:
+  api-url: https://api.github.com/repos/wp-cli/wp-cli/releases/latest
+  download-url: https://github.com/wp-cli/wp-cli/releases/download/v{version}/wp-cli-{version}.phar
 
 projects:
   cos-php:
     repo: git@github.com:pantheon-systems/cos-runtime-php.git
     path: ${working-copy-path}/cos-php
     #fork: git@github.com:pantheon-circleci/cos-runtime-php.git
-  rpmbuild-php:
-    repo: git@github.com:pantheon-systems/rpmbuild-php.git
-    path: ${working-copy-path}/rpmbuild-php
+  cos-clis:
+    repo: git@github.com:pantheon-systems/cos-framework-clis.git
+    path: ${working-copy-path}/cos-framework-clis
+    main-branch: master
   wp:
     repo: git@github.com:pantheon-systems/WordPress.git
     path: ${working-copy-path}/WordPress

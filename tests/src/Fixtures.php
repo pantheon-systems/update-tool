@@ -115,13 +115,6 @@ class Fixtures
         return $api;
     }
 
-    public function phpRpmWorkingCopy()
-    {
-        $rpmbuild_php_url = $this->getConfig()->get('projects.rpmbuild-php.repo');
-        $rpmbuild_php_dir = $this->getConfig()->get('projects.rpmbuild-php.path');
-        return WorkingCopy::clone($rpmbuild_php_url, $rpmbuild_php_dir, $this->api());
-    }
-
     public function closeAllOpenPullRequests($remote_name, $as = 'default')
     {
         $api = $this->api($as);
@@ -142,18 +135,6 @@ class Fixtures
 
         $allPRs = $api->allPRs($remote_repo->org() . '/' . $remote_repo->project());
         $api->prMerge($remote_repo->org(), $remote_repo->project(), $allPRs, '');
-    }
-
-    public function forceReinitializePhpFixtures($as = 'default')
-    {
-        $api = $this->api($as);
-
-        $rpmbuild_php_url = $this->getConfig()->get('projects.rpmbuild-php.repo');
-        $rpmbuild_php_dir = $this->getConfig()->get('projects.rpmbuild-php.path');
-
-        $rpmbuild_php_fixture = $this->rpmbuildPhpFixture();
-
-        $this->forceReinitialize($rpmbuild_php_url, $rpmbuild_php_dir, $rpmbuild_php_fixture, $api);
     }
 
     public function forceReinitializeDrops8Fixture($as = 'default')
@@ -363,11 +344,6 @@ class Fixtures
     protected function getFixture($name)
     {
         return $this->fixturesDir() . '/' . $name;
-    }
-
-    protected function rpmbuildPhpFixture()
-    {
-        return $this->getFixture('/rpmbuild-php');
     }
 
     protected function phpCookbookFixture()
