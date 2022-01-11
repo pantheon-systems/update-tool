@@ -103,15 +103,17 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         // Create a new pull request
         $branch = $this->branchPrefix() . implode('-', $updated_versions);
         $this->logger->notice('Using {branch}', ['branch' => $branch]);
-        $cos_php
+        $pr = $cos_php
             ->createBranch($branch, 'master', true)
             ->add('PHP_VERSIONS')
             ->commit($message)
             ->push()
             ->pr($message);
 
+        $comment = sprintf('Superseeded by #%s.', $pr['number']);
+
         // Once we create a new PR, we can close the existing PRs.
-        $api->prClose($cos_php->org(), $cos_php->project(), $prs);
+        $api->prClose($cos_php->org(), $cos_php->project(), $prs, $comment);
     }
 
     protected function getCosPhpVersions($version_file_contents)
