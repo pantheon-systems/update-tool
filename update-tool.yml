@@ -21,6 +21,9 @@ php-net:
 wp-cli-gh:
   api-url: https://api.github.com/repos/wp-cli/wp-cli/releases/latest
   download-url: https://github.com/wp-cli/wp-cli/releases/download/v{version}/wp-cli-{version}.phar
+drush-gh:
+  api-url: https://api.github.com/repos/drush-ops/drush/releases
+  download-url: https://github.com/drush-ops/drush/archive/refs/tags/{version}.zip
 
 projects:
   cos-php:
