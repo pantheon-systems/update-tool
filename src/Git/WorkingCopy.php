@@ -490,9 +490,9 @@ class WorkingCopy implements LoggerAwareInterface
 
         $this->logger->notice('Create pull request for {org_project} using {head} from {base}', ['org_project' => $this->projectWithOrg(), 'head' => $head, 'base' => $base]);
 
-        $result = $this->api->prCreate($this->org(), $this->project(), $message, $body, $base, $head);
+        $result = $this->api->prOpen($this->org(), $this->project(), $message, $body, $base, $head);
 
-        return $this;
+        return $result;
     }
 
     /**
