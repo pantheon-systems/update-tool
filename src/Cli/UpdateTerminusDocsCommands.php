@@ -85,6 +85,16 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
             }
 
             $commands = json_decode(file_get_contents($dir . '/source/data/commands.json'), true);
+
+            // Remove _complete command that makes the build break.
+            foreach ($commands['commands'] as $key => $command) {
+                if ($command['name'] === '_complete') {
+                    unset($commands['commands'][$key]);
+                    break;
+                }
+            }
+            $commands['commands'] = array_values($commands['commands']);
+
             $commandsJson = json_encode($commands, JSON_PRETTY_PRINT);
 
             // Adjust output.
