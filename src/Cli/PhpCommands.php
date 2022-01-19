@@ -86,11 +86,12 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }, $updated_versions));
         $preamble = $this->preamble();
         $message = "{$preamble}{$all_updated_versions}";
+        $body = "This automation creates the PHP upgrade PR about two days before the versions are actually released. We should wait until the release is visible on https://www.php.net/ before merging.";
 
         // Determine if there are any PRs already open that we should
         // close. There should be no more than one. If its contents are the
         // same, then we should abort rather than create the same PR again.
-        // If the cnotents are different, then we'll make a new PR and close
+        // If the contents are different, then we'll make a new PR and close
         // this one.
         $prs = $api->matchingPRs($cos_php->projectWithOrg(), $preamble, '');
         if (in_array($message, $prs->titles())) {
@@ -108,7 +109,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             ->add('PHP_VERSIONS')
             ->commit($message)
             ->push()
-            ->pr($message);
+            ->pr($message, $body);
 
         $comment = sprintf('Superseeded by #%s.', $pr['number']);
 
