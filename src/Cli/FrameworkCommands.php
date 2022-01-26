@@ -44,7 +44,6 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
 
 
         if ('drush' === $cli) {
-            $message_text = "Drush";
             $versions_file_path = "$work_dir/drush/Makefile";
             $file_to_add = 'drush/Makefile';
             $version_file_contents = file_get_contents($versions_file_path);
@@ -60,7 +59,6 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
                 $this->say("Drush versions are up to date on COS");
             }
         } else {
-            $message_text = "WP-CLI ";
             $versions_file_path = "$work_dir/wpcli/Dockerfile";
             $version_file_contents = file_get_contents($versions_file_path);
             $version = $this->getCosWpCliVersion($version_file_contents);
@@ -87,15 +85,13 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
             return;
         }
 
-        $preamble = $this->preamble();
-        $message = "{$preamble}{$message_text} version $updated_version";
+        $preamble = $this->preamble($cli);
+        $message = "{$preamble} $updated_version";
 
         // Determine if there are any PRs already open that we should
-        // close. There should be no more than one. If its contents are the
-        // same, then we should abort rather than create the same PR again.
-        // If the cnotents are different, then we'll make a new PR and close
-        // this one.
-        $prs = $api->matchingPRs($cos_cli->projectWithOrg(), $preamble, '');
+        // close. If its contents are the same, then we should abort rather than create the same PR again.
+        // If the contents are different, then we'll make a new PR and close this one.
+        $prs = $api->matchingPRs($cos_cli->projectWithOrg(), $preamble);
         if (in_array($message, $prs->titles())) {
             $this->logger->notice("There is an existing pull request for this update; nothing else to do.");
             return;
@@ -168,9 +164,13 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
     /**
      * The preamble is placed at the beginning of commit messages.
      */
-    protected function preamble()
+    protected function preamble($cli)
     {
-        return $this->getConfig()->get('messages.update-to', 'Update to ');
+        if ('drush' === $cli) {
+            return $this->getConfig()->get('messages.update-to', 'Update to Drush version');
+        } else {
+            return $this->getConfig()->get('messages.update-to', 'Update to WP-CLI version');
+        }
     }
 
     /**
