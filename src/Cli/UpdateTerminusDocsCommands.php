@@ -34,7 +34,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
         'branch-name-prefix' => 'docs-update-terminus-',
         'commit-message' => 'Update terminus information.',
         'pr-body' => '',
-        'pr-title' => '[UpdateTool - Terminus Information] Update commands and releases.',
+        'pr-title' => '[UpdateTool - Terminus Information] Update commands and releases to version %version.',
         'dry-run' => false,
     ])
     {
@@ -66,6 +66,16 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
 
         $githubRepo = $options['github-repo'];
         $baseBranch = $options['base-branch'];
+
+        // Finish early if nothing to do.
+        $prTitle = $options['pr-title'];
+        $preamble = $this->preamble($prTitle);
+        $realPrTitle = $this->getFinalPrTitle($prTitle, $terminusRelease);
+        $prs = $api->matchingPRs($githubRepo, $preamble);
+        if (in_array($realPrTitle, $prs->titles())) {
+            $this->logger->notice("There is an existing pull request for this Terminus version; nothing else to do.");
+            return;
+        }
 
         $branchNamePrefix = $options['branch-name-prefix'];
         $branchName = $branchNamePrefix . date('YmdHi');
@@ -100,7 +110,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
             // Adjust output.
             $commandsJson = str_replace(
                 [
-                    'site_env',
+                    '<site_env>',
                     'drush_command',
                     'wp_command',
                 ],
@@ -146,11 +156,29 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
 
         $dryRun = $options['dry-run'];
         if (!$dryRun) {
-            $prTitle = $options['pr-title'];
             $prBody = $options['pr-body'];
             $workingCopy->push('origin', $branchName);
-            $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+            $pr = $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+
+            $comment = sprintf('Superseeded by #%s.', $pr['number']);
+            $api->prClose($workingCopy->org(), $workingCopy->project(), $prs, $comment);
         }
+    }
+
+    /**
+     * Get preamble string for PR title.
+     */
+    protected function preamble($prTitle) {
+        if ($position = strpos($prTitle, '%version')) {
+            return substr($prTitle, 0, $position);
+        }
+    }
+
+    /**
+     * Get final PR title based on version.
+     */
+    protected function getFinalPrTitle($prTitle, $version) {
+        return str_replace('%version', $version, $prTitle);
     }
 
     /**
