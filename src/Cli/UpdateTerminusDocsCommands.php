@@ -7,7 +7,7 @@ use Psr\Log\LoggerAwareTrait;
 use Robo\Common\ConfigAwareTrait;
 use Robo\Contract\ConfigAwareInterface;
 use Hubph\HubphAPI;
-use Hubph\Git\WorkingCopy;
+use UpdateTool\Git\WorkingCopy;
 use Hubph\Git\Remote;
 
 /**
@@ -158,7 +158,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
         if (!$dryRun) {
             $prBody = $options['pr-body'];
             $workingCopy->push('origin', $branchName);
-            $pr = $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
+            $pr = $workingCopy->pr($realPrTitle, $prBody, $baseBranch, $branchName);
 
             $comment = sprintf('Superseeded by #%s.', $pr['number']);
             $api->prClose($workingCopy->org(), $workingCopy->project(), $prs, $comment);
