@@ -168,7 +168,8 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
     /**
      * Get preamble string for PR title.
      */
-    protected function preamble($prTitle) {
+    protected function preamble($prTitle)
+    {
         if ($position = strpos($prTitle, '%version')) {
             return substr($prTitle, 0, $position);
         }
@@ -177,7 +178,8 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
     /**
      * Get final PR title based on version.
      */
-    protected function getFinalPrTitle($prTitle, $version) {
+    protected function getFinalPrTitle($prTitle, $version)
+    {
         return str_replace('%version', $version, $prTitle);
     }
 
