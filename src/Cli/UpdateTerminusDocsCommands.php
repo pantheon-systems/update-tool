@@ -33,7 +33,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
         'base-branch' => 'main',
         'branch-name-prefix' => 'docs-update-terminus-',
         'commit-message' => 'Update terminus information.',
-        'pr-body' => '',
+        'pr-body' => '[UpdateTool - Terminus Information] Update commands and releases to the latest Terminus version.',
         'pr-title' => '[UpdateTool - Terminus Information] Update commands and releases to version %version.',
         'dry-run' => false,
     ])
