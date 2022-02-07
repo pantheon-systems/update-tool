@@ -9,7 +9,7 @@ jobs:
     <<: *updatinator_container
     docker:
       - image: quay.io/pantheon-public/docker-updatinator:1.x
-      - image: circleci/mysql:5.7.24
+      - image: cimg/mysql:5.7.36
     steps:
       - checkout
       - run: composer install
