@@ -167,7 +167,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
         'error-log-file' => 'error.log',
-        'skip-on-empty-support-level' => TRUE,
+        'skip-on-empty-support-level' => true,
         'pr-body' => '',
         'pr-title' => '[UpdateTool - Project Information] Update project information.',
     ])
@@ -269,7 +269,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     /**
      * Write to log file.
      */
-    protected function writeToLogFile($message, $filename) {
+    protected function writeToLogFile($message, $filename)
+    {
         $contents = '';
         if (file_exists($filename)) {
             $contents = file_get_contents($filename);
