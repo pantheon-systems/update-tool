@@ -162,6 +162,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'update-codeowners' => false,
         'codeowners-only-api' => false,
         'codeowners-only-guess' => false,
+        'codeowners-only-owner' => '',
         'update-support-level-badge' => false,
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
@@ -238,6 +239,9 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                             } else {
                                 $codeowners = implode('\n', $codeowners);
                             }
+                        }
+                        if ($options['codeowners-only-owner'] && $codeowners !== $options['codeowners-only-owner']) {
+                            $codeowners = '';
                         }
                     }
                 } else {
