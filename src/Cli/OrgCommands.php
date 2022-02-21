@@ -165,6 +165,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'update-support-level-badge' => false,
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
+        'error-log-file' => 'error.log',
         'pr-body' => '',
         'pr-title' => '[UpdateTool - Project Information] Update project information.',
     ])
@@ -245,6 +246,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     try {
                         $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $options['pr-title'], $options['pr-body'], $projectSupportLevel, $codeowners);
                     } catch (\Exception $e) {
+                        $this->writeToLogFile($projectFullName, $options['error-log-file']);
                         $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
                     }
                 }
@@ -253,6 +255,18 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         } else {
             throw new \Exception("File $csv_file does not exist.");
         }
+    }
+
+    /**
+     * Write to log file.
+     */
+    protected function writeToLogFile($message, $filename) {
+        $contents = '';
+        if (file_exists($filename)) {
+            $contents = file_get_contents($filename);
+        }
+        $contents .= $message . "\n";
+        file_put_contents($filename, $contents);
     }
 
     /**
