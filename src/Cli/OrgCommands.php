@@ -166,6 +166,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
         'error-log-file' => 'error.log',
+        'skip-on-empty-support-level' => TRUE,
         'pr-body' => '',
         'pr-title' => '[UpdateTool - Project Information] Update project information.',
     ])
@@ -220,6 +221,10 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     // If empty or invalid support level, we won't update it here.
                     if ($projectUpdateSupportLevel && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
                         $projectUpdateSupportLevel = false;
+                        if ($options['skip-on-empty-support-level']) {
+                            $this->logger->warning("Skipping project $projectFullName because of empty or invalid support level.");
+                            continue;
+                        }
                     }
                     if ($projectUpdateCodeowners) {
                         list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
