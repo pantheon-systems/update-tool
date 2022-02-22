@@ -223,7 +223,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     if ($projectUpdateSupportLevel && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
                         $projectUpdateSupportLevel = false;
                         if ($options['skip-on-empty-support-level']) {
-                            $this->logger->warning("Skipping project $projectFullName because of empty or invalid support level.");
+                            $this->logger->warning(sprintf("Skipping project %s because of empty or invalid support level.", $projectFullName));
                             continue;
                         }
                     }
