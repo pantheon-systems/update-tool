@@ -162,9 +162,12 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'update-codeowners' => false,
         'codeowners-only-api' => false,
         'codeowners-only-guess' => false,
+        'codeowners-only-owner' => '',
         'update-support-level-badge' => false,
         'branch-name' => 'project-update-info',
         'commit-message' => 'Update project information.',
+        'error-log-file' => 'error.log',
+        'skip-on-empty-support-level' => true,
         'pr-body' => '',
         'pr-title' => '[UpdateTool - Project Information] Update project information.',
     ])
@@ -219,6 +222,10 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     // If empty or invalid support level, we won't update it here.
                     if ($projectUpdateSupportLevel && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
                         $projectUpdateSupportLevel = false;
+                        if ($options['skip-on-empty-support-level']) {
+                            $this->logger->warning(sprintf("Skipping project %s because of empty or invalid support level.", $projectFullName));
+                            continue;
+                        }
                     }
                     if ($projectUpdateCodeowners) {
                         list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
@@ -233,6 +240,9 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                                 $codeowners = implode('\n', $codeowners);
                             }
                         }
+                        if ($options['codeowners-only-owner'] && $codeowners !== $options['codeowners-only-owner']) {
+                            $codeowners = '';
+                        }
                     }
                 } else {
                     $projectUpdateSupportLevel = false;
@@ -245,6 +255,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     try {
                         $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $options['pr-title'], $options['pr-body'], $projectSupportLevel, $codeowners);
                     } catch (\Exception $e) {
+                        $this->writeToLogFile($projectFullName, $options['error-log-file']);
                         $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
                     }
                 }
@@ -253,6 +264,19 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         } else {
             throw new \Exception("File $csv_file does not exist.");
         }
+    }
+
+    /**
+     * Write to log file.
+     */
+    protected function writeToLogFile($message, $filename)
+    {
+        $contents = '';
+        if (file_exists($filename)) {
+            $contents = file_get_contents($filename);
+        }
+        $contents .= $message . "\n";
+        file_put_contents($filename, $contents);
     }
 
     /**
