@@ -169,6 +169,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'error-log-file' => 'error.log',
         'skip-on-empty-support-level' => true,
         'pr-body' => '',
+        'pr-body-unsupported' => '',
         'pr-title' => '[UpdateTool - Project Information] Update project information.',
     ])
     {
@@ -177,6 +178,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $codeownersOnlyApi = $options['codeowners-only-api'];
         $codeownersOnlyGuess = $options['codeowners-only-guess'];
         $updateSupportLevelBadge = $options['update-support-level-badge'];
+        $prBody = $options['pr-body'];
         if (!$updateCodeowners && !$updateSupportLevelBadge) {
             throw new \Exception("Either --update-codeowners or --update-support-level-badge must be specified.");
         }
@@ -227,6 +229,9 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                             continue;
                         }
                     }
+                    elseif ($projectSupportLevel === 'Unsupported') {
+                        $prBody = $options['pr-body-unsupported'] ?? $prBody;
+                    }
                     if ($projectUpdateCodeowners) {
                         list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
                         if (empty($codeowners) || $ownerSource === 'file') {
@@ -253,7 +258,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                         $projectSupportLevel = null;
                     }
                     try {
-                        $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $options['pr-title'], $options['pr-body'], $projectSupportLevel, $codeowners);
+                        $projectUpdate->updateProjectInfo($api, $projectFullName, $projectDefaultBranch, $options['branch-name'], $options['commit-message'], $options['pr-title'], $prBody, $projectSupportLevel, $codeowners);
                     } catch (\Exception $e) {
                         $this->writeToLogFile($projectFullName, $options['error-log-file']);
                         $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
