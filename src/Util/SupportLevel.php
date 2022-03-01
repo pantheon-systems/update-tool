@@ -37,7 +37,6 @@ class SupportLevel
     public static function getSupportLevelBadges()
     {
         return [
-            'pilot' => '[![Pilot](https://img.shields.io/badge/Pantheon-Pilot-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#pilot)',
             'ea' => '[![Early Access](https://img.shields.io/badge/Pantheon-Early_Access-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#early-access)',
             'la' => '[![Limited Availability](https://img.shields.io/badge/Pantheon-Limited_Availability-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#limited-availability)',
             'active' => '[![Actively Maintained](https://img.shields.io/badge/Pantheon-Actively_Maintained-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#actively-maintained)',
