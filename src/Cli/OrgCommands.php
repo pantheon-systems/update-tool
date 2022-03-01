@@ -228,7 +228,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                             $this->logger->warning(sprintf("Skipping project %s because of empty or invalid support level.", $projectFullName));
                             continue;
                         }
-                    } elseif ($projectSupportLevel === 'Unsupported') {
+                    } elseif ($projectSupportLevel === 'Unsupported' || $projectSupportLevel === 'Deprecated') {
                         $prBody = $options['pr-body-unsupported'] ?? $prBody;
                     }
                     if ($projectUpdateCodeowners) {
