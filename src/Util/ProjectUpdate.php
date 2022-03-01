@@ -50,6 +50,8 @@ class ProjectUpdate implements LoggerAwareInterface
 
 
         $workingCopy = WorkingCopy::cloneBranch($url, $dir, $branchToClone, $api);
+        [$organization, $project_name] = explode('/', $project);
+        $workingCopy->createFork($project_name);
 
         $workingCopy->setLogger($this->logger);
 
@@ -106,7 +108,7 @@ class ProjectUpdate implements LoggerAwareInterface
 
         if ($codeowners_changed || $readme_changed) {
             $workingCopy->commit($commitMessage);
-            $workingCopy->push('origin', $branchName);
+            $workingCopy->push('fork', $branchName);
             if (!$existingPrFound) {
                 $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
             }

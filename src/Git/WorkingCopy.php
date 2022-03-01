@@ -60,6 +60,8 @@ class WorkingCopy implements LoggerAwareInterface
         $this->fork = new Remote($fork_url);
         $this->fork->addAuthentication($this->api);
 
+        $this->addRemote($this->fork->url(), 'fork');
+
         return $this;
     }
 
@@ -67,14 +69,17 @@ class WorkingCopy implements LoggerAwareInterface
      * createFork creates a new secondary repository copied from
      * the current repository, and sets it up as a fork per 'addFork'.
      */
-    public function createFork($forked_project_name, $forked_org = '', $branch = '')
+    public function createFork($forked_project_name, $forked_org = null, $branch = '')
     {
-        $result = $this->api->gitHubAPI()->api('repo')->create(
-            $forked_project_name,
-            '',
-            '',
-            true,
-            $forked_org
+        [$org, $project_name] = explode('/', $this->remote->projectWithOrg());
+        $result = $this->api->gitHubAPI()->api('repo')->forks()->create(
+            $org,
+            $project_name,
+            [
+                'owner' => $this->api->whoami()['login'],
+                'repo' => $forked_project_name,
+                'org' => $forked_org,
+            ]
         );
 
         // 'git_url' => 'git://github.com/org/project.git',
