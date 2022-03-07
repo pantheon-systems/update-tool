@@ -5,6 +5,7 @@ Fast and smart. Update Tool checks for available software updates and creates pu
 [![Travis CI](https://travis-ci.org/pantheon-systems/update-tool.svg?branch=master)](https://travis-ci.org/pantheon-systems/update-tool)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/pantheon-systems/update-tool/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/pantheon-systems/update-tool/?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/pantheon-systems/update-tool/badge.svg?branch=master)](https://coveralls.io/github/pantheon-systems/update-tool?branch=master) 
+[![Actively Maintained](https://img.shields.io/badge/Pantheon-Actively_Maintained-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#actively-maintained)
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
 
 <table><tr width="25%"><td><img alt="Detinator" src="docs/images/roadrunner.png"/></td><td width="75%" valign="top">
