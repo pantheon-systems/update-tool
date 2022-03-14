@@ -74,7 +74,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'as' => 'default',
         'format' => 'table',
         'only-public' => false,
-        'no-forks' => false,
+        'forks' => true,
     ])
     {
         $api = $this->api($options['as']);
@@ -96,7 +96,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }
 
         // Remove fork repos.
-        if ($options['no-forks']) {
+        if (!$options['forks']) {
             $repos = array_filter($repos, function ($repo) {
                 return empty($repo['fork']);
             });
