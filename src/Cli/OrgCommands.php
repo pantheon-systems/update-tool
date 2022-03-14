@@ -70,7 +70,12 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      *
      * @return Consolidation\OutputFormatters\StructuredData\RowsOfFields
      */
-    public function orgAnalyze($org, $options = ['as' => 'default', 'format' => 'table'])
+    public function orgAnalyze($org, $options = [
+        'as' => 'default',
+        'format' => 'table',
+        'only-public' => false,
+        'forks' => true,
+    ])
     {
         $api = $this->api($options['as']);
         $pager = $api->resultPager();
@@ -82,6 +87,20 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $repos = array_filter($repos, function ($repo) {
             return empty($repo['archived']);
         });
+
+        // Remove private repos.
+        if ($options['only-public']) {
+            $repos = array_filter($repos, function ($repo) {
+                return empty($repo['private']);
+            });
+        }
+
+        // Remove fork repos.
+        if (!$options['forks']) {
+            $repos = array_filter($repos, function ($repo) {
+                return empty($repo['fork']);
+            });
+        }
 
         // TEMPORARY: only do the first 20
         // $repos = array_splice($repos, 0, 20);
@@ -106,9 +125,11 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
                 if (!empty($data['content'])) {
                     $content = base64_decode($data['content']);
-                    $repo['support_level'] = SupportLevel::getSupportLevelsFromContent($content, true);
+                    $support_level = SupportLevel::getSupportLevelsFromContent($content);
+                    $repo['support_level'] = count($support_level) ? reset($support_level) : 'EMPTY';
                 }
             } catch (\Exception $e) {
+                $repo['support_level'] = 'EMPTY';
             }
 
             $reposResult[$resultKey] = $repo;

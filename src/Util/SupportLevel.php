@@ -86,7 +86,7 @@ class SupportLevel
                 // Get the badge text from the badge markup.
                 preg_match(self::SUPPORT_LEVEL_BADGE_LABEL_REGEX, $badge, $matches);
                 if (!empty($matches[1])) {
-                    if (strpos($line, $matches[1]) !== false) {
+                    if (stripos($line, $matches[0]) !== false) {
                         $support_levels[$key] = $key;
                     }
                 }
