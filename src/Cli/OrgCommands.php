@@ -199,7 +199,6 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $codeownersOnlyApi = $options['codeowners-only-api'];
         $codeownersOnlyGuess = $options['codeowners-only-guess'];
         $updateSupportLevelBadge = $options['update-support-level-badge'];
-        $prBody = $options['pr-body'];
         if (!$updateCodeowners && !$updateSupportLevelBadge) {
             throw new \Exception("Either --update-codeowners or --update-support-level-badge must be specified.");
         }
@@ -221,6 +220,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             $projectSupportLevelIndex = -1;
             $projectDefaultBranchIndex = -1;
             foreach ($csv as $row_id => $row) {
+                $prBody = $options['pr-body'];
                 // Get column indexes if header row.
                 if ($row_id == 0) {
                     $projectFullNameIndex = $this->getColumnNumber('full_name', $row);
@@ -284,7 +284,6 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                         $this->logger->warning("Failed to update project information for $projectFullName: " . $e->getMessage());
                     }
                 }
-                break;
             }
         } else {
             throw new \Exception("File $csv_file does not exist.");
