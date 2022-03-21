@@ -754,16 +754,16 @@
         },
         {
             "name": "g1a/hubph",
-            "version": "0.6.5",
+            "version": "0.6.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/g1a/hubph.git",
-                "reference": "989354011ae04ffdb2cc9cc98827bcf6c8506a72"
+                "reference": "badfc7146c34968e29df96e36d810ee39ac3a633"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/g1a/hubph/zipball/989354011ae04ffdb2cc9cc98827bcf6c8506a72",
-                "reference": "989354011ae04ffdb2cc9cc98827bcf6c8506a72",
+                "url": "https://api.github.com/repos/g1a/hubph/zipball/badfc7146c34968e29df96e36d810ee39ac3a633",
+                "reference": "badfc7146c34968e29df96e36d810ee39ac3a633",
                 "shasum": ""
             },
             "require": {
@@ -805,9 +805,9 @@
             "description": "Template project for PHP libraries.",
             "support": {
                 "issues": "https://github.com/g1a/hubph/issues",
-                "source": "https://github.com/g1a/hubph/tree/0.6.5"
+                "source": "https://github.com/g1a/hubph/tree/0.6.6"
             },
-            "time": "2022-01-10T20:08:45+00:00"
+            "time": "2022-03-21T21:28:11+00:00"
         },
         {
             "name": "grasmash/expander",
