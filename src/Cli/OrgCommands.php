@@ -356,7 +356,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 // This PR is ready to merge.
                 if (!$options['dry-run']) {
                     $this->logger->notice("Merging PR #$prNumber in $projectName because it is old enough.");
-                    $api->gitHubAPI()->api('pull_request')->merge($projectOrg, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectFullName", $prSha);
+                    $api->gitHubAPI()->api('pull_request')->merge($user, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectName", $prSha);
+                    break;
                 } else {
                     $this->logger->notice("PR #$prNumber in $projectName would be merged if no dry-run because it is old enough.");
                 }
