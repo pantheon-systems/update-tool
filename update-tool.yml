@@ -487,6 +487,7 @@ plugins:
     repo: https://github.com/jspellman814/wp_launch_check
     path: ${working-copy-path}/wp-launch-check
     main-branch: main
+    update-message: Bump WP Core version
     version-api:
       url: https://api.wordpress.org/core/version-check/1.7/
     file-to-check: features/general.feature

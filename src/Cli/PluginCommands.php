@@ -33,19 +33,21 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
         }
 
         $work_dir = $this->getConfig()->get("plugins.$remote.path");
+        $main_branch = $this->getConfig()->get("plugins.$remote.main-branch");
+
         $plugin_working_copy = WorkingCopy::clone($url, $work_dir, $api);
         $plugin_working_copy
             ->addFork('')
             ->setLogger($this->logger);
         $this->logger->notice("Check out {project} to {path}.", ['project' => $plugin_working_copy->projectWithOrg(), 'path' => $work_dir]);
         $plugin_working_copy
-        ->switchBranch("plugins.$remote.main-branch")
-        ->pull('origin', "plugins.$remote.main-branch");
+        ->switchBranch($main_branch)
+        ->pull('origin', $main_branch);
 
         // Get plugin file to parse.
-        $file = $this->getConfig()->get("plugins.$remote.file-to-check");
+        $file_to_check = $this->getConfig()->get("plugins.$remote.file-to-check");
         $query_string = $this->getConfig()->get("plugins.$remote.query-string");
-        $versions_file_path = "$work_dir/$file";
+        $versions_file_path = "$work_dir/$file_to_check";
         $version_file_contents = file_get_contents($versions_file_path);
 
         // Check for updates.
@@ -53,10 +55,33 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
         $latest_versions = $this->findLatestVersion($api_url);
 
         // Get current version, compare to updated version, and update file if needed.
-        $version_diff = $this->getCurrentVersionUpdateFile($version_file_contents, $query_string, $latest_versions);
+        $version_file_contents = $this->getCurrentVersionUpdateFile($version_file_contents, $query_string, $latest_versions);
 
+        $message = $this->message($remote);
+        // Determine if there are any PRs already open that we should
+        // close. If its contents are the same, then we should abort rather than create the same PR again.
+        // If the contents are different, then we'll make a new PR and close this one.
+        $prs = $api->matchingPRs($plugin_working_copy->projectWithOrg(), $message);
+        if (in_array($message, $prs->titles())) {
+            $this->logger->notice("There is an existing pull request for this update; nothing else to do.");
+            return;
+        }
+        
+        file_put_contents($versions_file_path, $version_file_contents);
 
+        // Create a new pull request
+        $branch_slug = implode('-', $latest_versions);
+        $branch = $this->branchPrefix($remote) . $branch_slug;
+        $this->logger->notice('Using {branch}', ['branch' => $branch]);
+        $plugin_working_copy
+            ->createBranch($branch, $main_branch, true)
+            ->add($file_to_check)
+            ->commit($message)
+            ->push()
+            ->pr($message, '', $main_branch);
 
+        // Once we create a new PR, we can close the existing PRs.
+        $api->prClose($plugin_working_copy->org(), $plugin_working_copy->project(), $prs);
     }
 
     /**
@@ -73,9 +98,10 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
             throw new \Exception('No offers returned from the version-check API endpoint.');
         }
         $major_version = explode('.', $versionData['offers'][0]['version']);
-        //$latest_versions[] = $major_version[0] . '.' . $major_version[1];
-        $latest_versions[] = '6.0';
-        $latest_versions[] = $versionData['offers'][3]['version'];
+        $latest_versions[] = $major_version[0] . '.' . $major_version[1];
+        //$latest_versions[] = '6.0';
+        //$latest_versions[] = $versionData['offers'][3]['version'];
+        $latest_versions[] = '5.8.5';
 
         return $latest_versions;
     }
@@ -96,20 +122,29 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
         $compare_arrays = ($latest_versions === $current_versions);
         // If our comparison is false, we need to update the file.
         if(empty($compare_arrays)){
-            // figure out which version is different and update accordingly
+            $array_diff = array_diff($latest_versions, $current_versions);
+            $array_key_to_replace = array_key_first($array_diff);
+
+            $version_file_contents = str_replace($current_versions[$array_key_to_replace], $array_diff[$array_key_to_replace], $version_file_contents);
         }
 
+        return $version_file_contents;
+    }
 
-
-        return $current_versions;
+    /**
+     * The commit message.
+     */
+    protected function message($remote)
+    {
+        return $this->getConfig()->get("plugins.$remote.update-message", 'Update version');
     }
 
     /**
      * The branch prefix is placed at the beginning of branch names.
      */
-    protected function branchPrefix($cli)
+    protected function branchPrefix($remote)
     {
-        return $this->getConfig()->get('constants.branch-prefix', 'wp-cli-');
+        return $this->getConfig()->get("plugins.$remote.branch-prefix", 'wplc-');
     }
 
     protected function createRemote($remote_name, $api)
