@@ -28,12 +28,13 @@ $appName = "UpdateTool";
 $appVersion = trim(file_get_contents(__DIR__ . '/VERSION'));
 $commandClasses = [
   \Hubph\Cli\HubphCommands::class,
-  \UpdateTool\Cli\PhpCommands::class,
-  \UpdateTool\Cli\FrameworkCommands::class,
-  \UpdateTool\Cli\ProjectCommands::class,
-  \UpdateTool\Cli\CICommands::class,
-  \UpdateTool\Cli\OrgCommands::class,
-  \UpdateTool\Cli\UpdateTerminusDocsCommands::class,
+//  \UpdateTool\Cli\PhpCommands::class,
+//  \UpdateTool\Cli\FrameworkCommands::class,
+//  \UpdateTool\Cli\ProjectCommands::class,
+//  \UpdateTool\Cli\CICommands::class,
+//  \UpdateTool\Cli\OrgCommands::class,
+//  \UpdateTool\Cli\UpdateTerminusDocsCommands::class,
+  \UpdateTool\Cli\PluginCommands::class,
 ];
 $selfUpdateRepository = 'pantheon-systems/update-tool';
 $configPrefix = 'UPDATETOOL';

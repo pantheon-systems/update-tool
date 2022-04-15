@@ -481,3 +481,13 @@ projects:
       url: https://api.wordpress.org/core/version-check/1.7/
     release-node:
       atom: 'https://wordpress.org/news/category/releases/feed/atom/'
+
+plugins:
+  wp-launch-check:
+    repo: https://github.com/jspellman814/wp_launch_check
+    path: ${working-copy-path}/wp-launch-check
+    main-branch: main
+    version-api:
+      url: https://api.wordpress.org/core/version-check/1.7/
+    file-to-check: features/general.feature
+    query-string: --version=
