@@ -113,7 +113,7 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
 
         foreach (explode("\n", $version_file_contents) as $line) {
             if (preg_match('#('. $query_string .')(.*)$#', $line, $matches)) {
-                $version = str_replace( ' --force`', '', $matches[2] );
+                $version = str_replace(' --force`', '', $matches[2]);
 
                 $current_versions[] = $version;
             }
@@ -121,7 +121,7 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
 
         $compare_arrays = ($latest_versions === $current_versions);
         // If our comparison is false, we need to update the file.
-        if(empty($compare_arrays)){
+        if (empty($compare_arrays)) {
             $array_diff = array_diff($latest_versions, $current_versions);
             $array_key_to_replace = array_key_first($array_diff);
 
