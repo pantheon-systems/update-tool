@@ -484,7 +484,7 @@ projects:
 
 plugins:
   wp-launch-check:
-    repo: https://github.com/jspellman814/wp_launch_check
+    repo: https://github.com/pantheon-systems/wp_launch_check
     path: ${working-copy-path}/wp-launch-check
     main-branch: main
     update-message: Bump WP Core version

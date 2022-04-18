@@ -99,9 +99,7 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
         }
         $major_version = explode('.', $versionData['offers'][0]['version']);
         $latest_versions[] = $major_version[0] . '.' . $major_version[1];
-        //$latest_versions[] = '6.0';
-        //$latest_versions[] = $versionData['offers'][3]['version'];
-        $latest_versions[] = '5.8.5';
+        $latest_versions[] = $versionData['offers'][3]['version'];
 
         return $latest_versions;
     }
@@ -122,10 +120,16 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
         $compare_arrays = ($latest_versions === $current_versions);
         // If our comparison is false, we need to update the file.
         if (empty($compare_arrays)) {
-            $array_diff = array_diff($latest_versions, $current_versions);
-            $array_key_to_replace = array_key_first($array_diff);
+            $versions_to_replace = array_diff($latest_versions, $current_versions);
 
-            $version_file_contents = str_replace($current_versions[$array_key_to_replace], $array_diff[$array_key_to_replace], $version_file_contents);
+            if (count($versions_to_replace) >= 2) {
+                foreach ($versions_to_replace as $key => $version) {
+                    $version_file_contents = str_replace($current_versions[$key], $version, $version_file_contents);
+                }
+            } else {
+                $array_key_to_replace = array_key_first($versions_to_replace);
+                $version_file_contents = str_replace($current_versions[$array_key_to_replace], $versions_to_replace[$array_key_to_replace], $version_file_contents);
+            }
         }
 
         return $version_file_contents;
