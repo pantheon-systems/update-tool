@@ -8,8 +8,6 @@ use Robo\Contract\ConfigAwareInterface;
 use Robo\Common\ConfigAwareTrait;
 use UpdateTool\Git\WorkingCopy;
 use UpdateTool\Git\Remote;
-use Hubph\VersionIdentifiers;
-use Hubph\HubphAPI;
 
 /**
  * Commands used to create pull requests to update the available command line tool version on the platform
