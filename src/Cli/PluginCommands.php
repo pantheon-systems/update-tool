@@ -53,9 +53,22 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
         $latest_versions = $this->findLatestVersion($api_url);
 
         // Get current version, compare to updated version, and update file if needed.
-        $version_file_contents = $this->getCurrentVersionUpdateFile($version_file_contents, $query_string, $latest_versions);
+        // Returns array containing the version to update and the updated version_file_contents.
+        $version_data = $this->getCurrentVersionUpdateFile($version_file_contents, $query_string, $latest_versions);
+        if (empty($version_data[0])) {
+            return;
+        }
 
-        $message = $this->message($remote);
+        if (count($version_data[0]) >=2) {
+            $version_updates = implode(' and ', $version_data[0]);
+        } else {
+            $version_updates = implode(' ', $version_data[0]);
+        }
+
+        var_dump($version_updates);
+
+        $preamble = $this->preamble($remote);
+        $message = "{$preamble} to {$version_updates}";
         // Determine if there are any PRs already open that we should
         // close. If its contents are the same, then we should abort rather than create the same PR again.
         // If the contents are different, then we'll make a new PR and close this one.
@@ -65,10 +78,10 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
             return;
         }
         
-        file_put_contents($versions_file_path, $version_file_contents);
+        file_put_contents($versions_file_path, $version_data[1]);
 
         // Create a new pull request
-        $branch_slug = implode('-', $latest_versions);
+        $branch_slug = str_replace(' ', '-', $version_updates);
         $branch = $this->branchPrefix($remote) . $branch_slug;
         $this->logger->notice('Using {branch}', ['branch' => $branch]);
         $plugin_working_copy
@@ -102,10 +115,13 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
         return $latest_versions;
     }
 
-
+    /**
+     * Get Current Versions and Update File if needed
+     */
     protected function getCurrentVersionUpdateFile($version_file_contents, $query_string, $latest_versions)
     {
         $current_versions = [];
+        $versions_to_replace = [];
 
         foreach (explode("\n", $version_file_contents) as $line) {
             if (preg_match('#('. $query_string .')(.*)$#', $line, $matches)) {
@@ -130,15 +146,15 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
             }
         }
 
-        return $version_file_contents;
+        return [$versions_to_replace,$version_file_contents];
     }
 
-    /**
-     * The commit message.
+     /**
+     * The preamble is placed at the beginning of commit messages.
      */
-    protected function message($remote)
+    protected function preamble($remote)
     {
-        return $this->getConfig()->get("plugins.$remote.update-message", 'Update version');
+        return $this->getConfig()->get("plugins.$remote.commit-preamble", 'Update version');
     }
 
     /**
