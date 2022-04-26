@@ -65,8 +65,6 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
             $version_updates = implode(' ', $version_data[0]);
         }
 
-        var_dump($version_updates);
-
         $preamble = $this->preamble($remote);
         $message = "{$preamble} to {$version_updates}";
         // Determine if there are any PRs already open that we should
@@ -100,17 +98,24 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
      */
     public function findLatestVersion($api_url)
     {
+        $upgrade = '"upgrade"';
+        $autoupdate = '"autoupdate"';
+
         $availableVersions = file_get_contents($api_url);
         if (empty($availableVersions)) {
             throw new \Exception('Could not contact the version-check API endpoint.');
         }
-        $versionData = json_decode($availableVersions, true);
-        if (!isset($versionData['offers'][0])) {
-            throw new \Exception('No offers returned from the version-check API endpoint.');
-        }
-        $major_version = explode('.', $versionData['offers'][0]['version']);
-        $latest_versions[] = $major_version[0] . '.' . $major_version[1];
-        $latest_versions[] = $versionData['offers'][3]['version'];
+
+        $cmd = "curl -s $api_url | jq -r '[.offers[]|select(.response==". $upgrade .")][0].version'";
+        exec($cmd, $minor, $status);
+        
+        $cmd = "curl -s $api_url | jq -r '[.offers[]|select(.response==". $autoupdate .")][2].version'";
+        exec($cmd, $major, $status);
+
+        // We need to remove the minor version to test for the WordPress minor version recommendation message.
+        $minor_version = explode('.', $minor[0]);
+        $latest_versions[] = $minor_version[0] . '.' . $minor_version[1];
+        $latest_versions[] = $major[0];
 
         return $latest_versions;
     }
