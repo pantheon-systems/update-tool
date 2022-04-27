@@ -98,24 +98,29 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
      */
     public function findLatestVersion($api_url)
     {
-        $upgrade = '"upgrade"';
-        $autoupdate = '"autoupdate"';
+        $latest = '"latest"';
+        $input = 'keys[] as $k';
+        $filter = '"\($k), \(.[$k])"';
 
-        $availableVersions = file_get_contents($api_url);
-        if (empty($availableVersions)) {
-            throw new \Exception('Could not contact the version-check API endpoint.');
-        }
-
-        $cmd = "curl -s $api_url | jq -r '[.offers[]|select(.response==". $upgrade .")][0].version'";
+        $cmd = "curl -s $api_url | jq '" . $input . " | " . $filter . " | select(index(" . $latest . "))'";
         exec($cmd, $minor, $status);
+        $minor = str_replace('"', '', $minor[0]);
+        // We need to remove the minor version to test for the WordPress minor version recommendation message.
+        $minor_version = explode('.', explode(', ', $minor)[0]);
+        $latest_versions[] = $minor_version[0] . '.' . $minor_version[1];
         
-        $cmd = "curl -s $api_url | jq -r '[.offers[]|select(.response==". $autoupdate .")][2].version'";
+        // Check for previous major version using latest version.
+        $last_major = '"' . strval($latest_versions[0] - 0.1) . '"';
+        $cmd = "curl -s $api_url | jq '" . $input . " | " . $filter . " | select(index(" . $last_major . "))'";
         exec($cmd, $major, $status);
 
-        // We need to remove the minor version to test for the WordPress minor version recommendation message.
-        $minor_version = explode('.', $minor[0]);
-        $latest_versions[] = $minor_version[0] . '.' . $minor_version[1];
-        $latest_versions[] = $major[0];
+        // Filter for outdated value (we don't want the insecure verison).
+        $previous_version = preg_grep("/outdated/", $major);
+        if (!empty($previous_version)) {
+            $major_version = explode(',', str_replace('"', '', reset($previous_version)));
+            // Add previous major version to $latest_versions array.
+            $latest_versions[] = $major_version[0];
+        }
 
         return $latest_versions;
     }

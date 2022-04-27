@@ -489,6 +489,6 @@ plugins:
     main-branch: main
     commit-preamble: Bump WP Core version
     version-api:
-      url: https://api.wordpress.org/core/version-check/1.7/
+      url: https://api.wordpress.org/core/stable-check/1.0/
     file-to-check: features/general.feature
     query-string: --version=
