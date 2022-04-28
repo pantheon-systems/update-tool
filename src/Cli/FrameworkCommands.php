@@ -58,6 +58,21 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
             } else {
                 $this->say("Drush versions are up to date on COS");
             }
+        } elseif ('composer' === $cli) {
+            $versions_file_path = "$work_dir/composer/Makefile";
+            $file_to_add = 'composer/Makefile';
+            $version_file_contents = file_get_contents($versions_file_path);
+            $major_versions = ['1', '2'];
+            $versions = $this->getCosComposerVersions($version_file_contents);
+
+            $next_versions = $this->nextComposerVersionsThatExist($major_versions, $versions);
+            if (!empty($next_versions)) {
+                $version_file_contents = $this->updateComposerMakefile($next_versions, $versions, $version_file_contents);
+                $updated_version = implode(' and ', $next_versions);
+                $branch_slug = implode('-', $next_versions);
+            } else {
+                $this->say("Composer versions are up to date on COS");
+            }
         } else {
             $versions_file_path = "$work_dir/wpcli/Dockerfile";
             $version_file_contents = file_get_contents($versions_file_path);
@@ -161,6 +176,20 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
         return $result;
     }
 
+    protected function getCosComposerVersions($version_file_contents): array
+    {
+        $versions = [];
+
+        foreach (explode("\n", $version_file_contents) as $line) {
+            $regex = '/^(COMPOSER\d_VERSION := )(.*)/m';
+            if (preg_match_all($regex, $line, $matches)) {
+                $versions[] = $matches[2][0];
+            }
+        }
+
+        return $versions;
+    }
+
     /**
      * The preamble is placed at the beginning of commit messages.
      */
@@ -168,6 +197,8 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
     {
         if ('drush' === $cli) {
             return $this->getConfig()->get('messages.update-to', 'Update to Drush version');
+        } elseif ('composer' === $cli) {
+            return $this->getConfig()->get('messages.update-to', 'Update to Composer version');
         } else {
             return $this->getConfig()->get('messages.update-to', 'Update to WP-CLI version');
         }
@@ -180,6 +211,8 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
     {
         if ('drush' === $cli) {
             return $this->getConfig()->get('constants.branch-prefix', 'drush-');
+        } elseif ('composer' === $cli) {
+            return $this->getConfig()->get('constants.branch-prefix', 'composer-');
         } else {
             return $this->getConfig()->get('constants.branch-prefix', 'wp-cli-');
         }
@@ -306,6 +339,45 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
     }
 
     /**
+     * Keep incrementing the provided version; return the highest
+     * version number that has an available download file.
+     */
+    protected function nextComposerVersionsThatExist(array $major_versions, array $versions): array
+    {
+        $latest_versions = $this->getComposerLatestVersions($major_versions);
+
+        $updated_versions = array_diff($latest_versions, $versions);
+        // Remove any versions where an update isn't needed.
+        $updated_versions = array_diff($updated_versions, $major_versions);
+
+        return $updated_versions;
+    }
+
+    /**
+     * Check the github repo at composer/composer and get the latest version
+     * for each major version Pantheon supports.
+     */
+    protected function getComposerLatestVersions(array $major_versions): array
+    {
+        $apiUrl = $this->getConfig()->get('composer-gh.api-url');
+        $latest_versions = [];
+        $releases = file_get_contents($apiUrl);
+        $releasesJson = json_decode($releases, true);
+        foreach ($major_versions as $major_version) {
+            // Get recent releases that match our supported major versions
+            $latest_version = exec("curl -sL '$apiUrl' | jq 'first(.[].tag_name | select(test(\"^($major_version.).*\")))'");
+            $lv = str_replace('"', '', $latest_version);
+            if (str_starts_with($lv, $major_version . '.')) {
+                $latest_versions[] = $lv;
+            } else {
+                $latest_versions[] = $major_version;
+            }
+        }
+
+        return $latest_versions;
+    }
+
+    /**
      * Check the github repo at drush-ops/drush and get the latest version
      * for each major version Pantheon supports.
      */
@@ -329,6 +401,20 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
     }
 
     protected function updateDrushMakefile($next_versions, $versions, $version_file_contents)
+    {
+        foreach ($next_versions as $version) {
+            $version_arr = explode('.', $version);
+            $version_match = preg_grep("/^$version_arr[0].(\w+)/i", $versions);
+            $version_match = array_values($version_match);
+            $old_version = $version_match[0];
+            $this->say("$version is available.");
+            $version_file_contents = preg_replace("#$old_version#", "$version", $version_file_contents);
+        }
+
+        return $version_file_contents;
+    }
+
+    protected function updateComposerMakefile($next_versions, $versions, $version_file_contents)
     {
         foreach ($next_versions as $version) {
             $version_arr = explode('.', $version);
