@@ -247,28 +247,31 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
      * Keep incrementing the provided version; return the highest
      * version number that has an available download file.
      */
-    protected function nextWpVersionThatExists($version)
+    protected function nextWpVersionThatExists($current_version)
     {
         // Return 'false' if the -current- version cannot be found on wp-cli/wp-cli.
-        if (!$this->wpVersionExists($version)) {
+        if (!$this->wpVersionExists($current_version)) {
             return false;
         }
 
+        // At this point the $version_that_exists is the version that is already in use.
+        $version_that_exists = $current_version;
         // Check for latest tag on GH.
         $apiUrl = $this->getConfig()->get('wp-cli-gh.api-url');
         $latest_version = trim(exec("curl -sL '$apiUrl' | jq -r '.tag_name'"), 'v');
 
-        $next_version = $version;
         // If our versions do not match, check that the latest version exists before continuing.
-        if ($version !== $latest_version) {
+        // Greater than comparision to ensure that we don't get older versions. See https://github.com/pantheon-systems/cos-framework-clis/pull/76#issuecomment-1118650316
+        if ($latest_version > $current_version) {
             $try_version = $this->wpVersionExists($latest_version);
 
             if (!empty($try_version)) {
-                $next_version = $latest_version;
+                // If the latest version exists on GH, set it as the $version_that_exists.
+                $version_that_exists = $latest_version;
             }
         }
 
-        return $next_version;
+        return $version_that_exists;
     }
 
     /**
