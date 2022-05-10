@@ -481,3 +481,14 @@ projects:
       url: https://api.wordpress.org/core/version-check/1.7/
     release-node:
       atom: 'https://wordpress.org/news/category/releases/feed/atom/'
+
+plugins:
+  wp-launch-check:
+    repo: https://github.com/pantheon-systems/wp_launch_check
+    path: ${working-copy-path}/wp-launch-check
+    main-branch: main
+    commit-preamble: Bump WP Core version
+    version-api:
+      url: https://api.wordpress.org/core/stable-check/1.0/
+    file-to-check: features/general.feature
+    query-string: --version=

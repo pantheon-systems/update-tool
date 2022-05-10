@@ -34,6 +34,7 @@ $commandClasses = [
   \UpdateTool\Cli\CICommands::class,
   \UpdateTool\Cli\OrgCommands::class,
   \UpdateTool\Cli\UpdateTerminusDocsCommands::class,
+  \UpdateTool\Cli\PluginCommands::class,
 ];
 $selfUpdateRepository = 'pantheon-systems/update-tool';
 $configPrefix = 'UPDATETOOL';
