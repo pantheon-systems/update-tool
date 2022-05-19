@@ -59,8 +59,8 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
                 $this->say("Drush versions are up to date on COS");
             }
         } elseif ('composer' === $cli) {
-            $versions_file_path = "$work_dir/composer/Makefile";
             $file_to_add = 'composer/Makefile';
+            $versions_file_path = "$work_dir/$file_to_add";
             $version_file_contents = file_get_contents($versions_file_path);
             $major_versions = ['1', '2'];
             $versions = $this->getCosComposerVersions($version_file_contents);
@@ -183,7 +183,8 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
         foreach (explode("\n", $version_file_contents) as $line) {
             $regex = '/^(COMPOSER\d_VERSION := )(.*)/m';
             if (preg_match_all($regex, $line, $matches)) {
-                $versions[] = $matches[2][0];
+                $version = $matches[2][0];
+                $versions[substr($version, 0, 1)] = $version;
             }
         }
 
@@ -339,8 +340,7 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
     }
 
     /**
-     * Keep incrementing the provided version; return the highest
-     * version number that has an available download file.
+     * Get composer versions that are available for download and actually need an update.
      */
     protected function nextComposerVersionsThatExist(array $major_versions, array $versions): array
     {
@@ -361,16 +361,14 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
     {
         $apiUrl = $this->getConfig()->get('composer-gh.api-url');
         $latest_versions = [];
-        $releases = file_get_contents($apiUrl);
-        $releasesJson = json_decode($releases, true);
         foreach ($major_versions as $major_version) {
             // Get recent releases that match our supported major versions
             $latest_version = exec("curl -sL '$apiUrl' | jq 'first(.[].tag_name | select(test(\"^($major_version.).*\")))'");
-            $lv = str_replace('"', '', $latest_version);
-            if (str_starts_with($lv, $major_version . '.')) {
-                $latest_versions[] = $lv;
+            $latest_version = str_replace('"', '', $latest_version);
+            if (str_starts_with($latest_version, $major_version . '.')) {
+                $latest_versions[$major_version] = $latest_version;
             } else {
-                $latest_versions[] = $major_version;
+                $latest_versions[$major_version] = $major_version;
             }
         }
 
@@ -416,13 +414,12 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
 
     protected function updateComposerMakefile($next_versions, $versions, $version_file_contents)
     {
-        foreach ($next_versions as $version) {
-            $version_arr = explode('.', $version);
-            $version_match = preg_grep("/^$version_arr[0].(\w+)/i", $versions);
-            $version_match = array_values($version_match);
-            $old_version = $version_match[0];
-            $this->say("$version is available.");
-            $version_file_contents = preg_replace("#$old_version#", "$version", $version_file_contents);
+        foreach ($next_versions as $major => $version) {
+            if (isset($versions[$major])) {
+                $old_version = $versions[$major];
+                $this->say("$version is available.");
+                $version_file_contents = preg_replace("#$old_version#", "$version", $version_file_contents);
+            }
         }
 
         return $version_file_contents;
