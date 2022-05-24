@@ -393,6 +393,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_label = ucfirst($upstream);
         $message = $this->getConfig()->get("projects.$remote.upstream.update-message", 'Update to ' . $upstream_label . ' ' . $latest . '.');
         $message = str_replace('{version}', $latest, $message);
+        $preamble = $this->getConfig()->get("projects.$remote.upstream.update-preamble", '');
 
         // If we can find a release node, then add the "more information" blerb.
         $releaseNode = new ReleaseNode($api);
@@ -409,6 +410,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         if (!empty($existingPRList)) {
             $this->logger->notice("Pull request already exists for available update {latest}; nothing more to do.", ['latest' => $latest]);
             return;
+        }
+
+        // Now search for PRs based on preamble if it was set.
+        if ($preamble) {
+            $prs = $api->matchingPRs($remote_repo->projectWithOrg(), $preamble, '');
         }
 
         $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
