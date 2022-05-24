@@ -117,7 +117,7 @@ projects:
     path: ${working-copy-path}/wordpress-composer
     source:
       project: wp
-      version-pattern: '^5'
+      version-pattern: '^5||^6'
       update-parameters:
         rsync:
           options: '-ravz --delete'
@@ -135,7 +135,7 @@ projects:
     main-branch: master
     source:
       project: wp
-      version-pattern: '^5'
+      version-pattern: '^5||^6'
       branch: master
   drops-7-composer:
     repo: git@github.com:pantheon-systems/drops-7-composer.git
