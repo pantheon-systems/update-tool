@@ -262,6 +262,7 @@ projects:
       project: drupal
       major: 9
       update-method: SingleCommit
+      update-preamble: "Update to Drupal 9"
       update-parameters:
         allow-pre-release: false
         platform-additions:
