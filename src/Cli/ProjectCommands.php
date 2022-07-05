@@ -564,6 +564,90 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
+     * @command project:update-from-base
+     * @param $project The github project to update from base.
+     */
+    public function projectUpdateFromBase($project, $options = ['as' => 'default', 'push' => true, 'check' => false])
+    {
+        $api = $this->api($options['as']);
+
+        $upstream = $this->getConfig()->get("projects.$project.upstream.repo");
+        if (empty($upstream)) {
+            throw new \Exception('Project cannot be updated; it is missing a source.');
+        }
+        $upstream_branch = $this->getConfig()->get("projects.$project.upstream.branch", 'master');
+
+        $project_repo = $this->getConfig()->get("projects.$project.repo");
+        $project_dir = $this->getConfig()->get("projects.$project.path");
+        $base_branch = $this->getConfig()->get("projects.$project.base-branch");
+        $main_branch = $this->getConfig()->get("projects.$project.main-branch");
+        $tracking_file = $this->getConfig()->get("projects.$project.tracking-file");
+        $commit_preamble = $this->getConfig()->get("projects.$project.commit-preamble");
+
+        $project_working_copy = WorkingCopy::cloneBranch($project_repo, $project_dir, $main_branch, $api);
+        $project_working_copy->setLogger($this->logger);
+        $project_working_copy->switchBranch($base_branch);
+        $project_working_copy->addRemote($upstream, 'upstream');
+        $project_working_copy->pull('upstream', $upstream_branch);
+
+        $last_commit = null;
+        if (file_exists($project_dir . '/' . $tracking_file)) {
+            $last_commit = trim(file_get_contents($project_dir . '/' . $tracking_file));
+        }
+
+        $base_last_commit = $project_working_copy->revParse($base_branch);
+        if ($base_last_commit === $last_commit) {
+            $this->logger->notice("No changes since last update.");
+            return;
+        }
+
+        // @todo Check for existing PR maybe based on base_last_commit.
+
+        // Update base-branch in the process.
+        $project_working_copy->push();
+
+        // Pantheonize this repo.
+        copy(__DIR__ . '/../../templates/composer-scaffold/pantheonize.sh', $project_dir . '/pantheonize.sh');
+        chmod($project_dir . '/pantheonize.sh', 0755);
+        $patch_path = realpath(__DIR__ . '/../../templates/composer-scaffold/pantheonize.patch');
+        exec("cd $project_dir && PATCH_FILE=$patch_path ./pantheonize.sh && rm pantheonize.sh");
+        $project_working_copy->addAll();
+
+        // Create a temporary patch.
+        exec("cd $project_dir && git diff --staged $main_branch > /tmp/$project-result.patch");
+        $project_working_copy->reset($base_branch, true);
+
+        if (trim(file_get_contents("/tmp/$project-result.patch")) === '') {
+            $this->logger->notice("No changes since last update.");
+            return;
+        }
+
+        // Apply the patch.
+        $project_working_copy->switchBranch($main_branch);
+        $date = date('Y-m-d');
+        $project_working_copy->createBranch('update-' . $date);
+        $project_working_copy->apply("/tmp/$project-result.patch");
+
+        // Update the hash file.
+        $base_last_commit = $project_working_copy->revParse($base_branch);
+        file_put_contents($project_dir . '/' . $tracking_file, $base_last_commit);
+
+        // Commit the changes.
+        $project_working_copy->addAll();
+        $commit_message = "$commit_preamble $date";
+        $project_working_copy->commit($commit_message);
+
+        // Push the changes.
+        $project_working_copy->push();
+        // @todo Update vars.
+        // @todo Title should include base_commit_id to make PR matching easy.
+        $pr_title = $commit_message;
+        $pr_body = '';
+        $project_working_copy->pr($pr_title, $pr_body, $main_branch);
+        
+    }
+
+    /**
      * Apply specified filters to the working copy and commit the changes.
      */
     protected function applyFiltersAndCommit($filter_manager, $upstream_working_copy, $project_working_copy, $update_parameters)
