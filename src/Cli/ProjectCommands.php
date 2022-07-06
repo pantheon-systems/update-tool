@@ -651,7 +651,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Once we create a new PR, we can close the existing PRs.
         $api->prClose($project_working_copy->org(), $project_working_copy->project(), $prs);
-        
     }
 
     /**
