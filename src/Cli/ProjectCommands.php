@@ -594,9 +594,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $project_working_copy->push();
 
         $last_commit = null;
+        $project_working_copy->switchBranch($main_branch);
         if (file_exists($project_dir . '/' . $tracking_file)) {
             $last_commit = trim(file_get_contents($project_dir . '/' . $tracking_file));
         }
+        $project_working_copy->switchBranch($base_branch);
 
         $base_last_commit = $project_working_copy->revParse($base_branch);
         if ($base_last_commit === $last_commit) {
@@ -631,11 +633,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Apply the patch.
         $project_working_copy->switchBranch($main_branch);
         $date = date('Y-m-d');
-        $project_working_copy->createBranch('update-' . $date);
+        $new_branch_name = sprintf('update-%s', $date);
+        $project_working_copy->createBranch($new_branch_name);
         $project_working_copy->apply("/tmp/$project-result.patch");
 
         // Update the hash file.
-        $base_last_commit = $project_working_copy->revParse($base_branch);
         file_put_contents($project_dir . '/' . $tracking_file, $base_last_commit);
 
         // Commit the changes.
@@ -644,8 +646,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $project_working_copy->commit($commit_message);
 
         // Push the changes.
-        $project_working_copy->push();
-        $project_working_copy->pr($pr_title, '', $main_branch);
+        $project_working_copy->push('origin', $new_branch_name);
+        $project_working_copy->pr($pr_title, '', $main_branch, $new_branch_name);
 
         // Once we create a new PR, we can close the existing PRs.
         $api->prClose($project_working_copy->org(), $project_working_copy->project(), $prs);
