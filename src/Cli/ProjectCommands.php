@@ -583,12 +583,15 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $main_branch = $this->getConfig()->get("projects.$project.main-branch");
         $tracking_file = $this->getConfig()->get("projects.$project.tracking-file");
         $commit_preamble = $this->getConfig()->get("projects.$project.commit-preamble");
+        $pr_title_preamble = $this->getConfig()->get("projects.$project.pr-title-preamble");
 
         $project_working_copy = WorkingCopy::cloneBranch($project_repo, $project_dir, $main_branch, $api);
         $project_working_copy->setLogger($this->logger);
         $project_working_copy->switchBranch($base_branch);
         $project_working_copy->addRemote($upstream, 'upstream');
         $project_working_copy->pull('upstream', $upstream_branch);
+        // Update base-branch in the process.
+        $project_working_copy->push();
 
         $last_commit = null;
         if (file_exists($project_dir . '/' . $tracking_file)) {
@@ -601,10 +604,13 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             return;
         }
 
-        // @todo Check for existing PR maybe based on base_last_commit.
+        $pr_title = sprintf('%s %s', $pr_title_preamble, substr($base_last_commit, 0, 7));
 
-        // Update base-branch in the process.
-        $project_working_copy->push();
+        $prs = $api->matchingPRs($project_working_copy->projectWithOrg(), $pr_title_preamble);
+        if (in_array($pr_title, $prs->titles())) {
+            $this->logger->notice("There is an existing pull request for this update; nothing else to do.");
+            return;
+        }
 
         // Pantheonize this repo.
         copy(__DIR__ . '/../../templates/composer-scaffold/pantheonize.sh', $project_dir . '/pantheonize.sh');
@@ -634,16 +640,15 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Commit the changes.
         $project_working_copy->addAll();
-        $commit_message = "$commit_preamble $date";
+        $commit_message = sprintf('%s. (%s, commit: %s)', $commit_preamble, $date, substr($base_last_commit, 0, 7));
         $project_working_copy->commit($commit_message);
 
         // Push the changes.
         $project_working_copy->push();
-        // @todo Update vars.
-        // @todo Title should include base_commit_id to make PR matching easy.
-        $pr_title = $commit_message;
-        $pr_body = '';
-        $project_working_copy->pr($pr_title, $pr_body, $main_branch);
+        $project_working_copy->pr($pr_title, '', $main_branch);
+
+        // Once we create a new PR, we can close the existing PRs.
+        $api->prClose($project_working_copy->org(), $project_working_copy->project(), $prs);
         
     }
 

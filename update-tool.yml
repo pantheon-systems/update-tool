@@ -491,6 +491,7 @@ projects:
     main-branch: 1.x
     base-branch: base
     commit-preamble: Synchronize with upstream package
+    pr-title-preamble: "Update composer-scaffold to match upstream commit:"
     tracking-file: upstream-hash
     upstream:
       repo: git@github.com:drupal/core-composer-scaffold.git
