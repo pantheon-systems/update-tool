@@ -564,6 +564,96 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
+     * @command project:update-from-base
+     * @param $project The github project to update from base.
+     */
+    public function projectUpdateFromBase($project, $options = ['as' => 'default', 'push' => true, 'check' => false])
+    {
+        $api = $this->api($options['as']);
+
+        $upstream = $this->getConfig()->get("projects.$project.upstream.repo");
+        if (empty($upstream)) {
+            throw new \Exception('Project cannot be updated; it is missing a source.');
+        }
+        $upstream_branch = $this->getConfig()->get("projects.$project.upstream.branch", 'master');
+
+        $project_repo = $this->getConfig()->get("projects.$project.repo");
+        $project_dir = $this->getConfig()->get("projects.$project.path");
+        $base_branch = $this->getConfig()->get("projects.$project.base-branch");
+        $main_branch = $this->getConfig()->get("projects.$project.main-branch");
+        $tracking_file = $this->getConfig()->get("projects.$project.tracking-file");
+        $commit_preamble = $this->getConfig()->get("projects.$project.commit-preamble");
+        $pr_title_preamble = $this->getConfig()->get("projects.$project.pr-title-preamble");
+
+        $project_working_copy = WorkingCopy::cloneBranch($project_repo, $project_dir, $main_branch, $api);
+        $project_working_copy->setLogger($this->logger);
+        $project_working_copy->switchBranch($base_branch);
+        $project_working_copy->addRemote($upstream, 'upstream');
+        $project_working_copy->pull('upstream', $upstream_branch);
+        // Update base-branch in the process.
+        $project_working_copy->push();
+
+        $last_commit = null;
+        $project_working_copy->switchBranch($main_branch);
+        if (file_exists($project_dir . '/' . $tracking_file)) {
+            $last_commit = trim(file_get_contents($project_dir . '/' . $tracking_file));
+        }
+        $project_working_copy->switchBranch($base_branch);
+
+        $base_last_commit = $project_working_copy->revParse($base_branch);
+        if ($base_last_commit === $last_commit) {
+            $this->logger->notice("No changes since last update.");
+            return;
+        }
+
+        $pr_title = sprintf('%s %s', $pr_title_preamble, substr($base_last_commit, 0, 7));
+
+        $prs = $api->matchingPRs($project_working_copy->projectWithOrg(), $pr_title_preamble);
+        if (in_array($pr_title, $prs->titles())) {
+            $this->logger->notice("There is an existing pull request for this update; nothing else to do.");
+            return;
+        }
+
+        // Pantheonize this repo.
+        copy(__DIR__ . '/../../templates/composer-scaffold/pantheonize.sh', $project_dir . '/pantheonize.sh');
+        chmod($project_dir . '/pantheonize.sh', 0755);
+        $patch_path = realpath(__DIR__ . '/../../templates/composer-scaffold/pantheonize.patch');
+        exec("cd $project_dir && PATCH_FILE=$patch_path ./pantheonize.sh && rm pantheonize.sh");
+        $project_working_copy->addAll();
+
+        // Create a temporary patch.
+        exec("cd $project_dir && git diff --staged $main_branch > /tmp/$project-result.patch");
+        $project_working_copy->reset($base_branch, true);
+
+        if (trim(file_get_contents("/tmp/$project-result.patch")) === '') {
+            $this->logger->notice("No changes since last update.");
+            return;
+        }
+
+        // Apply the patch.
+        $project_working_copy->switchBranch($main_branch);
+        $date = date('Y-m-d');
+        $new_branch_name = sprintf('update-%s', $date);
+        $project_working_copy->createBranch($new_branch_name);
+        $project_working_copy->apply("/tmp/$project-result.patch");
+
+        // Update the hash file.
+        file_put_contents($project_dir . '/' . $tracking_file, $base_last_commit);
+
+        // Commit the changes.
+        $project_working_copy->addAll();
+        $commit_message = sprintf('%s. (%s, commit: %s)', $commit_preamble, $date, substr($base_last_commit, 0, 7));
+        $project_working_copy->commit($commit_message);
+
+        // Push the changes.
+        $project_working_copy->push('origin', $new_branch_name);
+        $project_working_copy->pr($pr_title, '', $main_branch, $new_branch_name);
+
+        // Once we create a new PR, we can close the existing PRs.
+        $api->prClose($project_working_copy->org(), $project_working_copy->project(), $prs);
+    }
+
+    /**
      * Apply specified filters to the working copy and commit the changes.
      */
     protected function applyFiltersAndCommit($filter_manager, $upstream_working_copy, $project_working_copy, $update_parameters)

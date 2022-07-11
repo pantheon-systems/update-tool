@@ -485,6 +485,18 @@ projects:
     release-node:
       atom: 'https://wordpress.org/news/category/releases/feed/atom/'
 
+  composer-scaffold:
+    repo: git@github.com:pantheon-systems/composer-scaffold.git
+    path: ${working-copy-path}/composer-scaffold
+    main-branch: 1.x
+    base-branch: base
+    commit-preamble: Synchronize with upstream package
+    pr-title-preamble: "Update composer-scaffold to match upstream commit:"
+    tracking-file: upstream-hash
+    upstream:
+      repo: git@github.com:drupal/core-composer-scaffold.git
+      branch: 9.4.x
+
 plugins:
   wp-launch-check:
     repo: https://github.com/pantheon-systems/wp_launch_check
