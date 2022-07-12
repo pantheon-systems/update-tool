@@ -14,6 +14,7 @@ LC_ALL=C find . -maxdepth 2 -type f -name '*' -exec sed -i .bak 's/Drupal scaffo
 LC_ALL=C find . -maxdepth 2 -type f -name '*' -exec sed -i .bak 's/drupal-composer\/composer-scaffold/drupal-composer\/drupal-scaffold/g' {} +
 LC_ALL=C find . -maxdepth 2 -type f -name '*' -exec sed -i .bak 's/drupal\/core-composer-scaffold/pantheon-systems\/composer-scaffold/g' {} +
 LC_ALL=C find . -maxdepth 2 -type f -name '*' -exec sed -i .bak 's/"homepage": "https:\/\/www.drupal.org\/project\/drupal"/"homepage": "https:\/\/github.com\/pantheon-systems\/composer-scaffold"/g' {} +
+LC_ALL=C find . -maxdepth 2 -type f -name '*' -exec sed -i .bak 's/Drupal Composer Scaffold/Composer Scaffold/g' {} +
 
 git apply < $PATCH_FILE
 
