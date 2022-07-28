@@ -43,8 +43,10 @@ projects:
     tag-branch: master
     upstream:
       project: WordPress
+      repo: git@github.com:WordPress/WordPress.git
       major: '[4-9]'
       version-pattern: '#.#.-'
+      tags-version-pattern: '^5||^6'
       update-method: WpCliUpdate
       update-parameters:
         # Not used by the WPCliUpdate, but recorded here for documentation purposes

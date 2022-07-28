@@ -20,6 +20,7 @@ use UpdateTool\Util\ReleaseNode;
 use VersionTool\VersionTool;
 use UpdateTool\Util\SupportLevel;
 use UpdateTool\Util\ProjectUpdate;
+use UpdateTool\Exceptions\NotRecentReleaseException;
 
 /**
  * Commands used to manipulate projects directly with git
@@ -316,6 +317,188 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     public function projectCheck($remote, $options = ['as' => 'default'])
     {
         $this->projectUpstreamUpdate($remote, $options + ['check' => true]);
+    }
+
+    /**
+     * @command project:upstream:push-tags
+     */
+    public function projectUpstreamPushTags($remote, $options = ['as' => 'default', 'check' => false, 'dry-run' => false])
+    {
+        $api = $this->api($options['as']);
+
+        // Get references to the remote repo and the upstream repo
+        $upstream = $this->getConfig()->get("projects.$remote.upstream.project");
+        if (empty($upstream)) {
+            throw new \Exception('Project cannot be updated; it is missing an upstream.');
+        }
+
+        $remote_repo = $this->createRemote($remote, $api);
+        $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
+        $update_parameters['meta']['name'] = $remote_repo->projectWithOrg();
+        $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
+
+        $upstream_repo_url = $this->getConfig()->get("projects.$remote.upstream.repo");
+        $upstream_repo = Remote::create($upstream_repo_url, $api);
+
+        $version_pattern = $this->getConfig()->get("projects.$remote.upstream.tags-version-pattern", '#.#.#');
+        $versionPatternRegex = $this->versionPatternRegex($version_pattern);
+
+        $source_releases = $upstream_repo->tags($versionPatternRegex, empty($update_parameters['allow-pre-release']), '');
+        $existing_releases = $remote_repo->tags($versionPatternRegex, empty($update_parameters['allow-pre-release']), '');
+
+        $this->logger->notice("Finding missing tags for {project}", ['project' => $remote_repo->projectWithOrg()]);
+
+        // Find versions in the source that have not been created in the target.
+        $versions_to_process = [];
+        // Get main-branch from config, default to master.
+        $previous_version = '';
+        foreach ($source_releases as $source_version => $info) {
+            if (array_key_exists($source_version, $existing_releases)) {
+                $this->logger->notice("{version} already exists", ['version' => $source_version]);
+            } else {
+                $this->logger->notice("{version} needs to be created", ['version' => $source_version]);
+                $versions_to_process[$source_version] = $previous_version;
+            }
+            $previous_version = $source_version;
+        }
+
+        if (empty($versions_to_process)) {
+            $this->logger->notice("Everything is up-to-date.");
+            return;
+        }
+
+        // If we are running in check-only mode, exit now, before we do anything.
+        if ($options['check']) {
+            return;
+        }
+
+        // Create the filters
+        $filter_manager = $this->getFilters($this->getConfig()->get("projects.$remote.upstream.update-filters"));
+
+        // Find an update method and create an updater
+        $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
+        $updater = $this->getUpdater($update_method, $api);
+        if (empty($updater)) {
+            throw new \Exception('Project cannot be updated; it is missing an update method.');
+        }
+        $updater->setApi($api);
+        $updater->setLogger($this->logger);
+        $updater->setFilters($filter_manager);
+
+        // Allow the updator to configure itself prior to the update.
+        $updater->configure($this->getConfig(), $remote);
+
+        $project_url = $this->getConfig()->get("projects.$remote.repo");
+        $project_dir = $this->getConfig()->get("projects.$remote.path");
+        $project_fork = $this->getConfig()->get("projects.$remote.fork");
+        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
+        $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
+        $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
+
+        $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
+        $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
+        $project_working_copy
+            ->addFork($project_fork)
+            ->setLogger($this->logger);
+        $fork_url = $project_working_copy->forkUrl();
+        if ($fork_url) {
+            $this->logger->notice("Pull requests will be made in forked repository {fork}", ['fork' => $fork_url]);
+        }
+        $project_working_copy->fetchTags();
+
+        $last_successful_update = null;
+        foreach ($versions_to_process as $version => $previous) {
+            // Checkout previous tag.
+            $project_working_copy->checkout($previous);
+
+            $update_parameters['meta']['current-version'] = $previous;
+            $update_parameters['meta']['new-version'] = $version;
+
+            $updater->findLatestVersion($major, '', $update_parameters);
+
+            // Create a commit message.
+            $upstream_label = ucfirst($upstream);
+            $message = $this->getConfig()->get("projects.$remote.upstream.update-message", 'Update to ' . $upstream_label . ' ' . $version . '.');
+            $message = str_replace('{version}', $version, $message);
+            $preamble = $this->getConfig()->get("projects.$remote.upstream.update-preamble", '');
+
+            // If we can find a release node, then add the "more information" blerb.
+            $releaseNode = new ReleaseNode($api);
+            try {
+                list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $version, empty($update_parameters['allow-pre-release']));
+                if (!empty($release_url)) {
+                    $message .= " For more information, see $release_url";
+                }
+            } catch (NotRecentReleaseException $e) {
+                $this->logger->notice("{version} is not a recent release so no release node link found.", ['version' => $version]);
+            }
+
+            $this->logger->notice("Update message: {msg}", ['msg' => $message]);
+
+            $this->logger->notice("Updating {remote} from {previous} to {version}", ['remote' => $remote, 'previous' => $previous, 'version' => $version]);
+
+            $branch = "update-$version";
+            $project_working_copy->createBranch($branch);
+
+            // Check to see if the version we want to update from is the one we have checked out.
+            $version_info = new VersionTool();
+            $info = $version_info->info($project_working_copy->dir());
+            if (!$info) {
+                throw new \Exception("Could not figure out version from " . $project_working_copy->dir() . "; maybe project failed to clone / download.");
+            }
+
+            $current_version = $info->version();
+            if ($current_version !== $previous) {
+                if ($current_version === $last_successful_update) {
+                    // Ok to use last successful as backup here.
+                    $previous = $last_successful_update;
+                    $update_parameters['meta']['current-version'] = $previous;
+                }
+                else {
+                    throw new \Exception("Version " . $current_version . " does not match expected " . $previous);
+                }
+            }
+
+            // Do the actual update
+            $this->logger->notice("Updating via update method {method} using {class}.", ['method' => $update_method, 'class' => get_class($updater)]);
+
+            try {
+                $updated_project = $updater->update($project_working_copy, $update_parameters);
+            } catch (\Exception $e) {
+                $this->logger->error("Error updating {remote} to version {version}", ['version' => $version, 'remote' => $remote]);
+                continue;
+            }
+
+            // Confirm that the updated version of the code is now equal to $latest
+            $info = $version_info->info($updated_project->dir());
+            if (!$info) {
+                throw new \Exception("Could not figure out version from " . $updated_project->dir() . "; maybe project failed to update correctly.");
+            }
+            $updated_version = $info->version();
+            if ($updated_version !== $version) {
+                throw new \Exception("Update failed. We expected that the updated version of the project should be '$version', but instead it is '$updated_version'. " . $updated_project->dir());
+            }
+
+            // Commit onto the branch
+            $updated_project
+                ->add('.')
+                ->commit($message);
+
+            // Give the updater a chance to do something after the commit.
+            $updater->postCommit($updated_project, $update_parameters);
+
+            // Tag and push new version.
+            $project_working_copy->tag($version);
+
+            if (!$options['dry-run']) {
+                $this->logger->notice("Pushing tag {version} to {remote}", ['version' => $version, 'remote' => $remote]);
+                $project_working_copy->push('origin', $version);
+            }
+            $last_successful_update = $version;
+        }
+
+
+        // Go to previous version, run updater from there.
     }
 
     /**
