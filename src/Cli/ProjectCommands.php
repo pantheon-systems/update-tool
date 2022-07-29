@@ -146,20 +146,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $this->logger->notice("Finding missing derived tags for {project}", ['project' => $remote_repo->projectWithOrg()]);
 
-        // Find versions in the source that have not been created in the target.
-        $versions_to_process = [];
         // Get main-branch from config, default to master.
         $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
         $previous_version = $main_branch;
-        foreach ($source_releases as $source_version => $info) {
-            if (array_key_exists($source_version, $existing_releases)) {
-                $this->logger->notice("{version} already exists", ['version' => $source_version]);
-            } else {
-                $this->logger->notice("{version} needs to be created", ['version' => $source_version]);
-                $versions_to_process[$source_version] = $previous_version;
-            }
-            $previous_version = $source_version;
-        }
+        // Find versions in the source that have not been created in the target.
+        $versions_to_process = $this->compareTagsSets($source_releases, $existing_releases, $previous_version);
 
         if (empty($versions_to_process)) {
             $this->logger->notice("Everything is up-to-date.");
@@ -231,19 +222,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $this->logger->notice("Finding missing derived tags for {project}", ['project' => $remote_repo->projectWithOrg()]);
 
-        // Find versions in the source that have not been created in the target.
-        $versions_to_process = [];
         // Get main-branch from config, default to master.
         $previous_version = $this->getConfig()->get("projects.$remote.main-branch") ?? 'master';
-        foreach ($source_releases as $source_version => $info) {
-            if (array_key_exists($source_version, $existing_releases)) {
-                $this->logger->notice("{version} already exists", ['version' => $source_version]);
-            } else {
-                $this->logger->notice("{version} needs to be created", ['version' => $source_version]);
-                $versions_to_process[$source_version] = $previous_version;
-            }
-            $previous_version = $source_version;
-        }
+        // Find versions in the source that have not been created in the target.
+        $versions_to_process = $this->compareTagsSets($source_releases, $existing_releases, $previous_version);
 
         if (empty($versions_to_process)) {
             $this->logger->notice("Everything is up-to-date.");
@@ -320,6 +302,24 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     }
 
     /**
+     * Compare two given tags sets to find the missing items.
+     */
+    protected function compareTagsSets($source_releases, $existing_releases, $previous_version = '')
+    {
+        $versions_to_process = [];
+        foreach ($source_releases as $source_version => $info) {
+            if (array_key_exists($source_version, $existing_releases)) {
+                $this->logger->notice("{version} already exists", ['version' => $source_version]);
+            } else {
+                $this->logger->notice("{version} needs to be created", ['version' => $source_version]);
+                $versions_to_process[$source_version] = $previous_version;
+            }
+            $previous_version = $source_version;
+        }
+        return $versions_to_process;
+    }
+
+    /**
      * @command project:upstream:push-tags
      */
     public function projectUpstreamPushTags($remote, $options = ['as' => 'default', 'check' => false, 'dry-run' => false])
@@ -349,17 +349,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $this->logger->notice("Finding missing tags for {project}", ['project' => $remote_repo->projectWithOrg()]);
 
         // Find versions in the source that have not been created in the target.
-        $versions_to_process = [];
-        $previous_version = '';
-        foreach ($source_releases as $source_version => $info) {
-            if (array_key_exists($source_version, $existing_releases)) {
-                $this->logger->notice("{version} already exists", ['version' => $source_version]);
-            } else {
-                $this->logger->notice("{version} needs to be created", ['version' => $source_version]);
-                $versions_to_process[$source_version] = $previous_version;
-            }
-            $previous_version = $source_version;
-        }
+        $versions_to_process = $this->compareTagsSets($source_releases, $existing_releases);
 
         if (empty($versions_to_process)) {
             $this->logger->notice("Everything is up-to-date.");
