@@ -350,7 +350,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Find versions in the source that have not been created in the target.
         $versions_to_process = [];
-        // Get main-branch from config, default to master.
         $previous_version = '';
         foreach ($source_releases as $source_version => $info) {
             if (array_key_exists($source_version, $existing_releases)) {
@@ -395,7 +394,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
 
-        $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
+        $this->logger->notice("Cloning repository for {remote}", ['remote' => $remote]);
         $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
         $project_working_copy
             ->addFork($project_fork)
@@ -411,16 +410,14 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             // Checkout previous tag.
             $project_working_copy->checkout($previous);
 
-            $update_parameters['meta']['current-version'] = $previous;
+            // This will force to use $version instead of the latest version (currently only for WpCliUpdate method).
             $update_parameters['meta']['new-version'] = $version;
-
             $updater->findLatestVersion($major, '', $update_parameters);
 
             // Create a commit message.
             $upstream_label = ucfirst($upstream);
             $message = $this->getConfig()->get("projects.$remote.upstream.update-message", 'Update to ' . $upstream_label . ' ' . $version . '.');
             $message = str_replace('{version}', $version, $message);
-            $preamble = $this->getConfig()->get("projects.$remote.upstream.update-preamble", '');
 
             // If we can find a release node, then add the "more information" blerb.
             $releaseNode = new ReleaseNode($api);
@@ -452,12 +449,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
                 if ($current_version === $last_successful_update) {
                     // Ok to use last successful as backup here.
                     $previous = $last_successful_update;
-                    $update_parameters['meta']['current-version'] = $previous;
-                }
-                else {
+                } else {
                     throw new \Exception("Version " . $current_version . " does not match expected " . $previous);
                 }
             }
+            $update_parameters['meta']['current-version'] = $previous;
 
             // Do the actual update
             $this->logger->notice("Updating via update method {method} using {class}.", ['method' => $update_method, 'class' => get_class($updater)]);
@@ -465,6 +461,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             try {
                 $updated_project = $updater->update($project_working_copy, $update_parameters);
             } catch (\Exception $e) {
+                // Wordpress 5.0.5 is always failing because the zip files does not exist so we should be able to continue.
                 $this->logger->error("Error updating {remote} to version {version}", ['version' => $version, 'remote' => $remote]);
                 continue;
             }
@@ -496,9 +493,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             }
             $last_successful_update = $version;
         }
-
-
-        // Go to previous version, run updater from there.
     }
 
     /**
