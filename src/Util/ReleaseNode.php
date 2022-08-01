@@ -3,6 +3,7 @@ namespace UpdateTool\Util;
 
 use Consolidation\Config\ConfigInterface;
 use UpdateTool\Git\Remote;
+use UpdateTool\Exceptions\NotRecentReleaseException;
 
 /**
  * ReleaseNote facilitates looking up the URL of the page that describes
@@ -125,7 +126,7 @@ class ReleaseNode
         }
 
         // TODO: Read more pages to find older versions?
-        throw new \Exception("$version is not a recent release.");
+        throw new NotRecentReleaseException("$version is not a recent release.");
     }
 
     protected function stable($title)

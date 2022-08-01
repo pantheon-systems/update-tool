@@ -58,6 +58,12 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
      */
     public function findLatestVersion($major, $tag_prefix, $update_parameters)
     {
+        // Force to use the received version.
+        if (!empty($update_parameters['meta']['new-version'])) {
+            $this->version = $update_parameters['meta']['new-version'];
+            return $this->version;
+        }
+
         $availableVersions = file_get_contents($this->version_check_url);
         if (empty($availableVersions)) {
             throw new \Exception('Could not contact the WordPress version-check API endpoint.');
