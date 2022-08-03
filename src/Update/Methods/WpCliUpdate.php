@@ -83,6 +83,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
      */
     public function update(WorkingCopy $originalProject, array $parameters)
     {
+        $forceDbDrop = !empty($parameters['force-db-drop']) ?? false;
         $path = $originalProject->dir();
 
         $wpConfigPath = "$path/wp-config.php";
@@ -92,7 +93,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         try {
             // Set up a local WordPress site
             $this->wpCoreConfig($path, $this->dbhost, $this->dbname, $this->dbuser, $this->dbpw);
-            $this->wpDbDropIfNotCI($path);
+            $this->wpDbDropIfNotCI($path, $forceDbDrop);
             $this->wpDbCreate($path);
             $this->wpCoreInstall($path, $this->url, $this->title, $this->admin, $this->adminPw, $this->adminEmail);
 
@@ -102,7 +103,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         } catch (\Exception $e) {
             throw $e;
         } finally {
-            $this->wpDbDropIfNotCI($path);
+            $this->wpDbDropIfNotCI($path, $forceDbDrop);
             file_put_contents($wpConfigPath, $wpConfigData);
         }
         return $originalProject;
@@ -151,9 +152,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     /**
      * Call 'db drop', but only if not running on a CI server
      */
-    protected function wpDbDropIfNotCI($path)
+    protected function wpDbDropIfNotCI($path, $force = false)
     {
-        if (!getenv('CI')) {
+        if (!getenv('CI') || $force) {
             $this->wpDbDrop($path);
         }
     }

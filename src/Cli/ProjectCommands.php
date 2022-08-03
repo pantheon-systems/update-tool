@@ -335,6 +335,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $remote_repo = $this->createRemote($remote, $api);
         $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
         $update_parameters['meta']['name'] = $remote_repo->projectWithOrg();
+        $update_parameters['force-db-drop'] = true;
         $major = $this->getConfig()->get("projects.$remote.upstream.major", '[0-9]+');
 
         $upstream_repo_url = $this->getConfig()->get("projects.$remote.upstream.repo");
