@@ -423,8 +423,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
             $this->logger->notice("Update message: {msg}", ['msg' => $message]);
 
-            $this->logger->notice("Updating {remote} from {previous} to {version}", ['remote' => $remote, 'previous' => $previous, 'version' => $version]);
-
             $branch = "update-$version";
             $project_working_copy->createBranch($branch);
 
@@ -444,6 +442,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
                     throw new \Exception("Version " . $current_version . " does not match expected " . $previous);
                 }
             }
+            $this->logger->notice("Updating {remote} from {previous} to {version}", ['remote' => $remote, 'previous' => $previous, 'version' => $version]);
+
             $update_parameters['meta']['current-version'] = $previous;
 
             // Do the actual update
