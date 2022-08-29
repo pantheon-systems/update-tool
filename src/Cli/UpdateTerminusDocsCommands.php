@@ -144,6 +144,12 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
             file_put_contents($dir . '/source/data/terminusReleases.json', $releasesJson);
         }
 
+        $installMdContents = file_get_contents($dir . '/source/content/terminus/install.md');
+        $replacement = '${1}' . $terminusRelease . '${3}';
+        $installMdContents = preg_replace('/(.*https:\/\/github\.com\/pantheon-systems\/terminus\/releases\/download\/)(\d+\.\d+\.\d+)(.*)/', $replacement, $installMdContents);
+        file_put_contents($dir . '/source/content/terminus/install.md', $installMdContents);
+
+
         if (!$workingCopy->status()) {
             $this->logger->info('Nothing to update.');
             return;
@@ -151,7 +157,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
 
         $this->logger->info('Committing changes...');
         $commitMessage = $options['commit-message'];
-        $workingCopy->add("$dir/source/data");
+        $workingCopy->add("$dir/source/data $dir/source/content");
         $workingCopy->commit($commitMessage);
 
         $dryRun = $options['dry-run'];
