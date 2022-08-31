@@ -1,0 +1,4 @@
+# README: https://help.github.com/en/articles/about-code-owners
+# NOTE: the last matching line for a PR is the only one that is used to add reviewers.
+
+* @pantheon-systems/cms-ecosystem
