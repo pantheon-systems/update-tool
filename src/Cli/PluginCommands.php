@@ -67,6 +67,7 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
 
         $preamble = $this->preamble($remote);
         $message = "{$preamble} to {$version_updates}";
+        $body = "It's intentional that the version(s) being updated to, {$version_updates}, are not the latest version(s) available.";
         // Determine if there are any PRs already open that we should
         // close. If its contents are the same, then we should abort rather than create the same PR again.
         // If the contents are different, then we'll make a new PR and close this one.
@@ -87,7 +88,7 @@ class PluginCommands extends \Robo\Tasks implements ConfigAwareInterface, Logger
             ->add($file_to_check)
             ->commit($message)
             ->push()
-            ->pr($message, '', $main_branch);
+            ->pr($message, $body, $main_branch);
 
         // Once we create a new PR, we can close the existing PRs.
         $api->prClose($plugin_working_copy->org(), $plugin_working_copy->project(), $prs);
