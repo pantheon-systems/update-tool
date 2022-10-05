@@ -56,8 +56,11 @@ projects:
           - pantheon.upstream.yml
           - wp-config.php
           - wp-content/mu-plugins/loader.php
+        muplugin:
+          repo: git@github.com:pantheon-systems/pantheon-mu-plugin.git
       update-filters:
         - CopyPlatformAdditions
+        - CopyMuPlugin
     pr:
       instructions: |
         Update from WordPress {{original-version}} to WordPress {{update-version}}.
