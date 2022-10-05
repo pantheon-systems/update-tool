@@ -55,7 +55,7 @@ projects:
           - README.md
           - pantheon.upstream.yml
           - wp-config.php
-          - wp-content/mu-plugins/pantheon
+          - wp-content/mu-plugins/loader.php
       update-filters:
         - CopyPlatformAdditions
     pr:
