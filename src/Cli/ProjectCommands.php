@@ -490,7 +490,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
      * @command project:upstream:update
      */
     public function projectUpstreamUpdate($remote, $options = ['as' => 'default', 'pr' => true, 'check' => false, 'allow-mismatch' => false])
-    {
+    { $this->logger->notice('projectUpstreamUpdate');
         $api = $this->api($options['as']);
         $make_pr = !empty($options['pr']);
         $allow_msg_mismatch = !empty($options['allow-mismatch']);
@@ -513,10 +513,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $current = $remote_repo->latest($major, empty($update_parameters['allow-pre-release']), '');
         $update_parameters['meta']['current-version'] = $current;
         $this->logger->notice("Considering updates for {project}", ['project' => $remote_repo->projectWithOrg()]);
-
+        $this->logger->notice(json_encode( $this->getConfig()->get("projects.$remote.upstream.update-filters")));
         // Create the filters
         $filter_manager = $this->getFilters($this->getConfig()->get("projects.$remote.upstream.update-filters"));
-
+        $this->logger->notice(json_encode($this->getConfig()->get("projects.$remote.upstream.update-method")));
         // Find an update method and create an updater
         $update_method = $this->getConfig()->get("projects.$remote.upstream.update-method");
         $updater = $this->getUpdater($update_method, $api);
