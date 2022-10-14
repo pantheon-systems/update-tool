@@ -90,6 +90,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $wpConfigData = file_get_contents($wpConfigPath);
         unlink($wpConfigPath);
 
+        // Apply configured filters.
+        $this->filters->apply($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
+
         try {
             // Set up a local WordPress site
             $this->wpCoreConfig($path, $this->dbhost, $this->dbname, $this->dbuser, $this->dbpw);
