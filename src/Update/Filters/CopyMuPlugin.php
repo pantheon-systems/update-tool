@@ -26,14 +26,16 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
      */
     public function action($src, $dest, $parameters)
     {
-        $this->logger->notice($dest);
         $repo = $parameters['muplugin']['repo'];
-        $this->logger->notice('Git pulling {item}', ['item' => $repo]);
+        $path = $parameters['muplugin']['path'];
+        $dest = $dest ? $dest : $parameters['muplugin']['muplugin-dir'];
+        $this->logger->notice('Git pulling {repo} into {path}', [
+            'repo' => $repo,
+            'path' => $path,
+        ]);
         // Do a git clone of the pantheon-mu-plugin repo
-        $this->taskGitStack()
-            ->cloneRepo($repo, $dest)
-            ->run();
-        // $this->copyFileOrDirectory($src . '/' . $item, $dest . '/' . $item);
+        WorkingCopy::clone( $repo, $path );
+
     }
 
     /**
