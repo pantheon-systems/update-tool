@@ -36,6 +36,13 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
         // Do a git clone of the pantheon-mu-plugin repo
         WorkingCopy::clone( $repo, $path );
 
+        // Move files from the working copy to the destination.
+        $this->logger->notice( 'Copying files from {path} to {dest}', [
+            'path' => $path,
+            'dest' => $dest,
+        ] );
+        $fs = new Filesystem();
+        $fs->mirror($path, $dest);
     }
 
     /**
