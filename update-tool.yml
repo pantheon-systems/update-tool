@@ -58,6 +58,8 @@ projects:
           - wp-content/mu-plugins/loader.php
         muplugin:
           repo: git@github.com:pantheon-systems/pantheon-mu-plugin.git
+          path: ${working-copy-path}/pantheon-mu-plugin
+          muplugin-dir: ${working-copy-path}/WordPress/wp-content/mu-plugins/pantheon-mu-plugin
       update-filters:
         - CopyMuPlugin
         - CopyPlatformAdditions
