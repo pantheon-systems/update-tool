@@ -5,6 +5,7 @@ namespace UpdateTool\Update\Filters;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
+use UpdateTool\Git\WorkingCopy;
 
 /**
  * CopyMuPlugin is an update filter that will pull the
@@ -13,8 +14,7 @@ use Symfony\Component\Filesystem\Filesystem;
  *
  * See also 'Copy'
  */
-class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface
-{
+class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
     use LoggerAwareTrait;
 
     /**
