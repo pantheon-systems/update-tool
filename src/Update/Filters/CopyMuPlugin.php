@@ -43,6 +43,29 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
         ] );
         $fs = new Filesystem();
         $fs->mirror($path, $dest);
+
+        $this->logger->notice( 'Cleaning up...' );
+
+        // Clean up the old mu-plugin working copy.
+        $this->logger->notice( 'Removing {path}', ['path' => $path] );
+        $fs->remove($path);
+
+        // Clean up the old and unnecessary files in mu-plugins.
+        $files_to_delete = [
+            "$dest/.git",
+            "$dest/README.md",
+            "$dest/composer.json",
+        ];
+        foreach ( $files_to_delete as $file ) {
+            $this->logger->notice( 'Removing {file}', ['file' => $file] );
+            $fs->remove($file);
+        }
+
+        // Check if the /pantheon subdirecotry exists. If it does, delete that, too.
+        if ( $fs->exists( $dest . '/pantheon' ) ) {
+            $this->logger->notice( 'Removing {file}', ['file' => $dest . '/pantheon'] );
+            $fs->remove( $dest . '/pantheon' );
+        }
     }
 
     /**
