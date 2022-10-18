@@ -29,6 +29,7 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
         $repo = $parameters['muplugin']['repo'];
         $path = $parameters['muplugin']['path'];
         $dest = $dest ? $dest : $parameters['muplugin']['muplugin-dir'];
+        $muplugin_dir = dirname( $dest );
         $this->logger->notice('Git pulling {repo} into {path}', [
             'repo' => $repo,
             'path' => $path,
@@ -62,7 +63,7 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
         }
 
         // Check if the /pantheon subdirecotry exists. If it does, delete that, too.
-        if ( $fs->exists( $dest . '/pantheon' ) ) {
+        if ( $fs->exists( $muplugin_dir . '/pantheon' ) ) {
             $this->logger->notice( 'Removing {file}', ['file' => $dest . '/pantheon'] );
             $fs->remove( $dest . '/pantheon' );
         }
