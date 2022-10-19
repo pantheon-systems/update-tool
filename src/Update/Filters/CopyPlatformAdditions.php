@@ -26,7 +26,7 @@ class CopyPlatformAdditions implements UpdateFilterInterface, LoggerAwareInterfa
     public function action($src, $dest, $parameters)
     {
         $parameters += ['platform-additions' => []];
-        $this->logger->notice('doing platform additions');
+
         foreach ($parameters['platform-additions'] as $item) {
             $this->logger->notice('Copying {item}', ['item' => $item]);
             $this->copyFileOrDirectory($src . '/' . $item, $dest . '/' . $item);
@@ -39,7 +39,7 @@ class CopyPlatformAdditions implements UpdateFilterInterface, LoggerAwareInterfa
     protected function copyFileOrDirectory($src, $dest)
     {
         $fs = new Filesystem();
-        $this->logger->notice('copying {src} to {dest}', ['src' => $src, 'dest' => $dest]);
+        $this->logger->notice('Copying {src} to {dest}', ['src' => $src, 'dest' => $dest]);
         $fs->mkdir(dirname($dest));
         if (is_dir($src)) {
             $fs->mirror($src, $dest);
