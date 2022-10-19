@@ -92,8 +92,8 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
 
         // Apply configured filters.
         $this->filters->apply(
-            $this->originalProject->dir() ?: '',
-            $this->updatedProject->dir() ?: '',
+            ( $this->originalProject ) ? $this->originalProject->dir() : '',
+            ( $this->updatedProject ) ? $this->updatedProject->dir() : '',
             $parameters
         );
 
