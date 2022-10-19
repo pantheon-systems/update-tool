@@ -91,7 +91,11 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         unlink($wpConfigPath);
 
         // Apply configured filters.
-        $this->filters->apply($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
+        $this->filters->apply(
+            $this->originalProject->dir() ?: '',
+            $this->updatedProject->dir() ?: '',
+            $parameters
+        );
 
         try {
             // Set up a local WordPress site
