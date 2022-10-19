@@ -14,7 +14,8 @@ use UpdateTool\Git\WorkingCopy;
  *
  * See also 'Copy'
  */
-class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
+class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface
+{
     use LoggerAwareTrait;
 
     /**
@@ -29,26 +30,26 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
         $repo = $parameters['muplugin']['repo'];
         $path = $parameters['muplugin']['path'];
         $dest = $dest ? $dest : $parameters['muplugin']['muplugin-dir'];
-        $muplugin_dir = dirname( $dest );
+        $muplugin_dir = dirname($dest);
         $this->logger->notice('Git pulling {repo} into {path}', [
             'repo' => $repo,
             'path' => $path,
         ]);
         // Do a git clone of the pantheon-mu-plugin repo
-        WorkingCopy::clone( $repo, $path );
+        WorkingCopy::clone($repo, $path);
 
         // Move files from the working copy to the destination.
-        $this->logger->notice( 'Copying files from {path} to {dest}', [
+        $this->logger->notice('Copying files from {path} to {dest}', [
             'path' => $path,
             'dest' => $dest,
-        ] );
+        ]);
         $fs = new Filesystem();
         $fs->mirror($path, $dest);
 
-        $this->logger->notice( 'Cleaning up...' );
+        $this->logger->notice('Cleaning up...');
 
         // Clean up the old mu-plugin working copy.
-        $this->logger->notice( 'Removing {path}', ['path' => $path] );
+        $this->logger->notice('Removing {path}', ['path' => $path]);
         $fs->remove($path);
 
         // Clean up the old and unnecessary files in mu-plugins.
@@ -57,15 +58,15 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface {
             "$dest/README.md",
             "$dest/composer.json",
         ];
-        foreach ( $files_to_delete as $file ) {
-            $this->logger->notice( 'Removing {file}', ['file' => $file] );
+        foreach ($files_to_delete as $file) {
+            $this->logger->notice('Removing {file}', ['file' => $file]);
             $fs->remove($file);
         }
 
         // Check if the /pantheon subdirecotry exists. If it does, delete that, too.
-        if ( $fs->exists( $muplugin_dir . '/pantheon' ) ) {
-            $this->logger->notice( 'Removing {file}', ['file' => $dest . '/pantheon'] );
-            $fs->remove( $dest . '/pantheon' );
+        if ($fs->exists( $muplugin_dir . '/pantheon' )) {
+            $this->logger->notice('Removing {file}', ['file' => $dest . '/pantheon']);
+            $fs->remove($dest . '/pantheon');
         }
     }
 
