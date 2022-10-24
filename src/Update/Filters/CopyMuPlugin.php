@@ -63,7 +63,7 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface
             $fs->remove($file);
         }
 
-        // Check if the /pantheon subdirecotry exists. If it does, delete that, too.
+        // Check if the /pantheon subdirectory exists. If it does, delete that, too.
         if ($fs->exists($muplugin_dir . '/pantheon')) {
             $this->logger->notice('Removing {file}', ['file' => $dest . '/pantheon']);
             $fs->remove($dest . '/pantheon');
