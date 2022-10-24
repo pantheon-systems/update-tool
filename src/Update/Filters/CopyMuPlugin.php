@@ -69,19 +69,4 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface
             $fs->remove($dest . '/pantheon');
         }
     }
-
-    /**
-     * Helpful wrapper to call either 'mirror' or 'copy' as needed.
-     */
-    protected function copyFileOrDirectory($src, $dest)
-    {
-        $fs = new Filesystem();
-
-        $fs->mkdir(dirname($dest));
-        if (is_dir($src)) {
-            $fs->mirror($src, $dest);
-        } else {
-            $fs->copy($src, $dest, true);
-        }
-    }
 }
