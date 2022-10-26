@@ -2,18 +2,12 @@
 
 Fast and smart. Update Tool checks for available software updates and creates pull requests.
 
-[![Travis CI](https://travis-ci.org/pantheon-systems/update-tool.svg?branch=master)](https://travis-ci.org/pantheon-systems/update-tool)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/pantheon-systems/update-tool/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/pantheon-systems/update-tool/?branch=master)
-[![Coverage Status](https://coveralls.io/repos/github/pantheon-systems/update-tool/badge.svg?branch=master)](https://coveralls.io/github/pantheon-systems/update-tool?branch=master) 
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/pantheon-systems/update-tool/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/pantheon-systems/update-tool/tree/master)
 [![Actively Maintained](https://img.shields.io/badge/Pantheon-Actively_Maintained-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#actively-maintained-support)
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
 
 <table><tr width="25%"><td><img alt="Detinator" src="docs/images/roadrunner.png"/></td><td width="75%" valign="top">
-The Update Tool is a lightweight collection of commands that know how to create 
-pull requests from various data sources that inform us of the most recent available
-version of certain software components on our platform. These commands are executed
-periodically via `cron`, as managed by the 
-<a href="https://github.com/pantheon-systems/updatinator">Updatinator</a> tool.
+The Update Tool is a lightweight collection of commands that know how to create pull requests from various data sources that inform us of the most recent available version of certain software components on our platform. These commands are executed periodically via `cron`, as managed by the <a href="https://github.com/pantheon-systems/updatinator">Updatinator</a> tool.
 </td></tr></table>
 
 ## Command List
@@ -48,7 +42,7 @@ The test suite may be run locally by way of some simple composer scripts:
 | Run all tests    | `composer test`
 | PHPUnit tests    | `composer unit`
 | PHP linter       | `composer lint`
-| Code style       | `composer cs`     
+| Code style       | `composer cs`
 | Fix style errors | `composer cbf`
 
 ### Releasing
