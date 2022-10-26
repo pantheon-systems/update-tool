@@ -39,7 +39,7 @@ class CopyPlatformAdditions implements UpdateFilterInterface, LoggerAwareInterfa
     protected function copyFileOrDirectory($src, $dest)
     {
         $fs = new Filesystem();
-
+        $this->logger->notice('Copying {src} to {dest}', ['src' => $src, 'dest' => $dest]);
         $fs->mkdir(dirname($dest));
         if (is_dir($src)) {
             $fs->mirror($src, $dest);
