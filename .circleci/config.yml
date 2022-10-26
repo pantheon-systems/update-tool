@@ -8,7 +8,7 @@ jobs:
   test:
     <<: *updatinator_container
     docker:
-      - image: quay.io/pantheon-public/docker-updatinator:1.x
+      - image: quay.io/pantheon-public/docker-updatinator:3.x
       - image: cimg/mysql:5.7.36
     steps:
       - checkout
