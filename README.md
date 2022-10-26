@@ -7,11 +7,7 @@ Fast and smart. Update Tool checks for available software updates and creates pu
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
 
 <table><tr width="25%"><td><img alt="Detinator" src="docs/images/roadrunner.png"/></td><td width="75%" valign="top">
-The Update Tool is a lightweight collection of commands that know how to create 
-pull requests from various data sources that inform us of the most recent available
-version of certain software components on our platform. These commands are executed
-periodically via `cron`, as managed by the 
-<a href="https://github.com/pantheon-systems/updatinator">Updatinator</a> tool.
+The Update Tool is a lightweight collection of commands that know how to create pull requests from various data sources that inform us of the most recent available version of certain software components on our platform. These commands are executed periodically via `cron`, as managed by the <a href="https://github.com/pantheon-systems/updatinator">Updatinator</a> tool.
 </td></tr></table>
 
 ## Command List
@@ -46,7 +42,7 @@ The test suite may be run locally by way of some simple composer scripts:
 | Run all tests    | `composer test`
 | PHPUnit tests    | `composer unit`
 | PHP linter       | `composer lint`
-| Code style       | `composer cs`     
+| Code style       | `composer cs`
 | Fix style errors | `composer cbf`
 
 ### Releasing
