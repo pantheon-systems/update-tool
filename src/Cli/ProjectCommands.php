@@ -352,6 +352,9 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Find versions in the source that have not been created in the target.
         $versions_to_process = $this->compareTagsSets($source_releases, $existing_releases);
 
+        $source_tags = array_keys($source_releases);
+        $latest_tag_in_source = end($source_tags);
+
         if (empty($versions_to_process)) {
             $this->logger->notice("Everything is up-to-date.");
             return;
@@ -398,6 +401,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $last_successful_update = null;
         foreach ($versions_to_process as $version => $previous) {
+            if ($version === $latest_tag_in_source) {
+                $this->logger->notice("Skipping {version} because it is the latest tag in the source and should be handled by another job.", ['version' => $version]);
+                continue;
+            }
             // Checkout previous tag.
             $project_working_copy->checkout($previous);
 
