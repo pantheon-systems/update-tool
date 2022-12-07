@@ -68,8 +68,8 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         // Apply the diff as a patch
         $tmpfname = tempnam(sys_get_temp_dir(), "diff-patch-" . $parameters['meta']['current-version'] . '-' . $this->latest . '.tmp');
         file_put_contents($tmpfname, $diffContents . "\n");
-        $this->logger->notice('patch -d {file} --no-backup-if-mismatch -Nutp1 < {tmpfile}', ['file' => $this->originalProject->dir(), 'tmpfile' => $tmpfname]);
-        passthru('patch -d ' .  $this->originalProject->dir() . ' --no-backup-if-mismatch -Nutp1 < ' . $tmpfname, $exitCode);
+        $this->logger->notice('patch -d {file} --no-backup-if-mismatch --ignore-whitespace -Nutp1 < {tmpfile}', ['file' => $this->originalProject->dir(), 'tmpfile' => $tmpfname]);
+        passthru('patch -d ' .  $this->originalProject->dir() . ' --no-backup-if-mismatch --ignore-whitespace -Nutp1 < ' . $tmpfname, $exitCode);
         if ($exitCode !== 0) {
             throw new \Exception("Failed to apply diff as patch");
         }
