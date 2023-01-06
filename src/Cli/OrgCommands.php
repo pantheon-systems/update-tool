@@ -180,8 +180,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $additions = [];
                 if ($key === 'context') {
                     $additions = array_values($value);
-                }
-                else {
+                } else {
                     $additions = $this->findCircleContexts($value);
                 }
                 $contexts = array_merge($contexts, $additions);
