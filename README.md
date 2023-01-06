@@ -1,5 +1,7 @@
 # Update Tools
 
+This is just a test build.
+
 Fast and smart. Update Tool checks for available software updates and creates pull requests.
 
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/pantheon-systems/update-tool/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/pantheon-systems/update-tool/tree/master)
