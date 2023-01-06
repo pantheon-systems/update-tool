@@ -22,6 +22,7 @@ use UpdateTool\Util\SupportLevel;
 use UpdateTool\Util\ProjectUpdate;
 
 use UpdateTool\CircleCI\CircleAPI;
+use Symfony\Component\Yaml\Yaml;
 
 class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
@@ -63,12 +64,14 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      *   default_branch: Default Branch
      *   license: License
      *   permissions: Permissions
+     *   circle_ci: Uses Circle CI
      *   circle_vars: Circle Env Vars
+     *   circle_contexts: Circle Contexts
      *   codeowners: Code Owners
      *   owners_src: Owners Source
      *   ownerTeam: Owning Team
      *   support_level: Support Level
-     * @default-fields full_name,codeowners,owners_src,circle_vars,support_level
+     * @default-fields full_name,codeowners,owners_src,circle_vars,circle_contexts,support_level
      * @default-string-field full_name
      *
      * @return Consolidation\OutputFormatters\StructuredData\RowsOfFields
@@ -110,20 +113,13 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         $circleApi = new CircleAPI();
 
-        // TEMPORARY: only do the first 20
-        // $repos = array_splice($repos, 0, 20);
+        // TEMPORARY: only do the first 10
+        // $repos = array_splice($repos, 0, 10);
 
         // Add CODEOWNER information to repository data
         $reposResult = [];
         foreach ($repos as $key => $repo) {
             $resultKey = $repo['full_name'];
-
-            $circleVars = [];
-            try {
-                list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
-            } catch (\Exception $e) {
-            }
-            $repo['circle_vars'] = $circleVars;
 
             list($codeowners, $ownerSource) = $this->guessCodeowners($api, $org, $repo['name']);
 
@@ -136,6 +132,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $repo['ownerTeam'] = str_replace("@$org/", "", $codeowners[0]);
             }
 
+            // Fetch metadata related to contents of README file
             try {
                 $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
                 if (!empty($data['content'])) {
@@ -147,6 +144,24 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $repo['support_level'] = 'EMPTY';
             }
 
+            // Fetch metadata related to CircleCI
+            $repo['circle_ci'] = false;
+            $repo['circle_vars'] = [];
+            $repo['circle_contexts'] = [];
+            try {
+                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], '.circleci/config.yml');
+                $repo['circle_ci'] = true;
+                if (!empty($data['content'])) {
+                    $content = base64_decode($data['content']);
+                    $circleConfig = Yaml::parse($content);
+                    $repo['circle_contexts'] = $this->findCircleContexts($circleConfig);
+                }
+                $circleVars = [];
+                list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
+                $repo['circle_vars'] = $circleVars;
+            } catch (\Exception $e) {
+            }
+
             $reposResult[$resultKey] = $repo;
         }
 
@@ -154,6 +169,28 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $this->addTableRenderFunction($data);
 
         return $data;
+    }
+
+    protected function findCircleContexts($circleConfig)
+    {
+        $contexts = [];
+
+        foreach ($circleConfig as $key => $value) {
+            if (is_array($value)) {
+                $additions = [];
+                if ($key === 'context') {
+                    $additions = array_values($value);
+                }
+                else {
+                    $additions = $this->findCircleContexts($value);
+                }
+                $contexts = array_merge($contexts, $additions);
+            }
+        }
+        sort($contexts);
+        $contexts = array_unique($contexts);
+
+        return $contexts;
     }
 
     /**

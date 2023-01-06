@@ -23,19 +23,29 @@ class CircleAPI
         $data = [];
         if ($res->getStatusCode() == 200) {
             $body = $res->getBody()->getContents();
-            if (!empty($body)) {
-                $bodyData = json_decode($body, true);
-                if (isset($bodyData['items'])) {
-                    foreach ($bodyData['items'] as $varData) {
-                        $key = $varData['name'];
-                        $value = $varData['value'];
-                        $data[$key] = $value;
-                    }
-                }
-            }
+            $data = $this->extractEnvVarsFromBody($body);
         }
 
         return [$res->getStatusCode(), $data];
+    }
+
+    protected function extractEnvVarsFromBody($body)
+    {
+        if (empty($body)) {
+            return [];
+        }
+        $bodyData = json_decode($body, true);
+        if (!isset($bodyData['items'])) {
+            return [];
+        }
+
+        $data = [];
+        foreach ($bodyData['items'] as $varData) {
+            $key = $varData['name'];
+            $value = $varData['value'];
+            $data[$key] = $value;
+        }
+        return $data;
     }
 
     protected function url($command, $org, $project, $provider = 'gh')
