@@ -121,8 +121,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             $circleVars = [];
             try {
                 list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
+            } catch (\Exception $e) {
             }
-            catch (\Exception $e) {}
             $repo['circle_vars'] = $circleVars;
 
             list($codeowners, $ownerSource) = $this->guessCodeowners($api, $org, $repo['name']);

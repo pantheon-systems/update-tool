@@ -33,7 +33,6 @@ class CircleAPI
                     }
                 }
             }
-
         }
 
         return [$res->getStatusCode(), $data];
