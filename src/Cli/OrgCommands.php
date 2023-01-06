@@ -21,6 +21,8 @@ use Hubph\Git\Remote;
 use UpdateTool\Util\SupportLevel;
 use UpdateTool\Util\ProjectUpdate;
 
+use UpdateTool\CircleCI\CircleAPI;
+
 class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwareInterface
 {
     use ConfigAwareTrait;
@@ -61,11 +63,12 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      *   default_branch: Default Branch
      *   license: License
      *   permissions: Permissions
+     *   circle_vars: Circle Env Vars
      *   codeowners: Code Owners
      *   owners_src: Owners Source
      *   ownerTeam: Owning Team
      *   support_level: Support Level
-     * @default-fields full_name,codeowners,owners_src,support_level
+     * @default-fields full_name,codeowners,owners_src,circle_vars,support_level
      * @default-string-field full_name
      *
      * @return Consolidation\OutputFormatters\StructuredData\RowsOfFields
@@ -74,6 +77,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'as' => 'default',
         'format' => 'table',
         'only-public' => false,
+        'include-archived' => false,
         'forks' => true,
     ])
     {
@@ -84,9 +88,11 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $repos = $pager->fetchAll($repoApi, 'repositories', [$org]);
 
         // Remove archived repositories from consideration
-        $repos = array_filter($repos, function ($repo) {
-            return empty($repo['archived']);
-        });
+        if (!$options['include-archived']) {
+            $repos = array_filter($repos, function ($repo) {
+                return empty($repo['archived']);
+            });
+        }
 
         // Remove private repos.
         if ($options['only-public']) {
@@ -102,13 +108,22 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             });
         }
 
+        $circleApi = new CircleAPI();
+
         // TEMPORARY: only do the first 20
         // $repos = array_splice($repos, 0, 20);
 
         // Add CODEOWNER information to repository data
         $reposResult = [];
         foreach ($repos as $key => $repo) {
-            $resultKey = $repo['id'];
+            $resultKey = $repo['full_name'];
+
+            $circleVars = [];
+            try {
+                list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
+            }
+            catch (\Exception $e) {}
+            $repo['circle_vars'] = $circleVars;
 
             list($codeowners, $ownerSource) = $this->guessCodeowners($api, $org, $repo['name']);
 
@@ -480,7 +495,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     return '';
                 }
                 if (is_array($cellData)) {
-                    if ($key == 'permissions') {
+                    if (($key == 'permissions') || ($key == 'circle_vars')) {
                         return implode(',', array_filter(array_keys($cellData)));
                     }
                     if ($key == 'codeowners') {
