@@ -25,6 +25,16 @@ There are two ways to provide authentication credentials when using the Update T
 
 The authentication credentials you will need can be found in the production Vault: `secret/securenotes/github_user__pantheon-upstream`
 
+### Rotating Credentials
+
+*Production:* In production, this tool uses the credentials defined in the [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinator) project.
+
+*Testing:* CircleCI needs a GitHub token for a service account that has access to the projects in the [test-configurations.yml](tests/fixtures/home/test-configuration.yml) fixtures file. Currently, the github user pantheon-ci-bot is being used. Access it via:
+
+```
+pvault production read secret/github/access-tokens/pantheon-ci-bot 
+```
+
 ## Automation
 
 The [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinator) project runs the automation processes in CircleCI 2.0 scripts.
