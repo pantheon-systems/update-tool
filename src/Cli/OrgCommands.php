@@ -84,8 +84,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'only-public' => false,
         'only-private' => false,
         'include-archived' => false,
-        'include-admins' => false,
-        'include-branch-protections' => false,
+        'fetch-admins' => false,
+        'fetch-branch-protections' => false,
         'forks' => true,
     ])
     {
@@ -100,7 +100,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         // Get list of all admins of the org, so that we can exclude these from
         // the user list.
         $orgAdmins = [];
-        if ($options['include-admins']) {
+        if ($options['fetch-admins']) {
             $orgMembersApi = $orgApi->members();
             $members = $pager->fetchAll($orgMembersApi, 'all', [$org]);
             foreach ($members as $id => $member) {
@@ -144,7 +144,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $circleApi = new CircleAPI();
 
         // TEMPORARY: only do the first 10
-        // $repos = array_splice($repos, 0, 10);
+        // $repos = array_splice($repos, 0, 1);
 
         // Add CODEOWNER information to repository data
         $reposResult = [];
@@ -167,16 +167,16 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             //var_export($repoMetadata);
 
             // Fetch metadata related to repository admins
-            if ($options['include-admins']) {
+            if ($options['fetch-admins']) {
                 $admins = [];
                 $teamAdmins = [];
                 try {
                     $teams = $repoApi->teams($org, $repo['name']);
                     foreach ($teams as $team) {
-                        $name = $team['name'];
+                        $machineName = $team['slug'];
                         if (!empty($team['permissions']['admin'])) {
-                            $admins[] = "@$org/$name";
-                            $members = $teamsApi->members($name, $org);
+                            $admins[] = "@$org/$machineName";
+                            $members = $teamsApi->members($machineName, $org);
                             foreach ($members as $member) {
                                 $teamAdmins[] = $member['login'];
                             }
@@ -196,7 +196,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
             // Fetch metadata related to branch protections
             $branch_protections = [];
-            if ($options['include-branch-protections']) {
+            if ($options['fetch-branch-protections']) {
                 $protections = [];
                 $protectionData = [];
                 try {
