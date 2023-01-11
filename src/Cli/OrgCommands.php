@@ -185,12 +185,11 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     $collaborators = $repoApi->collaborators()->all($org, $repo['name']);
                     foreach ($collaborators as $id => $collaborator) {
                         $login = $collaborator['login'];
-                        if (!empty($collaborator['permissions']['admin']) && !in_array($login, $orgAdmins) && !in_array($login,  $teamAdmins)) {
+                        if (!empty($collaborator['permissions']['admin']) && !in_array($login, $orgAdmins) && !in_array($login, $teamAdmins)) {
                             $admins[] = $login;
                         }
                     }
                 } catch (\Exception $e) {
-
                 }
                 $repo['admins'] = $admins;
             }
