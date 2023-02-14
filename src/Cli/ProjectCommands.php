@@ -123,7 +123,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     /**
      * @command project:derivative:pull
      */
-    public function projectDerivativePull($remote, $options = ['as' => 'default', 'push' => true, 'check' => false])
+    public function projectDerivativePull($remote, $options = ['as' => 'default', 'push' => false, 'check' => false])
     {
         $api = $this->api($options['as']);
 
@@ -172,12 +172,28 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $this->logger->notice("Cloning repository for {remote} and fetching needed branch and tags", ['remote' => $remote]);
 
         $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
+
+        // Make minor, repo specific changes. It will automatically invoke the
+        // repo name + PreTagUpdates translated to camel case.
+        // Ex: wordpress-network will invoke wordpressNetworkPreTagUpdates().
+        $dynamic_update_method = lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $remote . "PreTagUpdates"))));
+        if (method_exists($this, $dynamic_update_method)) {
+            ($this->$dynamic_update_method)($project_working_copy);
+        }
+
         $project_working_copy->addRemote($upstream_url, 'upstream');
         $project_working_copy->fetch($upstream_branch, 'upstream');
         $project_working_copy->fetchTags('upstream');
 
         foreach ($versions_to_process as $version => $previous_version) {
             $project_working_copy->switchBranch($version);
+
+            // Make minor, repo specific changes post tag checkout.
+            // Ex: wordpress-network will invoke wordpressNetworkPostTagUpdates().
+            $dynamic_update_method = lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $remote . "PostTagUpdates"))));
+            if (method_exists($this, $dynamic_update_method)) {
+                ($this->$dynamic_update_method)($project_working_copy);
+            }
 
             if (!empty($options['push'])) {
                 $this->logger->notice("Push tag {version} to {target}", ['version' => $version, 'target' => $remote_repo->projectWithOrg()]);
@@ -192,6 +208,23 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $this->logger->notice("Push branch {version} to {target}", ['version' => $main_branch, 'target' => $remote_repo->projectWithOrg()]);
             $project_working_copy->push('origin', $main_branch);
         }
+    }
+
+    /**
+     * Performs minor updates for the WordPress Site Network repo.
+     *
+     * @param WorkingCopy $project_working_copy
+     *   The remote repo being worked on.
+     *
+     * @return void
+     */
+    protected function wordpressNetworkPreTagUpdates(WorkingCopy $project_working_copy)
+    {
+        $patch_path = realpath(__DIR__ . '/../../templates/wordpress-network/wp-config-pantheon.patch');
+
+        $project_working_copy->apply($patch_path);
+        $project_working_copy->add("wp-config-pantheon.php");
+        $project_working_copy->commit("Adds Multisite specific configuration to repo.");
     }
 
     /**
