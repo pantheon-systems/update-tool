@@ -427,6 +427,15 @@ class WorkingCopy implements LoggerAwareInterface
     }
 
     /**
+     * Delete a tag
+     */
+    public function tagDelete($tag)
+    {
+        $this->git("tag -d $tag");
+        return $this;
+    }
+
+    /**
      * Apply a patch
      */
     public function apply($file)

@@ -123,7 +123,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     /**
      * @command project:derivative:pull
      */
-    public function projectDerivativePull($remote, $options = ['as' => 'default', 'push' => false, 'check' => false])
+    public function projectDerivativePull($remote, $options = ['as' => 'default', 'push' => true, 'check' => false])
     {
         $api = $this->api($options['as']);
 
@@ -178,7 +178,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Ex: wordpress-network will invoke wordpressNetworkPreTagUpdates().
         $dynamic_update_method = lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $remote . "PreTagUpdates"))));
         if (method_exists($this, $dynamic_update_method)) {
-            ($this->$dynamic_update_method)($project_working_copy);
+            $this->$dynamic_update_method($project_working_copy);
         }
 
         $project_working_copy->addRemote($upstream_url, 'upstream');
@@ -192,7 +192,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             // Ex: wordpress-network will invoke wordpressNetworkPostTagUpdates().
             $dynamic_update_method = lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $remote . "PostTagUpdates"))));
             if (method_exists($this, $dynamic_update_method)) {
-                ($this->$dynamic_update_method)($project_working_copy);
+                $this->$dynamic_update_method($project_working_copy, $version);
             }
 
             if (!empty($options['push'])) {
@@ -225,6 +225,26 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $project_working_copy->apply($patch_path);
         $project_working_copy->add("wp-config-pantheon.php");
         $project_working_copy->commit("Adds Multisite specific configuration to repo.");
+    }
+
+    /**
+     * Performs minor updates for the WordPress Site Network repo.
+     *
+     * @param WorkingCopy $project_working_copy
+     *   The remote repo being worked on.
+     *
+     * @return void
+     */
+    protected function wordpressNetworkPostTagUpdates(WorkingCopy $project_working_copy, $version)
+    {
+        $project_working_copy->tagDelete($version);
+
+        $patch_path = realpath(__DIR__ . '/../../templates/wordpress-network/wp-config-pantheon.patch');
+        $project_working_copy->apply($patch_path);
+        $project_working_copy->add("wp-config-pantheon.php");
+        $project_working_copy->commit("Adds Multisite specific configuration to repo.");
+
+        $project_working_copy->tag($version);
     }
 
     /**
