@@ -23,7 +23,7 @@ There are two ways to provide authentication credentials when using the Update T
 - Environment variable: Define `GITHUB_TOKEN` with the apporpriate personal access token.
 - On-disk cache: See [update-tool.yml](update-tool.yml) for the location to store the personal access token. Use the `--as` option to select between different cache locations.
 
-The authentication credentials you will need can be found in the production Vault: `secret/securenotes/github_user__pantheon-upstream`
+The authentication credentials you will need can be found in the production Vault: `secret/github/user__pantheon-upstream`
 
 ### Rotating Credentials
 
@@ -32,7 +32,7 @@ The authentication credentials you will need can be found in the production Vaul
 *Testing:* CircleCI needs a GitHub token for a service account that has access to the projects in the [test-configurations.yml](tests/fixtures/home/test-configuration.yml) fixtures file. Currently, the github user pantheon-ci-bot is being used. Access it via:
 
 ```
-pvault production read secret/github/access-tokens/pantheon-ci-bot 
+pvault production read secret/github/access-tokens/pantheon-ci-bot
 ```
 
 ## Automation
