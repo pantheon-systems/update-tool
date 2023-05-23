@@ -608,4 +608,12 @@ class WorkingCopy implements LoggerAwareInterface
     {
         return $this->execWithRedaction('git {dir}' . $cmd, ['dir' => "-C {$this->dir} "] + $replacements, ['dir' => ''] + $redacted);
     }
+
+    /**
+     * Clean untracked files
+     */
+    public function clean($flags = '-df')
+    {
+        $this->git('clean {flags}', ['flags' => $flags]);
+    }
 }
