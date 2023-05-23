@@ -405,6 +405,9 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
                 $this->logger->notice("Skipping {version} because it is the latest tag in the source and should be handled by another job.", ['version' => $version]);
                 continue;
             }
+
+            // Make sure our working directory is cleaned up. An "untracked working tree files" error will fail checkout silently.
+            $project_working_copy->clean();
             // Checkout previous tag.
             $project_working_copy->checkout($previous);
 
