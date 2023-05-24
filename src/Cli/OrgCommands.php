@@ -67,11 +67,14 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      *   circle_ci: Uses Circle CI
      *   circle_vars: Circle Env Vars
      *   circle_contexts: Circle Contexts
+     *   resource_classes: Circle Resource Clases
+     *   uses_remote_docker: Uses Circle Remote Docker
+     *   review_for_circleci_docker_change: Review for CircleCI Docker change
      *   codeowners: Code Owners
      *   owners_src: Owners Source
      *   ownerTeam: Owning Team
      *   support_level: Support Level
-     * @default-fields full_name,codeowners,owners_src,circle_vars,circle_contexts,support_level
+     * @default-fields full_name,codeowners,owners_src,circle_vars,circle_contexts,support_level,resource_classes,uses_remote_docker,review_for_circleci_docker_change
      * @default-string-field full_name
      *
      * @return Consolidation\OutputFormatters\StructuredData\RowsOfFields
@@ -114,7 +117,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $circleApi = new CircleAPI();
 
         // TEMPORARY: only do the first 10
-        // $repos = array_splice($repos, 0, 10);
+        //$repos = array_splice($repos, 0, 10);
 
         // Add CODEOWNER information to repository data
         $reposResult = [];
@@ -148,6 +151,9 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             $repo['circle_ci'] = false;
             $repo['circle_vars'] = [];
             $repo['circle_contexts'] = [];
+            $repo['resource_classes'] = [];
+            $repo['uses_remote_docker'] = false;
+            $repo['review_for_circleci_docker_change'] = false;
             try {
                 $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], '.circleci/config.yml');
                 $repo['circle_ci'] = true;
@@ -155,6 +161,9 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     $content = base64_decode($data['content']);
                     $circleConfig = Yaml::parse($content);
                     $repo['circle_contexts'] = $this->findCircleContexts($circleConfig);
+                    $repo['resource_classes'] = $this->findResourceClass($circleConfig);
+                    $repo['uses_remote_docker'] = str_contains($content, "setup_remote_docker");
+                    $repo['review_for_circleci_docker_change'] = $this->getReviewForCircleCiDockerChange($repo);
                 }
                 $circleVars = [];
                 list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
@@ -169,6 +178,41 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $this->addTableRenderFunction($data);
 
         return $data;
+    }
+
+    protected function getReviewForCircleCiDockerChange($repo)
+    {
+        if (!$repo['uses_remote_docker']) {
+            return false;
+        }
+        $resource_classes_with_changes = [
+            'medium+',
+            "small",
+            "xlarge",
+            "2xlarge",
+            "2xlarge+",
+        ];
+        if (count(array_intersect($resource_classes_with_changes, $repo['resource_classes']))) {
+            return true;
+        }
+        return false;
+
+    }
+
+    protected function findResourceClass($circleConfig)
+    {
+        $resource_classes = [];
+
+        foreach ($circleConfig as $key => $value) {
+            if ($key === 'resource_class') {
+                $resource_classes[] = $value;
+                continue;
+            }
+            if (is_array($value)) {
+                $resource_classes += $this->findResourceClass($value);
+            }
+        }
+        return array_unique($resource_classes);
     }
 
     protected function findCircleContexts($circleConfig)

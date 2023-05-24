@@ -21,10 +21,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 DEPENDENCY LICENSES:
 
+Warning: Version warning: Imagick was compiled against ImageMagick version 1808 but version 1809 is loaded. Imagick will run but may behave surprisingly in Unknown on line 0
+Name: pantheon-systems/update-tool
+Version: 0.x-dev
+Licenses: MIT
+Dependencies:
+
 Name                                     Version Licenses 
 clue/stream-filter                       v1.5.0  MIT      
 composer/semver                          2.0.0   MIT      
-consolidation/annotated-command          4.4.0   MIT      
+consolidation/annotated-command          4.8.2   MIT      
 consolidation/config                     2.0.1   MIT      
 consolidation/filter-via-dot-access-data 1.0.0   MIT      
 consolidation/log                        2.0.2   MIT      
@@ -38,7 +44,7 @@ g1a/hubph                                0.6.6   MIT
 grasmash/expander                        1.0.0   MIT      
 guzzlehttp/guzzle                        6.5.5   MIT      
 guzzlehttp/promises                      1.5.1   MIT      
-guzzlehttp/psr7                          1.8.3   MIT      
+guzzlehttp/psr7                          1.9.1   MIT      
 knplabs/github-api                       v2.20.0 MIT      
 league/container                         2.5.0   MIT      
 php-http/cache-plugin                    1.7.2   MIT      
