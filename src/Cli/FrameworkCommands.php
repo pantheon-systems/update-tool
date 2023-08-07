@@ -42,6 +42,8 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
             ->switchBranch('master')
             ->pull('origin', 'master');
 
+        $pr_body = '';
+
 
         if ('drush' === $cli) {
             $versions_file_path = "$work_dir/drush/Makefile";
@@ -70,6 +72,7 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
                 $version_file_contents = $this->updateComposerMakefile($next_versions, $versions, $version_file_contents);
                 $updated_version = implode(' and ', $next_versions);
                 $branch_slug = implode('-', $next_versions);
+                $pr_body = "You may need to rebuild cos-runtime-php to get the new version of Composer.";
             } else {
                 $this->say("Composer versions are up to date on COS");
             }
@@ -122,7 +125,7 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
             ->add($file_to_add)
             ->commit($message)
             ->push()
-            ->pr($message);
+            ->pr($message, $pr_body);
 
         // Once we create a new PR, we can close the existing PRs.
         $api->prClose($cos_cli->org(), $cos_cli->project(), $prs);
