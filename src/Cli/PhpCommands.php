@@ -55,7 +55,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             ->switchBranch('master')
             ->pull('origin', 'master');
 
-        $versions_file_path = "$work_dir/PHP_VERSIONS";
+        $versions_file_path = "$work_dir/pantheon-php/PHP_VERSIONS";
         $version_file_contents = file_get_contents($versions_file_path);
         $updated_versions = [];
 
@@ -106,7 +106,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $this->logger->notice('Using {branch}', ['branch' => $branch]);
         $pr = $cos_php
             ->createBranch($branch, 'master', true)
-            ->add('PHP_VERSIONS')
+            ->add('pantheon-php/PHP_VERSIONS')
             ->commit($message)
             ->push()
             ->pr($message, $body);
