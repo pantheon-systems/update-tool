@@ -168,7 +168,6 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     {
         $urlTemplate = $this->getConfig()->get('php-net.download-url');
         $url = str_replace('{version}', $version, $urlTemplate);
-        // $this->say(var_dump($url));
         // If the $url points to a local cache, use file_exists
         if ((strpos($url, 'file:///') !== false) || (strpos($url, '://') === false)) {
             return file_exists($url);
