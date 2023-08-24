@@ -168,7 +168,6 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     {
         $urlTemplate = $this->getConfig()->get('php-net.download-url');
         $url = str_replace('{version}', $version, $urlTemplate);
-
         // If the $url points to a local cache, use file_exists
         if ((strpos($url, 'file:///') !== false) || (strpos($url, '://') === false)) {
             return file_exists($url);
@@ -205,6 +204,10 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }
         $next_version = $version;
         $try_version = $this->nextVersion($version);
+        if ($try_version == "7.4.31") {
+            // 7.4.31 DNE. Go Figure.
+            $try_version = $this->nextVersion($try_version);
+        }
         while ($this->versionExists($try_version)) {
             $next_version = $try_version;
             $try_version = $this->nextVersion($next_version);
