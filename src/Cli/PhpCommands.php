@@ -205,7 +205,7 @@ class PhpCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         }
         $next_version = $version;
         $try_version = $this->nextVersion($version);
-        if ( $try_version == "7.4.31" ) {
+        if ($try_version == "7.4.31") {
             // 7.4.31 DNE. Go Figure.
             $try_version = $this->nextVersion($try_version);
         }
