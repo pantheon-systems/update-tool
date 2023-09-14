@@ -55,8 +55,12 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface
         // Clean up the old and unnecessary files in mu-plugins.
         $files_to_delete = [
             "$dest/.git",
+            "$dest/.github",
+            "$dest/.gitattributes",
+            "$dest/.phpcs.xml",
             "$dest/README.md",
             "$dest/composer.json",
+            "$dest/CONTRIBUTING.md",
         ];
         foreach ($files_to_delete as $file) {
             $this->logger->notice('Removing {file}', ['file' => $file]);
