@@ -58,9 +58,12 @@ class CopyMuPlugin implements UpdateFilterInterface, LoggerAwareInterface
             "$dest/.github",
             "$dest/.gitattributes",
             "$dest/.phpcs.xml",
+            "$dest/phpunit.xml.dist",
             "$dest/README.md",
             "$dest/composer.json",
             "$dest/CONTRIBUTING.md",
+            "$dest/bin",
+            "$dest/tests",
         ];
         foreach ($files_to_delete as $file) {
             $this->logger->notice('Removing {file}', ['file' => $file]);
