@@ -111,6 +111,22 @@ class Remote implements LoggerAwareInterface
     }
 
     /**
+     * Returns an array of the last X commit hashes.
+     *
+     * @return array
+     */
+    public function commits($branch = "master", $limit = 10)
+    {
+        $commits = $this->git('log origin/{branch} --pretty=format:"%H" -n {limit}', ['branch' => $branch, 'limit' => $limit]);
+
+        if (!empty($commits)) {
+            return explode("\n", $commits);
+        } else {
+            return [];
+        }
+    }
+
+    /**
      * Delete a tag from the remote
      */
     public function delete($tag)

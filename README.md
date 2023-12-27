@@ -41,7 +41,7 @@ The [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinat
 
 ## Local Development
 
-Clone the GitHub repository and run `composer install` to get started.
+Clone the GitHub repository and run `composer install` to get started. Note that the unit test commands require your local PHP Version to be 7.x. 
 
 ### Running the tests
 
