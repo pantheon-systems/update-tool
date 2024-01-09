@@ -85,8 +85,11 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             VERSION=$CIRCLE_TAG
-            which pvault
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/update-tool.phar
+            if [ -z "$CIRCLE_GH_TOKEN" ]; then
+              echo "Could not find GH token! 😱 Exiting..."
+              exit 1
+            fi
+            ghr -t ${CIRCLE_GH_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/update-tool.phar
 
 workflows:
   version: 2
