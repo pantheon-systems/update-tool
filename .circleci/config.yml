@@ -13,6 +13,12 @@ jobs:
       - image: us-docker.pkg.dev/pantheon-artifacts/internal/pvault:latest
     steps:
       - checkout
+      - run:
+          name: "Vault Login"
+          command: |
+            VAULT_TOKEN=$(pvault production write -field=token auth/jwt-circleci/login role=circleci jwt=$CIRCLE_OIDC_TOKEN)
+            echo "export VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
+            echo "export PRODUCTION_VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
       - run: composer install
       - run: git config --global user.email "bot@getpantheon.com"
       - run: git config --global user.name "Pantheon Automation"
@@ -44,12 +50,16 @@ workflows:
       - test:
           context:
             - gcp-credentials-ar-ci
+            - ar-access
+            - docker-executor-auth
           filters:
             tags:
               only: /.*/
       - publish_phar:
           context:
             - gcp-credentials-ar-ci
+            - ar-access
+            - docker-executor-auth
           requires:
             - test
           filters:
