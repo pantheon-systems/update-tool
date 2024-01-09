@@ -34,12 +34,22 @@ jobs:
     steps:
       - checkout
       - run:
-      - run: composer install
-      - run: git config --global user.email "bot@getpantheon.com"
-      - run: git config --global user.name "Pantheon Automation"
-      - run: ./update-tool whoami
-      - run: which vault
-      - run: composer phar:build
+          name: "Install Composer Dependencies"
+          command: composer install
+      - run:
+          name: "Setup Git Config"
+          command: |
+            git config --global user.email "bot@getpantheon.com"
+            git config --global user.name "Pantheon Automation"
+      - run:
+          name: "Test Update Tool"
+          command: ./update-tool whoami
+      - run:
+          name: "Test Vault"
+          command: which vault
+      - run:
+          name: "Build Update Tool"
+          command: composer phar:build
       - persist_to_workspace:
           root: /updatinator
           paths:
