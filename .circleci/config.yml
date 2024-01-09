@@ -31,6 +31,21 @@ jobs:
             fi
             echo "export VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
             echo "export PRODUCTION_VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
+      - run:
+          name: "Export GitHub Token from Vault"
+          command: |
+            # Make sure we have vault.
+            which vault
+            if [ $? -ne 0 ]; then
+              echo "Vault not found...weird... 🤔"
+              exit 1
+            fi
+            CIRCLE_GH_TOKEN=$(vault read -field=token secret/github/access-tokens/pantheon-ci-bot)
+            if [ -z "$CIRCLE_GH_TOKEN" ]; then
+              echo "Failed to get GitHub token"
+              exit 1
+            fi
+            export $CIRCLE_GH_TOKEN >> $BASH_ENV
   test:
     <<: *updatinator_container
     docker:
