@@ -29,8 +29,8 @@ jobs:
               echo "Failed to get Vault token"
               exit 1
             fi
-            echo "export VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
-            echo "export PRODUCTION_VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
+            # echo "export VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
+            # echo "export PRODUCTION_VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
             touch secrets-env && chmod 600 secrets-env
             echo export VAULT_TOKEN=\"${VAULT_TOKEN}\"" >> secrets-env
             echo export VAULT_ADDR=\"${VAULT_ADDR}\"" >> secrets-env
