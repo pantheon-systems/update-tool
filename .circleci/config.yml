@@ -12,9 +12,8 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Install jq and curl"
-          command: |
-            apk add jq curl ca-certificates
+          name: "Install dependencies"
+          command: apk add jq curl ca-certificates
       - run:
           name: "Vault Login"
           command: |
@@ -44,6 +43,8 @@ jobs:
             else
               echo "Sourcing secrets-env..."
               . secrets-env
+              # Let's see if sourcing secrets-env worked.
+              echo "VAULT_ADDR: $VAULT_ADDR"
             fi
             echo "Getting GitHub token from Vault..."
             CIRCLE_GH_TOKEN=$(vault read -field=token secret/github/access-tokens/pantheon-ci-bot)
