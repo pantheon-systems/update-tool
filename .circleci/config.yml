@@ -65,8 +65,12 @@ jobs:
           name: "Test Update Tool"
           command: ./update-tool whoami
       - run:
-          name: "Test Vault"
-          command: which vault
+          name: "Test Token from Vault"
+          command: |
+            if [ -z "$CIRCLE_GH_TOKEN" ]; then
+              echo "Could not find GH token! 😱 Exiting..."
+              exit 1
+            fi
       - run:
           name: "Build Update Tool"
           command: composer phar:build
