@@ -15,6 +15,7 @@ jobs:
           name: "Install jq"
           command: |
             apk add jq
+      - run:
           name: "Vault Login"
           command: |
             export VAULT_ADDR="https://api.vault-production.pantheon.io:8200"
