@@ -7,6 +7,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+        image: quay.io/pantheon-public/docker-updatinator:3.x
     steps:
       - uses: actions/checkout@v3
       - name: Install Composer Dependencies
