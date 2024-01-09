@@ -24,7 +24,7 @@ jobs:
             curl -fsSL https://storage.googleapis.com/pantheon-ca-certs/ca.crt > $VAULT_CACERT
             echo "" >> $VAULT_CACERT
             curl -fsSL https://storage.googleapis.com/pantheon-sandbox-ca-certs/ca.crt >> $VAULT_CACERT
-            VAULT_TOKEN=$(vault write auth/jwt-circleci/login role=circleci -format=json role=circleci jwt=$CIRCLE_OIDC_TOKEN | jq -r '.auth.client_token')
+            VAULT_TOKEN=$(vault write auth/jwt-circleci/login -format=json role=circleci jwt=$CIRCLE_OIDC_TOKEN | jq -r '.auth.client_token')
             if [ -z "$VAULT_TOKEN" ]; then
               echo "Failed to get Vault token"
               exit 1
