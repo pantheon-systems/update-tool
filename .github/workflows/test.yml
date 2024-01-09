@@ -12,6 +12,9 @@ jobs:
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
       - name: Run Update Tool Whoami
-        run: ./update-tool whoami
+        run: |
+          git config --global user.email "bot@getpantheon.com"
+          git config --global user.name "Pantheon Automation"
+          ./update-tool whoami
       - name: Run tests
         run: composer test
