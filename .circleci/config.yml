@@ -16,6 +16,7 @@ jobs:
       - run: git config --global user.email "bot@getpantheon.com"
       - run: git config --global user.name "Pantheon Automation"
       - run: ./update-tool whoami
+      - run: which pvault
       - run: composer phar:build
       - persist_to_workspace:
           root: /updatinator
@@ -39,7 +40,10 @@ workflows:
   version: 2
   new_image:
     jobs:
-      - build:
+      - publish_phar:
+          context:
+            - gcp-credentials-ar-ci
+      - test:
           context:
             - gcp-credentials-ar-ci
   push:
