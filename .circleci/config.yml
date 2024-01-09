@@ -50,16 +50,12 @@ workflows:
       - test:
           context:
             - gcp-credentials-ar-ci
-            - ar-access
-            - docker-executor-auth
           filters:
             tags:
               only: /.*/
       - publish_phar:
           context:
             - gcp-credentials-ar-ci
-            - ar-access
-            - docker-executor-auth
           requires:
             - test
           filters:
