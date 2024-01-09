@@ -12,9 +12,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Install jq"
+          name: "Install jq and curl"
           command: |
             apk add jq
+            apk add curl
       - run:
           name: "Vault Login"
           command: |
