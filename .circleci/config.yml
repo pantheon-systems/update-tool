@@ -14,8 +14,7 @@ jobs:
       - run:
           name: "Install jq and curl"
           command: |
-            apk add jq
-            apk add curl
+            apk add jq curl ca-certificates
       - run:
           name: "Vault Login"
           command: |
