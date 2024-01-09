@@ -12,6 +12,7 @@ version: 2
 jobs:
   vault-login:
     executor: vault-image
+    resource_class: small
     steps:
       - checkout
       - run:
