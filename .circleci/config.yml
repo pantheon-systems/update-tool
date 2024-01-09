@@ -3,27 +3,42 @@ defaults:
   updatinator_container: &updatinator_container
     working_directory: /updatinator
 
+executors:
+  vault-image:
+    docker:
+      - image: docker.io/hashicorp/vault:1.15
+
 version: 2
 jobs:
-  test:
-    <<: *updatinator_container
-    docker:
-      - image: quay.io/pantheon-public/docker-updatinator:3.x
-      - image: cimg/mysql:5.7.36
-      - image: us-docker.pkg.dev/pantheon-artifacts/internal/pvault:latest
+  vault-login:
+    executor: vault-image
     steps:
       - checkout
       - run:
           name: "Vault Login"
           command: |
-            VAULT_TOKEN=$(pvault production write -field=token auth/jwt-circleci/login role=circleci jwt=$CIRCLE_OIDC_TOKEN)
+            export VAULT_ADDR="https://api.vault-production.pantheon.io:8200"
+
+            VAULT_TOKEN=$(vault write auth/jwt-circleci/login role=circleci -format=json role=circleci jwt=$CIRCLE_OIDC_TOKEN | jq -r '.auth.client_token')
+            if [ -z "$VAULT_TOKEN" ]; then
+              echo "Failed to get Vault token"
+              exit 1
+            fi
             echo "export VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
             echo "export PRODUCTION_VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
+  test:
+    <<: *updatinator_container
+    docker:
+      - image: quay.io/pantheon-public/docker-updatinator:3.x
+      - image: cimg/mysql:5.7.36
+    steps:
+      - checkout
+      - run:
       - run: composer install
       - run: git config --global user.email "bot@getpantheon.com"
       - run: git config --global user.name "Pantheon Automation"
       - run: ./update-tool whoami
-      - run: which pvault
+      - run: which vault
       - run: composer phar:build
       - persist_to_workspace:
           root: /updatinator
