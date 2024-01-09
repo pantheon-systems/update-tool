@@ -3,12 +3,13 @@ defaults:
   updatinator_container: &updatinator_container
     working_directory: /updatinator
 
+version: 2
+
 executors:
   vault-image:
     docker:
       - image: docker.io/hashicorp/vault:1.15
 
-version: 2
 jobs:
   vault-login:
     executor: vault-image
