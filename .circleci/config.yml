@@ -32,9 +32,9 @@ jobs:
             # echo "export VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
             # echo "export PRODUCTION_VAULT_TOKEN=$VAULT_TOKEN" >> $BASH_ENV
             touch secrets-env && chmod 600 secrets-env
-            echo export VAULT_TOKEN=\"${VAULT_TOKEN}\"" >> secrets-env
-            echo export VAULT_ADDR=\"${VAULT_ADDR}\"" >> secrets-env
-            echo export VAULT_CACERT=\"${VAULT_CACERT}\"" >> secrets-env
+            echo export "VAULT_TOKEN=\"${VAULT_TOKEN}\"" >> secrets-env
+            echo export "VAULT_ADDR=\"${VAULT_ADDR}\"" >> secrets-env
+            echo export "VAULT_CACERT=\"${VAULT_CACERT}\"" >> secrets-env
       - run:
           name: "Export GitHub Token from Vault"
           command: |
