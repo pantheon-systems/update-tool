@@ -1,0 +1,15 @@
+name: Test
+on:
+  pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+      - name: Run Update Tool Whoami
+        run: ./update-tool whoami
+      - name: Run tests
+        run: composer test
