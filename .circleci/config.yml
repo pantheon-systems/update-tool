@@ -72,12 +72,17 @@ workflows:
   version: 2
   push:
     jobs:
+      - vault-login:
+        - context:
+            - gcp-credentials-ar-ci
       - test:
           context:
             - gcp-credentials-ar-ci
           filters:
             tags:
               only: /.*/
+          requires:
+            - vault-login
       - publish_phar:
           context:
             - gcp-credentials-ar-ci
