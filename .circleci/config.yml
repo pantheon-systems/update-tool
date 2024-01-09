@@ -44,11 +44,11 @@ workflows:
       - publish_phar:
           context:
             - gcp-credentials-ar-ci
-            - docker-executor-auth
+            - ar-access
       - test:
           context:
             - gcp-credentials-ar-ci
-            - docker-executor-auth
+            - ar-access
   push:
     jobs:
       - test:
