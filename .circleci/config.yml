@@ -39,23 +39,17 @@ jobs:
 
 workflows:
   version: 2
-  new_image:
-    jobs:
-      - publish_phar:
-          context:
-            - gcp-credentials-ar-ci
-            - ar-access
-      - test:
-          context:
-            - gcp-credentials-ar-ci
-            - ar-access
   push:
     jobs:
       - test:
+          context:
+            - gcp-credentials-ar-ci
           filters:
             tags:
               only: /.*/
       - publish_phar:
+          context:
+            - gcp-credentials-ar-ci
           requires:
             - test
           filters:
