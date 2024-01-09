@@ -5,15 +5,10 @@ defaults:
 
 version: 2
 
-executors:
-  vault-image:
-    docker:
-      - image: docker.io/hashicorp/vault:1.15
-
 jobs:
   vault-login:
-    executor: vault-image
-    resource_class: small
+    docker:
+      - image: docker.io/hashicorp/vault:1.15
     steps:
       - checkout
       - run:
