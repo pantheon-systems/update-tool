@@ -10,6 +10,7 @@ jobs:
     docker:
       - image: quay.io/pantheon-public/docker-updatinator:3.x
       - image: cimg/mysql:5.7.36
+      - image: us-docker.pkg.dev/pantheon-artifacts/internal/pvault:latest
     steps:
       - checkout
       - run: composer install
