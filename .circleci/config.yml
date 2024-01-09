@@ -36,6 +36,11 @@ jobs:
 
 workflows:
   version: 2
+  new_image:
+    jobs:
+      - build:
+          context:
+            - gcp-credentials-ar-ci
   push:
     jobs:
       - test:
