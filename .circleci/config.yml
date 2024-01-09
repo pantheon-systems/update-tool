@@ -72,9 +72,7 @@ workflows:
   version: 2
   push:
     jobs:
-      - vault-login:
-        - context:
-            - gcp-credentials-ar-ci
+      - vault-login
       - test:
           context:
             - gcp-credentials-ar-ci
