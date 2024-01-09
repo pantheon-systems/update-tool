@@ -10,7 +10,7 @@ jobs:
     container:
         image: quay.io/pantheon-public/docker-updatinator:3.x
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
       - name: Run Update Tool Whoami
