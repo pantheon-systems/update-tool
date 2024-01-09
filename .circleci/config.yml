@@ -43,8 +43,10 @@ jobs:
               echo "Could not find secrets-env! 😱 Exiting..."
               exit 1
             else
+              echo "Sourcing secrets-env..."
               . secrets-env
             fi
+            echo "Getting GitHub token from Vault..."
             CIRCLE_GH_TOKEN=$(vault read -field=token secret/github/access-tokens/pantheon-ci-bot)
             if [ -z "$CIRCLE_GH_TOKEN" ]; then
               echo "Failed to get GitHub token"
