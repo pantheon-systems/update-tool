@@ -7,12 +7,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.5
     steps:
       - uses: actions/checkout@v2
       - name: Set PHP version
         uses: shivammathur/setup-php@v2
         with:
           php-version: 7.4
+      - name: Start MySQL
+        run: sudo systemctl start mysql
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
       - name: Install SSH key
