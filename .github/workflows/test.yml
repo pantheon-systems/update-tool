@@ -34,6 +34,6 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         if: ${{ failure() }}
         with:
-            limit-access-to-actor: true
+            limit-access-to-actor: false
       - name: Run tests
         run: composer test
