@@ -15,7 +15,6 @@ jobs:
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.PANTHEON_UPSTREAM_SSH_KEY }}
-        shell: bash
       - name: Run Update Tool Whoami
         shell: bash
         run: |
