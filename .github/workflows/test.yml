@@ -21,11 +21,18 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 7.4
-      - name: Start MySQL
+      - name: Setup MySQL
         run: |
           sudo systemctl start mysql
           mysqladmin -h 127.0.0.1 -u root -proot status
-          mysql -h 127.0.0.1 -u root -proot -e "SHOW DATABASES LIKE 'updatinate-wp-db';"
+          echo "Setting the root password to empty"
+          mysql -h 127.0.0.1 -u root -proot -e "USE mysql; UPDATE user SET Password='' WHERE User='root'; FLUSH PRIVILEGES;"
+          echo "Creating the database"
+          mysql -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS \`updatinate-wp-db\`;"
+          echo "Testing blank password"
+          mysqladmin -h 127.0.0.1 -u root -proot status
+          echo "Testing the database"
+          mysql -h 127.0.0.1 -u root -e "SHOW DATABASES LIKE 'updatinate-wp-db';"
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
       - name: Install SSH key
