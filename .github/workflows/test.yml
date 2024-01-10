@@ -17,13 +17,10 @@ jobs:
           ssh-private-key: ${{ secrets.PANTHEON_UPSTREAM_SSH_KEY }}
       - name: Run Update Tool Whoami
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
         run: |
-          echo "Unset GITHUB_TOKEN and GH_TOKEN"
-          unset GITHUB_TOKEN
-          unset GH_TOKEN
-          echo "Set GITHUB_TOKEN and GH_TOKEN"
-          export GITHUB_TOKEN=${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
-          export GH_TOKEN=${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           echo "Set git config"
           git config --global user.email "bot@getpantheon.com"
           git config --global user.name "Pantheon Automation"
