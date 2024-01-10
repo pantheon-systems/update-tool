@@ -21,9 +21,10 @@ jobs:
       - name: Run Update Tool Whoami
         run: |
           GITHUB_TOKEN=${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
-          gh auth login --with-token <<< "${GITHUB_TOKEN}"
           git config --global user.email "bot@getpantheon.com"
           git config --global user.name "Pantheon Automation"
+          gh auth login --with-token <<< "${GITHUB_TOKEN}"
+          gh auth status
           ./update-tool whoami
       - name: Run tests
         run: composer test
