@@ -23,12 +23,12 @@ jobs:
           unset GH_TOKEN
           echo "Set GITHUB_TOKEN and GH_TOKEN"
           export GITHUB_TOKEN=${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
-          export GH_TOKEN=${GITHUB_TOKEN}
+          export GH_TOKEN=${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           echo "Set git config"
           git config --global user.email "bot@getpantheon.com"
           git config --global user.name "Pantheon Automation"
           echo "Login with gh auth"
-          gh auth login --with-token <<< "${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}"
+          gh auth login
           gh auth status
           # ./update-tool whoami
       - name: Setup tmate session
