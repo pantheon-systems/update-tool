@@ -12,9 +12,6 @@ jobs:
     services:
       mariadb:
         image: mariadb:10.5
-        env:
-          MYSQL_DATABASE: updatinate-wp-db
-          MYSQL_ROOT_PASSWORD: ''
     steps:
       - uses: actions/checkout@v2
       - name: Set PHP version
@@ -27,12 +24,8 @@ jobs:
           mysqladmin -h 127.0.0.1 -u root -proot status
           echo "Setting the root password to empty"
           mysql -h 127.0.0.1 -u root -proot -e "USE mysql; UPDATE user SET authentication_string='' WHERE User='root'; FLUSH PRIVILEGES;"
-          echo "Creating the database"
-          mysql -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS \`updatinate-wp-db\`;"
           echo "Testing blank password"
           mysqladmin -h 127.0.0.1 -u root status
-          echo "Testing the database"
-          mysql -h 127.0.0.1 -u root -e "SHOW DATABASES LIKE 'updatinate-wp-db';"
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
       - name: Install SSH key
