@@ -20,6 +20,9 @@ jobs:
           unset GITHUB_TOKEN
           unset GH_TOKEN
         shell: bash
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ failure() }}
       - name: Run Update Tool Whoami
         shell: bash
         run: |
