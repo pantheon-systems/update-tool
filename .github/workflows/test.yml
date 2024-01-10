@@ -4,8 +4,7 @@ on:
   release:
     types: [created]
 
-permissions:
-  contents: write
+permissions: read-all
 
 jobs:
   test:
