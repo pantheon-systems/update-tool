@@ -14,6 +14,7 @@ jobs:
         image: mariadb:10.5
         env:
           MYSQL_DATABASE: updatinate-wp-db
+          MYSQL_ROOT_PASSWORD:
     steps:
       - uses: actions/checkout@v2
       - name: Set PHP version
