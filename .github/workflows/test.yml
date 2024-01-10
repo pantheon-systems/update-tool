@@ -17,6 +17,10 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.PANTHEON_UPSTREAM_SSH_KEY }}
       - name: Run Update Tool Whoami
         run: |
           git config --global user.email "bot@getpantheon.com"
