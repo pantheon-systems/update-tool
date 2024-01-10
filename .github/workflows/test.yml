@@ -15,6 +15,10 @@ jobs:
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.PANTHEON_UPSTREAM_SSH_KEY }}
+      - name: Set PHP version
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 7.4
       - name: Unset GitHub Tokens
         shell: bash
         run: |
