@@ -20,9 +20,6 @@ jobs:
           unset GITHUB_TOKEN
           unset GH_TOKEN
         shell: bash
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ failure() }}
       - name: Run Update Tool Whoami
         shell: bash
         run: |
@@ -33,5 +30,8 @@ jobs:
           gh auth login --with-token <<< "${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}"
           gh auth status
           ./update-tool whoami
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ failure() }}
       - name: Run tests
         run: composer test
