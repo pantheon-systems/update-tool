@@ -117,7 +117,7 @@ class Remote implements LoggerAwareInterface
      */
     public function commits($branch = "master", $limit = 10)
     {
-        $commits = $this->git('log origin/{branch} --pretty=format:"%H" -n {limit}', ['branch' => $branch, 'limit' => $limit]);
+        $commits = $this->git('log {remote}/{branch} --pretty=format:"%H" -n {limit}', ['remote' => $this->remote, 'branch' => $branch, 'limit' => $limit]);
 
         if (!empty($commits)) {
             return explode("\n", $commits);

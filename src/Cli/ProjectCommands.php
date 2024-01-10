@@ -512,6 +512,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         $remote_repo = $this->createRemote($remote, $api);
+        $upstream_repo = $this->createRemote($upstream, $api);
         $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
         $update_parameters['meta']['name'] = $remote_repo->projectWithOrg();
 
@@ -554,8 +555,13 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         list($latest, $latestTag) = $this->versionAndTagFromLatest($latest, $tag_prefix, $version_pattern);
         $update_parameters['latest-tag'] = $latestTag;
 
+        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
+
+        $source_commits = $upstream_repo->commits($main_branch);
+        $existing_commits = $remote_repo->commits($main_branch);
+
         // Exit with no action and no error if already up-to-date
-        if ($remote_repo->has($latest)) {
+        if ($remote_repo->has($latest) && $source_commits == $existing_commits) {
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
             return;
         }
@@ -602,7 +608,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
         $project_fork = $this->getConfig()->get("projects.$remote.fork");
-        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
 
         $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");

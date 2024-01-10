@@ -51,7 +51,7 @@ class ProjectCommandsTest extends CommandsTestBase
         // Make sure github API has enough time to realize the PR has been closed
         sleep(5);
 
-        // Verify the latest releast in our drops-8 and drupal fixtures.
+        // Verify the latest release in our drops-8 and drupal fixtures.
         $output = $this->executeExpectOK(['project:latest', 'drops-8']);
         $this->assertEquals('8.5.6', $output);
         $output = $this->executeExpectOK(['project:latest', 'drupal']);
@@ -124,9 +124,9 @@ class ProjectCommandsTest extends CommandsTestBase
         sleep(5);
 
         // Create a fork
-//        $wp_repo = $this->fixtures()->forkTestRepo('wp');
+        // $wp_repo = $this->fixtures()->forkTestRepo('wp');
 
-        // Verify the latest releast in our drops-8 and drupal fixtures.
+        // Verify the latest release in our drops-8 and drupal fixtures.
         $output = $this->executeExpectOK(['project:latest', 'wp']);
         $this->assertEquals('4.9.8', $output);
 
