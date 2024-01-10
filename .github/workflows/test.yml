@@ -24,8 +24,8 @@ jobs:
       - name: Start MySQL
         run: |
           sudo systemctl start mysql
-          mysqladmin -h 127.0.0.1 -u root -p status
-          mysql -h 127.0.0.1 -u root -p -e "SHOW DATABASES LIKE 'updatinate-wp-db';"
+          mysqladmin -h 127.0.0.1 -u root -proot status
+          mysql -h 127.0.0.1 -u root -proot -e "SHOW DATABASES LIKE 'updatinate-wp-db';"
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
       - name: Install SSH key
