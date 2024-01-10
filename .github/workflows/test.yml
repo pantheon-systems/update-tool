@@ -26,7 +26,7 @@ jobs:
           sudo systemctl start mysql
           mysqladmin -h 127.0.0.1 -u root -proot status
           echo "Setting the root password to empty"
-          mysql -h 127.0.0.1 -u root -proot -e "USE mysql; UPDATE user SET Password='' WHERE User='root'; FLUSH PRIVILEGES;"
+          mysql -h 127.0.0.1 -u root -proot -e "USE mysql; UPDATE user SET authentication_string=PASSWORD('') WHERE User='root'; FLUSH PRIVILEGES;"
           echo "Creating the database"
           mysql -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS \`updatinate-wp-db\`;"
           echo "Testing blank password"
