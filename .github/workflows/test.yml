@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/pantheon-public/docker-updatinator:3.x
+      options: user --root
     # services:
     #   mariadb:
     #     image: mariadb:10.5
