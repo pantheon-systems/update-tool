@@ -4,6 +4,8 @@ on:
   release:
     types: [created]
 
+permissions: write-all
+
 jobs:
   test:
     runs-on: ubuntu-latest
