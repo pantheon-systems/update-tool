@@ -29,4 +29,7 @@ jobs:
           gh auth status
           # ./update-tool whoami
       - name: Run tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
         run: composer test
