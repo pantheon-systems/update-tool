@@ -30,7 +30,7 @@ jobs:
           echo "Creating the database"
           mysql -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS \`updatinate-wp-db\`;"
           echo "Testing blank password"
-          mysqladmin -h 127.0.0.1 -u root -proot status
+          mysqladmin -h 127.0.0.1 -u root status
           echo "Testing the database"
           mysql -h 127.0.0.1 -u root -e "SHOW DATABASES LIKE 'updatinate-wp-db';"
       - name: Install Composer Dependencies
