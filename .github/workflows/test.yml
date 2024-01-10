@@ -32,7 +32,7 @@ jobs:
           echo "Login with gh auth"
           # gh auth login
           gh auth status
-          # ./update-tool whoami
+          ./update-tool whoami
       - name: Run tests
         env:
           GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
