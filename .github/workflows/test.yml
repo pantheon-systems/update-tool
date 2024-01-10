@@ -9,15 +9,12 @@ permissions: write-all
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/pantheon-public/docker-updatinator:3.x
-      options: user --root
-    # services:
-    #   mariadb:
-    #     image: mariadb:10.5
-    #     env:
-    #       MYSQL_DATABASE: updatinate-wp-db
-    #       MYSQL_ROOT_PASSWORD: ''
+    services:
+      mariadb:
+        image: mariadb:10.5
+        env:
+          MYSQL_DATABASE: updatinate-wp-db
+          MYSQL_ROOT_PASSWORD: root
     steps:
       - uses: actions/checkout@v2
       - name: Set PHP version
@@ -54,4 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: updatinate-wp-db
         run: composer test
