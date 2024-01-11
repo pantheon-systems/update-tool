@@ -57,7 +57,7 @@ The test suite may be run locally by way of some simple composer scripts:
 
 ### Releasing
 
-To release a new version of the Update Tool, simply create a new tag at the appropriate version. This will trigger the tests to run again. Assuming the tests pass, that send a release dispatch that triggers another GitHub Action to publish the release and upload the `update-tool.phar` to the release.
+To release a new version of the Update Tool, create a new tag at the appropriate version. This will trigger the tests to run again. Assuming the tests pass, that sends a release dispatch that triggers another GitHub Action to publish the release and upload the `update-tool.phar` to the release.
 
 Rebuild [pantheon-systems/docker-updatinator](https://github.com/pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
 
