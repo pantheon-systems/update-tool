@@ -12,3 +12,6 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '7.4'
+      - name: Get tag name
+        id: tag_name
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
