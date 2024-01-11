@@ -30,3 +30,12 @@ jobs:
         run: |
           composer install
           composer phar:build
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./update-tool.phar
+          asset_name: update-tool.phar
+          asset_content_type: application/octet-stream
