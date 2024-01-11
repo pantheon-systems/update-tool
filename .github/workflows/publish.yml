@@ -1,0 +1,29 @@
+name: Deploy
+on:
+  repository_dispatch:
+    types: [tests-passed]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+      - name: Get tag name
+        id: tag_name
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
+      - name: Build phar
+        run: |
+          composer install
+          composer phar:build
+      - name: Publish Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: 'update-tool.phar'
+          artifactErrorsFailBuild: true
+          body: Version ${{ steps.tag_name.outputs.tag }}
+          generateReleaseNotes: true
+          makeLatest: true

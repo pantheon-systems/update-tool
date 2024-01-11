@@ -1,0 +1,76 @@
+name: Test
+on:
+  pull_request:
+  push:
+    tags:
+      - '*'
+
+permissions: write-all
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.5
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set PHP version
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 7.4
+      - name: Setup MySQL
+        run: |
+          sudo systemctl start mysql
+          mysqladmin -h 127.0.0.1 -u root -proot status
+          echo "Setting the root password to empty"
+          mysql -h 127.0.0.1 -u root -proot -e "USE mysql; UPDATE user SET authentication_string='' WHERE User='root'; FLUSH PRIVILEGES;"
+          echo "Testing blank password"
+          mysqladmin -h 127.0.0.1 -u root status
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.PANTHEON_UPSTREAM_SSH_KEY }}
+      - name: Unset GitHub Tokens
+        shell: bash
+        run: |
+          unset GITHUB_TOKEN
+          unset GH_TOKEN
+      - name: Run Update Tool Whoami
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+        run: |
+          echo "Set git config"
+          git config --global user.email "bot@getpantheon.com"
+          git config --global user.name "Pantheon Automation"
+          echo "Login with gh auth"
+          # gh auth login
+          gh auth status
+          ./update-tool whoami
+      - name: Install WP-CLI
+        run: |
+          curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+          chmod +x wp-cli.phar
+          sudo mv wp-cli.phar /usr/local/bin/wp
+          wp --info
+      - name: Run tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+          DB_USER: root
+          DB_NAME: updatinate-wp-db
+        run: composer test
+  send-dispatch:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+          repository: pantheon-systems/update-tool
+          event-type: tests-passed
