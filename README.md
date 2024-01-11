@@ -29,7 +29,7 @@ The authentication credentials you will need can be found in the production Vaul
 
 *Production:* In production, this tool uses the credentials defined in the [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinator) project.
 
-*Testing:* CircleCI needs a GitHub token for a service account that has access to the projects in the [test-configurations.yml](tests/fixtures/home/test-configuration.yml) fixtures file. Currently, the github user pantheon-ci-bot is being used. Access it via:
+*Testing:* GitHub Actions needs a GitHub token for a service account that has access to the projects in the [test-configurations.yml](tests/fixtures/home/test-configuration.yml) fixtures file. Currently, the GitHub user `pantheon-ci-bot` is being used. Access it via:
 
 ```
 pvault production read secret/github/access-tokens/pantheon-ci-bot
@@ -57,10 +57,10 @@ The test suite may be run locally by way of some simple composer scripts:
 
 ### Releasing
 
-To release a new version of the Update Tool, run:
+To release a new version of the Update Tool, simply create a new tag at the appropriate version. This will trigger the tests to run again. Assuming the tests pass, that send a release dispatch that triggers another GitHub Action to publish the release and upload the `update-tool.phar` to the release.
 
-- `composer release`
+Rebuild [pantheon-systems/docker-updatinator](https://github.com/pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
 
-This will release a stable version of whatever is indicated in the VERSION file. e.g. if VERSION contains `1.0.3-dev`, then version `1.0.3` will be tagged and released, and the VERSION file will be updated to `1.0.4-dev`. To release version `1.1.0` instead, manually edit the VERSION file to `1.1.0-dev` and then run `composer release`.
+Alternately, you can use the Composer script `composer release`.
 
-The update-tool.phar file will be uploaded to GitHub on every release. Rebuild [pantheon-systems/docker-updatinator](https://github.com/pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
+This will release a stable version of whatever is indicated in the VERSION file. e.g. if VERSION contains `1.0.3-dev`, then version `1.0.3` will be tagged and released, and the VERSION file will be updated to `1.0.4-dev`. To release version `1.1.0` instead, manually edit the VERSION file to `1.1.0-dev` and then run `composer release`. This requires maintaining the `VERSION` file which historically has not been consistently updated, and simply creating the tag and allowing automation to handle the release is a more straightforward process.
