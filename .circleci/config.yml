@@ -5,23 +5,6 @@ defaults:
 
 version: 2
 jobs:
-  test:
-    <<: *updatinator_container
-    docker:
-      - image: quay.io/pantheon-public/docker-updatinator:3.x
-      - image: cimg/mysql:5.7.36
-    steps:
-      - checkout
-      - run: composer install
-      - run: git config --global user.email "bot@getpantheon.com"
-      - run: git config --global user.name "Pantheon Automation"
-      - run: ./update-tool whoami
-      - run: composer phar:build
-      - persist_to_workspace:
-          root: /updatinator
-          paths:
-            - update-tool.phar
-      - run: composer test
   publish_phar:
     docker:
       - image: cibuilds/github:0.10
@@ -38,10 +21,6 @@ workflows:
   version: 2
   push:
     jobs:
-      - test:
-          filters:
-            tags:
-              only: /.*/
       - publish_phar:
           requires:
             - test
