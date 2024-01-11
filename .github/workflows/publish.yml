@@ -3,6 +3,9 @@ on:
   repository_dispatch:
     types: [tests-passed]
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
