@@ -26,3 +26,7 @@ jobs:
           body: Version ${{ steps.tag_name.outputs.tag }}
           draft: false
           prerelease: false
+      - name: Build phar
+        run: |
+          composer install
+          composer phar:build
