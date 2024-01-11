@@ -2,7 +2,7 @@
 
 Fast and smart. Update Tool checks for available software updates and creates pull requests.
 
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/pantheon-systems/update-tool/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/pantheon-systems/update-tool/tree/master)
+[![Test](https://github.com/pantheon-systems/update-tool/actions/workflows/test.yml/badge.svg)](https://github.com/pantheon-systems/update-tool/actions/workflows/test.yml)
 [![Actively Maintained](https://img.shields.io/badge/Pantheon-Actively_Maintained-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#actively-maintained-support)
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
 
