@@ -113,16 +113,25 @@ class Remote implements LoggerAwareInterface
     /**
      * Returns an array of the last X commit hashes.
      *
-     * @return array
+     * @return string
      */
-    public function commits($branch = "master", $limit = 10)
+    public function commits($branch = null)
     {
-        $commits = $this->git('log {remote}/{branch} --pretty=format:"%H" -n {limit}', ['remote' => $this->remote, 'branch' => $branch, 'limit' => $limit]);
+        // If branch wasn't manually specified, retrieve the default branch from the repo.
+        if (empty($branch)) {
+            $branch = $this->git('remote show {remote}', ['remote' => $this->remote]);
+            $branch = trim($branch[3]);
+            // The response always begins with "HEAD branch: ", trim.
+            $branch = substr($branch, 13);
+        }
 
-        if (!empty($commits)) {
-            return explode("\n", $commits);
+
+        $commit_hash = $this->git('ls-remote {remote} {branch}', ['remote' => $this->remote, 'branch' => $branch]);
+
+        if (!empty($commit_hash)) {
+            return $commit_hash;
         } else {
-            return [];
+            return null;
         }
     }
 

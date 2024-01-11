@@ -557,8 +557,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
 
-        $source_commits = $upstream_repo->commits($main_branch);
-        $existing_commits = $remote_repo->commits($main_branch);
+        $source_commits = $upstream_repo->commits();
+        $existing_commits = $remote_repo->commits();
 
         // Exit with no action and no error if already up-to-date
         if ($remote_repo->has($latest) && $source_commits == $existing_commits) {
