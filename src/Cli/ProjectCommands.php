@@ -561,7 +561,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $existing_commits = $remote_repo->commits();
 
         // Exit with no action and no error if already up-to-date
-        if ($remote_repo->has($latest) && $source_commits == $existing_commits) {
+        if ($source_commits == $existing_commits) {
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
             return;
         }
