@@ -2,6 +2,7 @@
 
 namespace UpdateTool;
 
+use UpdateTool\Update\Methods;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class ProjectCommandsTest extends CommandsTestBase
@@ -177,6 +178,8 @@ class ProjectCommandsTest extends CommandsTestBase
         // Check to see if we can compose a release node url for our fixtures
         $output = $this->executeExpectOK(['project:release-node', 'wpms', '--format=string']);
         $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
+
+        exec('wp db drop --yes');
 
         // Try to create an upstream update PR for our wpms fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms']);
