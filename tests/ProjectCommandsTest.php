@@ -179,7 +179,7 @@ class ProjectCommandsTest extends CommandsTestBase
         $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
 
         // Try to create an upstream update PR for our wpms fixture
-        $output = $this->executeExpectOK(['project:upstream:update', 'wpms']);
+        $output = $this->executeExpectOK(['project:upstream:update --force-db-drop', 'wpms']);
         $this->assertContains('Updating wpms from 4.9.8 to 5.0.1', $output);
 
         // Ensure that the PR that was created is logged
