@@ -126,7 +126,7 @@ class ProjectCommandsTest extends CommandsTestBase
         // Create a fork
         // $wp_repo = $this->fixtures()->forkTestRepo('wp');
 
-        // Verify the latest release in our drops-8 and drupal fixtures.
+        // Verify the latest release in our wp fixture.
         $output = $this->executeExpectOK(['project:latest', 'wp']);
         $this->assertEquals('4.9.8', $output);
 
@@ -138,7 +138,7 @@ class ProjectCommandsTest extends CommandsTestBase
         $output = $this->executeExpectOK(['project:release-node', 'wp', '--format=string']);
         $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
 
-        // Try to create an upstream update PR for our drops-8 fixture
+        // Try to create an upstream update PR for our wp fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
         $this->assertContains('Updating wp from 4.9.8 to 5.0.1', $output);
 
@@ -154,8 +154,9 @@ class ProjectCommandsTest extends CommandsTestBase
     }
 
     /**
-     * Test to see if we can update Pantheon's WordPress from 4.9.8 to 5.0.1
-     * using a snapshot.
+     * Test to see if we can update Pantheon's WordPress Multisite from 4.9.8
+     * to 5.0.1 using a snapshot.
+     *
      */
     public function testWordPressMultisiteUpdate()
     {
@@ -165,7 +166,7 @@ class ProjectCommandsTest extends CommandsTestBase
         // Make sure github API has enough time to realize the PR has been closed
         sleep(5);
 
-        // Verify the latest release in our drops-8 and drupal fixtures.
+        // Verify the latest release in our wpms fixture.
         $output = $this->executeExpectOK(['project:latest', 'wpms']);
         $this->assertEquals('4.9.8', $output);
 
@@ -177,7 +178,7 @@ class ProjectCommandsTest extends CommandsTestBase
         $output = $this->executeExpectOK(['project:release-node', 'wpms', '--format=string']);
         $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
 
-        // Try to create an upstream update PR for our drops-8 fixture
+        // Try to create an upstream update PR for our wpms fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms']);
         $this->assertContains('Updating wpms from 4.9.8 to 5.0.1', $output);
 
