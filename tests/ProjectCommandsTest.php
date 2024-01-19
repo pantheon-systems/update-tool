@@ -179,7 +179,8 @@ class ProjectCommandsTest extends CommandsTestBase
         $output = $this->executeExpectOK(['project:release-node', 'wpms', '--format=string']);
         $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
 
-        exec('wp db drop --yes');
+        $path = $this->fixtures()->getPath('wpms');
+        exec("wp db drop --yes --path=$path");
 
         // Try to create an upstream update PR for our wpms fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms']);
