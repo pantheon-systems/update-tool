@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - '*'
+  workflow_dispatch:
+    inputs:
+      tmate_enabled:
+        description: 'Enable tmate session'
+        required: true
+        default: "0"
 
 permissions: write-all
 
@@ -64,6 +70,9 @@ jobs:
           DB_USER: root
           DB_NAME: updatinate-wp-db
         run: composer test
+      - name: Setup tmate session
+        if: ${{ github.event.inputs.tmate_enabled == 1 }}
+        uses: mxschmitt/action-tmate@v3
   send-dispatch:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
