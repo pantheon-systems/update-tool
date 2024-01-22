@@ -180,10 +180,9 @@ class ProjectCommandsTest extends CommandsTestBase
         $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
 
         $path = $this->fixtures()->getPath('wpms');
-        var_dump($path);
+        $wp_repo = $this->fixtures()->forkTestRepo('wpms');
+
         // list all the files and directories at $path
-        $files = scandir($path);
-        var_dump($files);
         exec("set -e; echo 'dropping wp database via wp-cli'; wp db drop --yes --path=$path");
         exit(1);
         // Try to create an upstream update PR for our wpms fixture
