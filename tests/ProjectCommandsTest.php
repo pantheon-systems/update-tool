@@ -183,8 +183,8 @@ class ProjectCommandsTest extends CommandsTestBase
         $wp_repo = $this->fixtures()->forkTestRepo('wpms');
 
         // list all the files and directories at $path
-        exec("set -e; echo 'dropping wp database via wp-cli'; wp db drop --yes --path=$path");
-        exit(1);
+        // exec("set -e; echo 'dropping wp database via wp-cli'; wp db drop --yes --path=$path");
+        // exit(1);
         // Try to create an upstream update PR for our wpms fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms']);
         $this->assertContains('Updating wpms from 4.9.8 to 5.0.1', $output);
