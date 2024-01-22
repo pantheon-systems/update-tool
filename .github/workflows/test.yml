@@ -62,11 +62,9 @@ jobs:
           GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           DB_USER: root
           DB_NAME: updatinate-wp-db
-        run: composer test
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
+        run: |
+          composer test
+          ls -la .
   send-dispatch:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
