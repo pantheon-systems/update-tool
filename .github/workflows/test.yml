@@ -53,8 +53,6 @@ jobs:
           echo "Set git config"
           git config --global user.email "bot@getpantheon.com"
           git config --global user.name "Pantheon Automation"
-          echo "Login with gh auth"
-          # gh auth login
           gh auth status
           ./update-tool whoami
       - name: Install WP-CLI
