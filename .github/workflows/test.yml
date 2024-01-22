@@ -4,12 +4,7 @@ on:
   push:
     tags:
       - '*'
-  workflow_dispatch:
-    inputs:
-      tmate_enabled:
-        description: 'Enable tmate session'
-        required: true
-        default: "0"
+
 
 permissions: write-all
 
@@ -70,6 +65,8 @@ jobs:
         run: composer test
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
   send-dispatch:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
