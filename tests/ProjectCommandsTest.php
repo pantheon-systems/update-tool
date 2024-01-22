@@ -186,7 +186,7 @@ class ProjectCommandsTest extends CommandsTestBase
         // exec("set -e; echo 'dropping wp database via wp-cli'; wp db drop --yes --path=$path");
         // exit(1);
         // Try to create an upstream update PR for our wpms fixture
-        $output = $this->executeExpectOK(['project:upstream:update', 'wpms']);
+        $output = $this->executeExpectOK(['project:upstream:update', 'wpms', ['--force-db-drop' => true]]);
         $this->assertContains('Updating wpms from 4.9.8 to 5.0.1', $output);
 
         // Ensure that the PR that was created is logged
