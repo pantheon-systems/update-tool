@@ -85,9 +85,12 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
      */
     public function update(WorkingCopy $originalProject, array $parameters)
     {
-        $forceDbDrop = (!empty($parameters['force-db-drop']) || $this->forceDbDrop) ?? false;
-        $path = $originalProject->dir();
+        $forceDbDrop = false;
+        if (!empty($parameters['force-db-drop']) || $this->forceDbDrop) {
+            $forceDbDrop = true;
+        }
 
+        $path = $originalProject->dir();
         $wpConfigPath = "$path/wp-config.php";
         $wpConfigData = file_get_contents($wpConfigPath);
         unlink($wpConfigPath);
