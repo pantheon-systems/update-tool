@@ -23,6 +23,16 @@ projects:
       major: '[4-9]'
       version-pattern: '#.#.#'
       update-method: WpCliUpdate
+  wpms:
+    repo: git@github.com:pantheon-fixtures/pantheon-wpms-fixture.git
+    path: ${working-copy-path}/WordPressNetwork
+    main-branch: main
+    force-db-drop: true
+    upstream:
+      project: wordpress-network
+      major: '[4-9]'
+      version-pattern: '#.#.#'
+      update-method: WpCliUpdate
   drops-8:
     repo: git@github.com:pantheon-fixtures/drops-8-fixture.git
     path: ${working-copy-path}/drops-8
@@ -46,3 +56,11 @@ projects:
       url: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture/version-check.json'
     release-node:
       atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture/releases.atom'
+  wordpress-network:
+    repo: git@github.com:WordPress/WordPress.git
+    path: ${working-copy-path}/WordPressNetworkUpstream
+    main-branch: master
+    version-api:
+      url: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wpms-fixture/api-fixture/version-check.json'
+    release-node:
+      atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wpms-fixture/api-fixture/releases.atom'
