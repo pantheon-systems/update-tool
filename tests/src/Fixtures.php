@@ -272,11 +272,6 @@ class Fixtures
         return $this->getConfig()->get('log.path');
     }
 
-    public function getPath($project)
-    {
-        return $this->getConfig()->get("projects.$project.path");
-    }
-
     /**
      * Create a new temporary directory.
      *
