@@ -27,6 +27,7 @@ projects:
     repo: git@github.com:pantheon-fixtures/pantheon-wpms-fixture.git
     path: ${working-copy-path}/WordPressNetwork
     main-branch: main
+    force-db-drop: true
     upstream:
       project: wordpress-network
       major: '[4-9]'
