@@ -178,7 +178,6 @@ class ProjectCommandsTest extends CommandsTestBase
         // Check to see if we can compose a release node url for our fixtures
         $output = $this->executeExpectOK(['project:release-node', 'wpms', '--format=string']);
         $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
-        var_dump($this->fixtures->getConfig()->get('projects.wpms.force-db-drop')); exit;
         // $path = $this->fixtures()->getPath('wpms');
         // $wp_repo = $this->fixtures()->forkTestRepo('wpms');
 
