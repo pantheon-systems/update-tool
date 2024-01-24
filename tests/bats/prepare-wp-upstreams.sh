@@ -17,7 +17,9 @@ projects=("WordPress" "wordpress-network")
 for project in "${projects[@]}"; do
 	echo "Preparing ${project}..."
 	# Parse path from the config file.
-	path=$(yq e ".projects.${project}.path" "${config}")
+	extracted_path=$(yq e ".projects.${project}.path" "${config}")
+	# Replace the placeholder with the actual working copy path.
+	path="${extracted_path//\${working-copy-path}/$TESTDIR}"
 
 	# Change directory to the project path.
 	cd "${path}" || { echo "Failed to change directory to ${path}"; exit 1; }
