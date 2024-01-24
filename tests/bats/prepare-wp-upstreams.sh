@@ -14,15 +14,12 @@ fi
 echo "Getting configuration file..."
 config="${GITHUB_WORKSPACE}/tests/fixtures/home/test-configuration.yml"
 projects=("WordPress" "wordpress-network")
+working-copy-path="${TESTDIR}/work/"
 for project in "${projects[@]}"; do
 	echo "Preparing ${project}..."
-	# Parse path from the config file.
-	extracted_path=$(yq e ".projects.${project}.path" "${config}")
-	# Replace the placeholder with the actual working copy path.
-	path="${extracted_path//\$\{working-copy-path\}/$TESTDIR}"
 
 	# Change directory to the project path.
-	cd "${path}" || { echo "Failed to change directory to ${path}"; exit 1; }
+	cd "${working-copy-path}" || { echo "Failed to change directory to ${working-copy-path}"; exit 1; }
 
 	# Parse the JSON file.
 	echo "Parsing JSON file..."
