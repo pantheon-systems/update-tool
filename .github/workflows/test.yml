@@ -66,9 +66,7 @@ jobs:
         run: |
           composer install-tools
       - name: Prepare WP upstreams
-        run: |
-          echo "TESTDIR=${GITHUB_WORKSPACE}/fixtures" >> $GITHUB_ENV
-          ./tests/bats/prepare-wp-upstreams.sh
+        run: ./tests/bats/prepare-wp-upstreams.sh
         shell: bash
   send-dispatch:
     if: startsWith(github.ref, 'refs/tags/')
