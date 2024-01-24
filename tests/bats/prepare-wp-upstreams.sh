@@ -14,7 +14,7 @@ fi
 echo "Getting configuration file..."
 config="${GITHUB_WORKSPACE}/tests/fixtures/home/test-configuration.yml"
 projects=("WordPress" "wordpress-network")
-working-copy-path="${GITHUB_WORKSPACE}/fixtures/work/"
+working-copy-path="${GITHUB_WORKSPACE}/work/"
 for project in "${projects[@]}"; do
 	echo "Preparing ${project}..."
 
