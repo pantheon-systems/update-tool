@@ -16,12 +16,12 @@ config="${GITHUB_WORKSPACE}/tests/fixtures/home/test-configuration.yml"
 projects=("WordPress" "wordpress-network")
 
 mkdir -p "${GITHUB_WORKSPACE}/work/"
-working-copy-path="${GITHUB_WORKSPACE}/work/"
+working_copy_path="${GITHUB_WORKSPACE}/work/"
 for project in "${projects[@]}"; do
 	echo "Preparing ${project}..."
 
 	# Change directory to the project path.
-	cd "${working-copy-path}" || { echo "Failed to change directory to ${working-copy-path}"; exit 1; }
+	cd "${working_copy_path}" || { echo "Failed to change directory to ${working_copy_path}"; exit 1; }
 
 	# Clone the project.
 	repo_url=$(yq e ".projects.${project}.repo" "${config}")
