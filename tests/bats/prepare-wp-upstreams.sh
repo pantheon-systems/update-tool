@@ -5,6 +5,7 @@ set -e
 echo "Preparing WordPress upstreams..."
 
 # Check Git config.
+gh auth status
 if [ "$(git config --get user.email)" != "bot@getpantheon.com" ]; then
 	echo "Configuring Git..."
 	git config --global user.email "bot@getpantheon.com"
