@@ -56,6 +56,9 @@
             "@unit",
             "@cs"
         ],
+        "bats": [
+            "bats tests/bats/*.bats"
+        ],
         "release": [
             "release VERSION"
         ],
