@@ -19,7 +19,7 @@ for project in "${projects[@]}"; do
 	# Parse path from the config file.
 	extracted_path=$(yq e ".projects.${project}.path" "${config}")
 	# Replace the placeholder with the actual working copy path.
-	path="${extracted_path//\${working-copy-path}/$TESTDIR}"
+	path="${extracted_path//\$\{working-copy-path\}/$TESTDIR}"
 
 	# Change directory to the project path.
 	cd "${path}" || { echo "Failed to change directory to ${path}"; exit 1; }
