@@ -9,8 +9,6 @@ permissions: write-all
 
 jobs:
   test:
-    env:
-      TESTDIR: ${GITHUB_WORKSPACE}/fixtures
     runs-on: ubuntu-latest
     services:
       mariadb:
@@ -68,7 +66,9 @@ jobs:
         run: |
           composer install-tools
       - name: Prepare WP upstreams
-        run: ./tests/bats/prepare-wp-upstreams.sh
+        run: |
+          echo "TESTDIR="${GITHUB_WORKSPACE}/fixtures" >> ${GITHUB_ENV}
+          ./tests/bats/prepare-wp-upstreams.sh
         shell: bash
   send-dispatch:
     if: startsWith(github.ref, 'refs/tags/')
