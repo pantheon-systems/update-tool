@@ -12,7 +12,7 @@ if [ "$(git config --get user.email)" != "bot@getpantheon.com" ]; then
 fi
 
 echo "Getting configuration file..."
-config="${GITHUB_WORKSPACE}/fixtures/home/test-configuration.yml"
+config="${GITHUB_WORKSPACE}/tests/fixtures/home/test-configuration.yml"
 projects=("WordPress" "wordpress-network")
 for project in "${projects[@]}"; do
 	echo "Preparing ${project}..."
