@@ -13,7 +13,7 @@ fi
 
 echo "Getting configuration file..."
 config="${GITHUB_WORKSPACE}/tests/fixtures/home/test-configuration.yml"
-projects=("WordPress" "wordpress-network")
+projects=("wp" "wpms")
 
 mkdir -p "${GITHUB_WORKSPACE}/work/"
 working_copy_path="${GITHUB_WORKSPACE}/work/"
