@@ -5,12 +5,18 @@ set -e
 echo "Preparing WordPress upstreams..."
 
 # Check Git config.
+echo "Checking Git config..."
 gh auth status
 if [ "$(git config --get user.email)" != "bot@getpantheon.com" ]; then
 	echo "Configuring Git..."
 	git config --global user.email "bot@getpantheon.com"
 	git config --global user.name "Pantheon Automation"
 fi
+
+# Check SSH access
+echo "Checking SSH access..."
+ssh -vT git@github.com
+ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 echo "Getting configuration file..."
 config="${GITHUB_WORKSPACE}/tests/fixtures/home/test-configuration.yml"
