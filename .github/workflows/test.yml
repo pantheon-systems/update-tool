@@ -66,10 +66,10 @@ jobs:
         run: |
           composer install-tools
       - name: Prepare WP upstreams
-        run: ./tests/bats/prepare-wp-upstreams.sh
         env:
           GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+        run: ./tests/bats/prepare-wp-upstreams.sh
         shell: bash
   send-dispatch:
     if: startsWith(github.ref, 'refs/tags/')
