@@ -13,10 +13,6 @@ if [ "$(git config --get user.email)" != "bot@getpantheon.com" ]; then
 	git config --global user.name "Pantheon Automation"
 fi
 
-# Check SSH access
-echo "Checking SSH access..."
-ssh -vT git@github.com
-ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 echo "Getting configuration file..."
 config="${GITHUB_WORKSPACE}/tests/fixtures/home/test-configuration.yml"
@@ -31,7 +27,9 @@ for project in "${projects[@]}"; do
 	cd "${working_copy_path}" || { echo "Failed to change directory to ${working_copy_path}"; exit 1; }
 
 	# Clone the project.
-	repo_url=$(yq e ".projects.${project}.repo" "${config}")
+	repo_ssh_url=$(yq e ".projects.${project}.repo" "${config}")
+	# Use an HTTPS URL for cloning.
+	repo_url=$(echo "${repo_ssh_url}" | sed -e 's|git@github.com:\(.*\)\.git|https://github.com/\1.git|')
 	echo "Cloning ${project} from ${repo_url}..."
 	git clone "${repo_url}" ./"${project}"
 	cd "${project}" || { echo "Failed to change directory to ${project}"; exit 1; }
