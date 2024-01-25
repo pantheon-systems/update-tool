@@ -198,8 +198,7 @@ class ProjectCommandsTest extends CommandsTestBase
     }
 
     /**
-     * Test to see if we can update Pantheon's WordPress from 4.9.8 to 5.0.1
-     * using a snapshot.
+     * Test to see if we can update Pantheon's WordPress from a commit
      *
      * @group WordPressTests
      */
@@ -224,7 +223,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to create an upstream update PR for our wp fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wp-commit']);
-        $this->assertContains('Updating wp from 4.9.8 to 5.0.1', $output);
+        $this->assertContains('Updating wp from 4.9.8 to 4.9.8', $output);
 
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
@@ -234,12 +233,12 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'wp-commit']);
-        $this->assertContains('[notice] Pull request already exists for available update 5.0.1; nothing more to do.', $output);
+        $this->assertContains('[notice] Pull request already exists for available update 4.9.8; nothing more to do.', $output);
     }
 
     /**
-     * Test to see if we can update Pantheon's WordPress Multisite from 4.9.8
-     * to 5.0.1 using a snapshot.
+     * Test to see if we can update Pantheon's WordPress Multisite from a
+     *  commit.
      *
      * @group WordPressTests
      */
@@ -261,7 +260,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to create an upstream update PR for our wpms fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms-commit']);
-        $this->assertContains('Updating wpms from 4.9.8 to 5.0.1', $output);
+        $this->assertContains('Updating wpms from 4.9.8 to 4.9.8', $output);
 
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
@@ -271,6 +270,6 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms-commit']);
-        $this->assertContains('[notice] Pull request already exists for available update 5.0.1; nothing more to do.', $output);
+        $this->assertContains('[notice] Pull request already exists for available update 4.9.8; nothing more to do.', $output);
     }
 }
