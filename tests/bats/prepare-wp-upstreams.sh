@@ -34,7 +34,6 @@ for project in "${projects[@]}"; do
 
 	# Change directory to the project path.
 	cd "${working_copy_path}" || { echo "Failed to change directory to ${working_copy_path}"; exit 1; }
-	pwd
 
 	# Fiddle with the repo URL.
 	repo_ssh_url=$(yq e ".projects.${project}.repo" "${config}")
