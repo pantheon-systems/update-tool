@@ -55,13 +55,6 @@ jobs:
           chmod +x wp-cli.phar
           sudo mv wp-cli.phar /usr/local/bin/wp
           wp --info
-      - name: Run tests
-        env:
-          GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
-          GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
-          DB_USER: root
-          DB_NAME: updatinate-wp-db
-        run: composer test
       - name: Setup tools
         run: |
           composer install-tools
@@ -71,13 +64,13 @@ jobs:
           GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
         run: ./tests/bin/prepare-wp-upstreams.sh
         shell: bash
-      - name: Run WP Tests after commit
+      - name: Run tests
         env:
           GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           DB_USER: root
           DB_NAME: updatinate-wp-db
-        run: composer test-wp
+        run: composer test
   send-dispatch:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
