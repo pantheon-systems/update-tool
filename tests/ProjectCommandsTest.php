@@ -223,7 +223,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to create an upstream update PR for our wp fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wp-commit']);
-        $this->assertContains('Updating wp from 4.9.8 to 4.9.8', $output);
+        $this->assertContains('Updating wp-commit from 4.9.8 to', $output);
 
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
@@ -260,7 +260,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to create an upstream update PR for our wpms fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms-commit']);
-        $this->assertContains('Updating wpms from 4.9.8 to 4.9.8', $output);
+        $this->assertContains('Updating wpms-commit from 4.9.8 to', $output);
 
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
