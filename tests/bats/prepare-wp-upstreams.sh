@@ -12,6 +12,8 @@ if [ "$(git config --get user.email)" != "bot@getpantheon.com" ]; then
 	git config --global user.email "bot@getpantheon.com"
 	git config --global user.name "Pantheon Automation"
 fi
+git config --global credential.helper store
+echo "https://${GH_TOKEN}@github.com" > ~/.git-credentials
 
 
 echo "Getting configuration file..."
