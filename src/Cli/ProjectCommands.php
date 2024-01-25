@@ -566,6 +566,18 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             return;
         }
 
+        // Source commits are not equal to existing commits, compare the releases.
+        if ($current === $latest) {
+            // Set $latest to the last commit hash in the $soucre_commits string from git if $current and $latest are the same version.
+            if (is_array($source_commits)) {
+                $latest = end($source_commits);
+            } else {
+                $latest = $source_commits;
+            }
+            // Strip out everything after the first string of characters representing the git hash and trim to a 7 character short hash.
+            $latest = substr(preg_replace('/^([a-z0-9]+).*/', '$1', $latest), 0, 7);
+        }
+
         $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
 
         // If we are running in check-only mode, exit now, before we do anything.
