@@ -33,6 +33,26 @@ projects:
       major: '[4-9]'
       version-pattern: '#.#.#'
       update-method: WpCliUpdate
+  wp-commit:
+    repo: git@github.com:pantheon-fixtures/pantheon-wp-fixture.git
+    path: ${working-copy-path}/WordPress-commit
+    main-branch: default
+    force-db-drop: true
+    upstream:
+      project: WordPress-commit
+      major: '[4-9]'
+      version-pattern: '#.#.#'
+      update-method: WpCliUpdate
+  wpms-commit:
+    repo: git@github.com:pantheon-fixtures/pantheon-wpms-fixture.git
+    path: ${working-copy-path}/WordPressNetwork-commit
+    main-branch: main
+    force-db-drop: true
+    upstream:
+      project: wordpress-network-commit
+      major: '[4-9]'
+      version-pattern: '#.#.#'
+      update-method: WpCliUpdate
   drops-8:
     repo: git@github.com:pantheon-fixtures/drops-8-fixture.git
     path: ${working-copy-path}/drops-8
@@ -64,3 +84,19 @@ projects:
       url: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wpms-fixture/api-fixture/version-check.json'
     release-node:
       atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wpms-fixture/api-fixture/releases.atom'
+  WordPress-commit:
+    repo: git@github.com:WordPress/WordPress.git
+    path: ${working-copy-path}/WordPressUpstream-commit
+    main-branch: master
+    version-api:
+      url: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture-4.9.8/version-check.json'
+    release-node:
+      atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture-4.9.8/releases.atom'
+  wordpress-network-commit:
+    repo: git@github.com:WordPress/WordPress.git
+    path: ${working-copy-path}/WordPressNetworkUpstream-commit
+    main-branch: master
+    version-api:
+      url: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wpms-fixture/api-fixture-4.9.8/version-check.json'
+    release-node:
+      atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wpms-fixture/api-fixture-4.9.8/releases.atom'
