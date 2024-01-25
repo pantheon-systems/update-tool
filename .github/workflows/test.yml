@@ -32,7 +32,7 @@ jobs:
       - name: Install SSH key
         uses: webfactory/ssh-agent@v0.7.0
         with:
-          ssh-private-key: ${{ secrets.PANTHEON_CI_BOT_PRIVATE_SSH_KEY }}
+          ssh-private-key: ${{ secrets.PANTHEON_UPSTREAM_SSH_KEY }}
       - name: Unset GitHub Tokens
         shell: bash
         run: |
