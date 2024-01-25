@@ -58,8 +58,8 @@
             "@unit",
             "@cs"
         ],
-        "bats": [
-            "bats tests/bats/*.bats"
+        "test-wp": [
+            "phpunit --colors=always --group WordPressTests"
         ],
         "release": [
             "release VERSION"
