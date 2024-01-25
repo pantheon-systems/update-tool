@@ -115,6 +115,8 @@ class ProjectCommandsTest extends CommandsTestBase
     /**
      * Test to see if we can update Pantheon's WordPress from 4.9.8 to 5.0.1
      * using a snapshot.
+     *
+     * @group WordPressTests
      */
     public function testWordPressUpdate()
     {
@@ -158,6 +160,7 @@ class ProjectCommandsTest extends CommandsTestBase
      * Test to see if we can update Pantheon's WordPress Multisite from 4.9.8
      * to 5.0.1 using a snapshot.
      *
+     * @group WordPressTests
      */
     public function testWordPressMultisiteUpdate()
     {
