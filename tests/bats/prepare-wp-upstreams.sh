@@ -72,7 +72,7 @@ for project in "${projects[@]}"; do
 	echo "Committing changes..."
 	git add "${updates_json}"
 	git commit -m "Increment testRun counter to ${testRun} for ${project} project."
-	git push origin master
+	git push origin ${branch}
 done
 
 echo "Done. ✅"
