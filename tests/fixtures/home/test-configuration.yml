@@ -37,7 +37,6 @@ projects:
     repo: git@github.com:pantheon-fixtures/pantheon-wp-fixture.git
     path: ${working-copy-path}/WordPress-commit
     main-branch: default
-    force-db-drop: true
     upstream:
       project: WordPress-commit
       major: '[4-9]'
