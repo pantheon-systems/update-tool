@@ -35,10 +35,12 @@ for project in "${projects[@]}"; do
 	# Change directory to the project path.
 	cd "${working_copy_path}" || { echo "Failed to change directory to ${working_copy_path}"; exit 1; }
 
-	# Clone the project.
+	# Fiddle with the repo URL.
 	repo_ssh_url=$(yq e ".projects.${project}.repo" "${config}")
-	# Use an HTTPS URL for cloning.
-	repo_url=$(echo "${repo_ssh_url}" | sed -e 's|git@github.com:\(.*\)\.git|https://github.com/\1.git|')
+	# Insert GH_TOKEN into the URL for HTTPS cloning.
+	repo_url=$(echo "${repo_ssh_url}" | sed -e "s|git@github.com:\(.*\)\.git|https://${GH_TOKEN}@github.com/\1.git|")
+
+	# Clone the project.
 	echo "Cloning ${project} from ${repo_url}..."
 	git clone "${repo_url}" ./"${project}"
 	cd "${project}" || { echo "Failed to change directory to ${project}"; exit 1; }
