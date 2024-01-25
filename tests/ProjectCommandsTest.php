@@ -220,7 +220,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'wp-commit']);
-        $this->assertContains('wp 4.9.8 has an available update: 4.9.8', $output);
+        $this->assertContains('wp-commit 4.9.8 has an available update: 4.9.8', $output);
 
         // Try to create an upstream update PR for our wp fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wp-commit']);
@@ -257,7 +257,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'wpms-commit']);
-        $this->assertContains('wpms 4.9.8 has an available update: 4.9.8', $output);
+        $this->assertContains('wpms-commit 4.9.8 has an available update: 4.9.8', $output);
 
         // Try to create an upstream update PR for our wpms fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms-commit']);
