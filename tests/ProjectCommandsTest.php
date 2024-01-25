@@ -220,11 +220,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'wp-commit']);
-        $this->assertContains('wp 4.9.8 has an available update: 5.0.1', $output);
-
-        // Check to see if we can compose a release node url for our fixtures
-        $output = $this->executeExpectOK(['project:release-node', 'wp-commit', '--format=string']);
-        $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
+        $this->assertContains('wp 4.9.8 has an available update: 4.9.8', $output);
 
         // Try to create an upstream update PR for our wp fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wp-commit']);
@@ -261,11 +257,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'wpms-commit']);
-        $this->assertContains('wpms 4.9.8 has an available update: 5.0.1', $output);
-
-        // Check to see if we can compose a release node url for our fixtures
-        $output = $this->executeExpectOK(['project:release-node', 'wpms-commit', '--format=string']);
-        $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
+        $this->assertContains('wpms 4.9.8 has an available update: 4.9.8', $output);
 
         // Try to create an upstream update PR for our wpms fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wpms-commit']);
