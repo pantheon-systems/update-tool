@@ -67,10 +67,12 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      *   circle_ci: Uses Circle CI
      *   circle_vars: Circle Env Vars
      *   circle_contexts: Circle Contexts
+     *   admins: Admins
      *   codeowners: Code Owners
      *   owners_src: Owners Source
      *   ownerTeam: Owning Team
      *   support_level: Support Level
+     *   branch_protections: Branch Protections
      * @default-fields full_name,codeowners,owners_src,circle_vars,circle_contexts,support_level
      * @default-string-field full_name
      *
@@ -80,15 +82,36 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'as' => 'default',
         'format' => 'table',
         'only-public' => false,
+        'only-private' => false,
         'include-archived' => false,
+        'fetch-admins' => false,
+        'fetch-branch-protections' => false,
         'forks' => true,
     ])
     {
         $api = $this->api($options['as']);
         $pager = $api->resultPager();
 
-        $repoApi = $api->gitHubAPI()->api('organization');
-        $repos = $pager->fetchAll($repoApi, 'repositories', [$org]);
+        $repoApi = $api->gitHubAPI()->api('repo');
+        $orgApi = $api->gitHubAPI()->api('organization');
+        $protectionAPI = $repoApi->protection();
+        $teamsApi = $orgApi->teams();
+
+        // Get list of all admins of the org, so that we can exclude these from
+        // the user list.
+        $orgAdmins = [];
+        if ($options['fetch-admins']) {
+            $orgMembersApi = $orgApi->members();
+            $members = $pager->fetchAll($orgMembersApi, 'all', [$org]);
+            foreach ($members as $id => $member) {
+                $memberData = $orgMembersApi->member($org, $member['login']);
+                if ($memberData['role'] == 'admin') {
+                    $orgAdmins[] = $member['login'];
+                }
+            }
+        }
+
+        $repos = $pager->fetchAll($orgApi, 'repositories', [$org]);
 
         // Remove archived repositories from consideration
         if (!$options['include-archived']) {
@@ -104,6 +127,13 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             });
         }
 
+        // Remove public repos.
+        if ($options['only-private']) {
+            $repos = array_filter($repos, function ($repo) {
+                return !empty($repo['private']);
+            });
+        }
+
         // Remove fork repos.
         if (!$options['forks']) {
             $repos = array_filter($repos, function ($repo) {
@@ -114,12 +144,13 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $circleApi = new CircleAPI();
 
         // TEMPORARY: only do the first 10
-        // $repos = array_splice($repos, 0, 10);
+        // $repos = array_splice($repos, 0, 1);
 
         // Add CODEOWNER information to repository data
         $reposResult = [];
         foreach ($repos as $key => $repo) {
             $resultKey = $repo['full_name'];
+            $defaultBranch = $repo['default_branch'];
 
             list($codeowners, $ownerSource) = $this->guessCodeowners($api, $org, $repo['name']);
 
@@ -130,6 +161,69 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $repo['ownerTeam'] = 'n/a';
             } else {
                 $repo['ownerTeam'] = str_replace("@$org/", "", $codeowners[0]);
+            }
+
+            //$repoMetadata = $repoApi->show($org, $repo['name']);
+            //var_export($repoMetadata);
+
+            // Fetch metadata related to repository admins
+            if ($options['fetch-admins']) {
+                $admins = [];
+                $teamAdmins = [];
+                try {
+                    $teams = $repoApi->teams($org, $repo['name']);
+                    foreach ($teams as $team) {
+                        $machineName = $team['slug'];
+                        if (!empty($team['permissions']['admin'])) {
+                            $admins[] = "@$org/$machineName";
+                            $members = $teamsApi->members($machineName, $org);
+                            foreach ($members as $member) {
+                                $teamAdmins[] = $member['login'];
+                            }
+                        }
+                    }
+                    $collaborators = $repoApi->collaborators()->all($org, $repo['name']);
+                    foreach ($collaborators as $id => $collaborator) {
+                        $login = $collaborator['login'];
+                        if (!empty($collaborator['permissions']['admin']) && !in_array($login, $orgAdmins) && !in_array($login, $teamAdmins)) {
+                            $admins[] = $login;
+                        }
+                    }
+                } catch (\Exception $e) {
+                }
+                $repo['admins'] = $admins;
+            }
+
+            // Fetch metadata related to branch protections
+            $branch_protections = [];
+            if ($options['fetch-branch-protections']) {
+                $protections = [];
+                $protectionData = [];
+                try {
+                    $protectionData = $protectionAPI->show($org, $repo['name'], $defaultBranch);
+                } catch (\Exception $e) {
+                    $protections = ['unprotected'];
+                }
+
+                // NOTE: We do not report restrictions on who can push to the default branch, if an allowlist has been set up for this.
+
+                // Insert protections related to required reviews
+                if (isset($protectionData['required_pull_request_reviews']) && ($protectionData['required_pull_request_reviews']['required_approving_review_count'] > 0)) {
+                    $protections[] = 'required_pull_request_reviews';
+                    foreach ($protectionData as $key => $value) {
+                        if (is_bool($value) && $value) {
+                            $protections[] = $key;
+                        }
+                    }
+                }
+                // Insert protections with generic structured ('enabled' => true)
+                foreach ($protectionData as $key => $protection) {
+                    if (is_array($protection) && !empty($protection['enabled'])) {
+                        $protections[] = $key;
+                    }
+                }
+
+                $repo['branch_protections'] = $protections;
             }
 
             // Fetch metadata related to contents of README file
@@ -531,10 +625,10 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                     return '';
                 }
                 if (is_array($cellData)) {
-                    if (($key == 'permissions') || ($key == 'circle_vars')) {
+                    if (in_array($key, ['permissions', 'circle_vars'])) {
                         return implode(',', array_filter(array_keys($cellData)));
                     }
-                    if ($key == 'codeowners') {
+                    if (in_array($key, ['codeowners', 'admins', 'branch_protections'])) {
                         return implode(' ', array_filter($cellData));
                     }
                     foreach (['login', 'label', 'name'] as $k) {
