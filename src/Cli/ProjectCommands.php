@@ -557,7 +557,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
 
-        $commit_update = false;
+        $update_parameters['meta']['commit-update'] = false;
         $source_commits = $upstream_repo->commits();
         $existing_commits = $remote_repo->commits();
 
@@ -577,8 +577,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             }
             // Strip out everything after the first string of characters representing the git hash and trim to a 7 character short hash.
             $latest = substr(preg_replace('/^([a-z0-9]+).*/', '$1', $latest), 0, 7);
-
-            $commit_update = true;
+            $update_parameters['meta']['commit-update'] = true;
+            $update_parameters['meta']['latest-commit'] = $latest;
         }
 
         $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
@@ -595,7 +595,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $preamble = $this->getConfig()->get("projects.$remote.upstream.update-preamble", '');
 
         // If we're not on a commit update and can find a release node, then add the "more information" blurb.
-        if (!$commit_update) {
+        if (!$update_parameters['meta']['commit-update']) {
             $releaseNode = new ReleaseNode($api);
             list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
         }
