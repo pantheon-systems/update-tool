@@ -119,7 +119,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
                 $this->wpCoreUpdate($path, $this->version);
                 $this->wpCoreVerifyChecksums($path);
             } else {
-                $this->performSingleCommitUpdate($originalProject, $parameters);
+                $originalProject = $this->performSingleCommitUpdate($originalProject, $parameters);
             }
         } catch (\Exception $e) {
             throw $e;
