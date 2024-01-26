@@ -119,10 +119,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
                 $this->wpCoreUpdate($path, $this->version);
                 $this->wpCoreVerifyChecksums($path);
             } else {
-                $parameters['filters'] = [
-                    'originalProject' => (property_exists($this, 'originalProject') && $this->originalProject) ? $this->originalProject->dir() : '',
-                    'updatedProject' => (property_exists($this, 'updatedProject') && $this->updatedProject) ? $this->updatedProject->dir() : '',
-                ];
+                $parameters['meta']['from-wpcli'] = true;
                 $originalProject = $this->performSingleCommitUpdate($originalProject, $parameters);
             }
         } catch (\Exception $e) {

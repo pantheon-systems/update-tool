@@ -59,9 +59,7 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $this->updatedProject = $this->fetchUpstream($parameters);
 
         // Apply configured filters.
-        if (isset($parameters['filters'])) {
-            $this->filters->apply($this->originalProject->dir(), $this->updatedProject->dir(), $parameters['filters']['originalProject']);
-        } else {
+        if (!isset($parameters['meta']['from-wpcli'])) {
             $this->filters->apply($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
         }
 
