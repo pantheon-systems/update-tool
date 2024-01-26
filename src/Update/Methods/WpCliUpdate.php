@@ -109,9 +109,14 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
             $this->wpDbCreate($path);
             $this->wpCoreInstall($path, $this->url, $this->title, $this->admin, $this->adminPw, $this->adminEmail);
 
-            // Tell wp-cli to go do the update; check and make sure the checksums are okay
-            $this->wpCoreUpdate($path, $this->version);
-            $this->wpCoreVerifyChecksums($path);
+            // Check if the version is in X.X.X syntax. If it's not, then we're updating from a commit.
+            if (!preg_match('/^\d+\.\d+\.\d+$/', $this->version)) {
+                // Tell wp-cli to go do the update; check and make sure the checksums are okay
+                $this->wpCoreUpdate($path, $this->version);
+                $this->wpCoreVerifyChecksums($path);
+            } else {
+                $this->performSingleCommitUpdate($originalProject, $parameters);
+            }
         } catch (\Exception $e) {
             throw $e;
         } finally {
