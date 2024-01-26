@@ -137,12 +137,6 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $updater = new SingleCommit();
         $updater->setLogger($this->logger);
         $updater->setApi($this->api);
-        // Apply configured filters.
-        $updater->filters->apply(
-            (property_exists($this, 'originalProject') && $this->originalProject) ? $this->originalProject->dir() : '',
-            (property_exists($this, 'updatedProject') && $this->updatedProject) ? $this->updatedProject->dir() : '',
-            $parameters
-        );
         try {
             $updater->update($originalProject, $parameters);
         } catch (\Exception $e) {
