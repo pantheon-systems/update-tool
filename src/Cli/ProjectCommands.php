@@ -594,9 +594,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $message = str_replace('{version}', $latest, $message);
         $preamble = $this->getConfig()->get("projects.$remote.upstream.update-preamble", '');
 
-        // If we can find a release node, then add the "more information" blerb.
-        $releaseNode = new ReleaseNode($api);
-        list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
+        // If we're not on a commit update and can find a release node, then add the "more information" blurb.
+        if (!$commit_update) {
+            $releaseNode = new ReleaseNode($api);
+            list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
+        }
         if (!empty($release_url)) {
             $message .= " For more information, see $release_url";
         }
