@@ -34,6 +34,8 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     protected $adminPw;
     protected $adminEmail;
     protected $forceDbDrop;
+    protected $upstream_repo;
+    protected $upstream_dir;
 
     /**
      * @inheritdoc
@@ -53,6 +55,8 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $this->adminPw = $config->get("fixtures.wp.admin-pw", 'manticore');
         $this->adminEmail = $config->get("fixtures.wp.admin-email", 'bot@pantheon.io');
         $this->forceDbDrop = $config->get("projects.$project.force-db-drop", false);
+        $this->upstream_repo = $config->get("projects.$upstream.repo");
+        $this->upstream_dir = $config->get("projects.$upstream.path");
     }
 
     /**
@@ -137,6 +141,8 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $updater = new SingleCommit();
         $updater->setLogger($this->logger);
         $updater->setApi($this->api);
+        $updater->upstream_url = $this->upstream_repo;
+        $updater->upstream_dir = $this->upstream_dir;
         try {
             $updater->update($originalProject, $parameters);
         } catch (\Exception $e) {
