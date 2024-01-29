@@ -58,11 +58,6 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $this->originalProject = $originalProject;
         $this->updatedProject = $this->fetchUpstream($parameters);
 
-        // Apply configured filters.
-        if (!isset($parameters['meta']['from-wpcli'])) {
-            $this->filters->apply($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
-        }
-
         // $this->updatedProject retains its working contents, and takes over
         // the .git directory of $this->originalProject.
         $this->updatedProject->take($this->originalProject);
@@ -136,19 +131,12 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
     protected function cloneUpstream(array $parameters)
     {
         $latestTag = $parameters['latest-tag'];
-        $commitUpdate = $parameters['meta']['commit-update'];
 
         // Clone the upstream. Check out just $latest
         $upstream_working_copy = WorkingCopy::shallowClone($this->upstream_url, $this->upstream_dir, $latestTag, 1, $this->api);
         $upstream_working_copy
             ->setLogger($this->logger);
 
-        // If we're making a commit-based update, we don't need to check the version.
-        if ($commitUpdate) {
-            $commitHash = $parameters['meta']['latest-commit'];
-            $this->logger->notice('Commit-based update found. Skipping version check and proceeding with commit {commit}', ['commit' => $commitHash]);
-            return $upstream_working_copy;
-        }
         // Confirm that the local working copy of the upstream has checked out $latest
         $version_info = new VersionTool();
         $info = $version_info->info($upstream_working_copy->dir());
