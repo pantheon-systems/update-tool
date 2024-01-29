@@ -581,6 +581,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $update_parameters['meta']['latest-commit'] = $latest;
             // Force the update method to be SingleCommit if we got here and it's currently set to WpCliUpdate.
             if ($update_method === 'WpCliUpdate') {
+                $this->logger->notice("Switching update method to 'SingleCommit' from {update_method} because a commit update is available.", ['update_method' => $update_method]);
                 $update_method = 'SingleCommit';
             }
         }
