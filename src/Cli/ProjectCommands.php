@@ -579,11 +579,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $latest = substr(preg_replace('/^([a-z0-9]+).*/', '$1', $latest), 0, 7);
             $update_parameters['meta']['commit-update'] = true;
             $update_parameters['meta']['latest-commit'] = $latest;
-            // Force the update method to be SingleCommit if we got here and it's currently set to WpCliUpdate.
-            if ($update_method === 'WpCliUpdate') {
-                $this->logger->notice("Switching update method to 'SingleCommit' from {update_method} because a commit update is available.", ['update_method' => $update_method]);
-                $update_method = 'SingleCommit';
-            }
         }
 
         $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
@@ -599,11 +594,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $message = str_replace('{version}', $latest, $message);
         $preamble = $this->getConfig()->get("projects.$remote.upstream.update-preamble", '');
 
-        // If we're not on a commit update and can find a release node, then add the "more information" blurb.
-        if (!$update_parameters['meta']['commit-update']) {
-            $releaseNode = new ReleaseNode($api);
-            list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
-        }
+        $releaseNode = new ReleaseNode($api);
+        list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
         if (!empty($release_url)) {
             $message .= " For more information, see $release_url";
         }
@@ -694,7 +686,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             throw new \Exception("Could not figure out version from " . $updated_project->dir() . "; maybe project failed to update correctly.");
         }
         $updated_version = $info->version();
-        if ($updated_version != $latest && !$update_parameters['meta']['commit-update']) {
+        if ($updated_version != $latest) {
             throw new \Exception("Update failed. We expected that the updated version of the project should be '$latest', but instead it is '$updated_version'. " . $updated_project->dir());
         }
 
