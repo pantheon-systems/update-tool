@@ -54,6 +54,11 @@ for project in "${projects[@]}"; do
 	echo "Checking out ${branch} branch..."
 	git checkout "${branch}"
 
+	if [ "${project}" == "wpms" ]; then
+		echo "Done with ${project}. ✅"
+		exit 0
+	fi
+
 	# Parse the JSON file.
 	echo "Parsing JSON file..."
 	updates_json="updates.json"
