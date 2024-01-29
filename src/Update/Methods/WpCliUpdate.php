@@ -106,13 +106,6 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
             $parameters
         );
 
-        // Run a commit update if requested.
-        if (isset($parameters['meta']['commit-update']) && $parameters['meta']['commit-update']) {
-            $parameters['meta']['from-wpcli'] = true;
-            $originalProject = $this->performSingleCommitUpdate($originalProject, $parameters);
-            return $originalProject;
-        }
-
         try {
             // Set up a local WordPress site
             $this->wpCoreConfig($path, $this->dbhost, $this->dbname, $this->dbuser, $this->dbpw);
@@ -129,28 +122,6 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
             $this->wpDbDropIfNotCI($path, $forceDbDrop);
             file_put_contents($wpConfigPath, $wpConfigData);
         }
-        return $originalProject;
-    }
-
-    /**
-     * Perform a single-commit update.
-     *
-     * @param WorkingCopy $originalProject
-     * @param array $parameters
-     */
-    protected function performSingleCommitUpdate(WorkingCopy $originalProject, array $parameters)
-    {
-        $updater = new SingleCommit();
-        $updater->setLogger($this->logger);
-        $updater->setApi($this->api);
-        $updater->upstream_url = $this->upstream_repo;
-        $updater->upstream_dir = $this->upstream_dir;
-        try {
-            $updater->update($originalProject, $parameters);
-        } catch (\Exception $e) {
-            throw $e;
-        }
-
         return $originalProject;
     }
 
