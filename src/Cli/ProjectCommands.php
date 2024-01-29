@@ -579,6 +579,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $latest = substr(preg_replace('/^([a-z0-9]+).*/', '$1', $latest), 0, 7);
             $update_parameters['meta']['commit-update'] = true;
             $update_parameters['meta']['latest-commit'] = $latest;
+            // Force the update method to be SingleCommit if we got here and it's currently set to WpCliUpdate.
+            if ($update_method === 'WpCliUpdate') {
+                $update_method = 'SingleCommit';
+            }
         }
 
         $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
