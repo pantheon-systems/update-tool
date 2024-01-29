@@ -106,6 +106,13 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
             $parameters
         );
 
+        // Run a commit update if requested.
+        if (isset($parameters['meta']['commit-update']) && $parameters['meta']['commit-update']) {
+            $parameters['meta']['from-wpcli'] = true;
+            $originalProject = $this->performSingleCommitUpdate($originalProject, $parameters);
+            return $originalProject;
+        }
+
         try {
             // Set up a local WordPress site
             $this->wpCoreConfig($path, $this->dbhost, $this->dbname, $this->dbuser, $this->dbpw);
@@ -113,15 +120,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
             $this->wpDbCreate($path);
             $this->wpCoreInstall($path, $this->url, $this->title, $this->admin, $this->adminPw, $this->adminEmail);
 
-            // Check if the version is in X.X.X syntax. If it's not, then we're updating from a commit.
-            if (isset($parameters['meta']['commit-update']) && !$parameters['meta']['commit-update']) {
-                // Tell wp-cli to go do the update; check and make sure the checksums are okay
-                $this->wpCoreUpdate($path, $this->version);
-                $this->wpCoreVerifyChecksums($path);
-            } else {
-                $parameters['meta']['from-wpcli'] = true;
-                $originalProject = $this->performSingleCommitUpdate($originalProject, $parameters);
-            }
+            // Tell wp-cli to go do the update; check and make sure the checksums are okay
+            $this->wpCoreUpdate($path, $this->version);
+            $this->wpCoreVerifyChecksums($path);
         } catch (\Exception $e) {
             throw $e;
         } finally {
