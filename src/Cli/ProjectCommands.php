@@ -689,7 +689,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             throw new \Exception("Could not figure out version from " . $updated_project->dir() . "; maybe project failed to update correctly.");
         }
         $updated_version = $info->version();
-        if ($updated_version != $latest) {
+        if ($updated_version != $latest && !$update_parameters['meta']['commit-update']) {
             throw new \Exception("Update failed. We expected that the updated version of the project should be '$latest', but instead it is '$updated_version'. " . $updated_project->dir());
         }
 
