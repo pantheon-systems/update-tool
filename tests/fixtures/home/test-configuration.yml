@@ -75,7 +75,7 @@ projects:
     release-node:
       atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wpms-fixture/api-fixture/releases.atom'
   wordpress-network-commit:
-    repo: git@github.com:WordPress/WordPress.git
+    repo: git@github.com:pantheon-fixtures/pantheon-wp-fixture.git
     path: ${working-copy-path}/WordPressNetworkUpstream-commit
     main-branch: master
     version-api:
