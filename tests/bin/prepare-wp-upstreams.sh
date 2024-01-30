@@ -22,7 +22,6 @@ fi
 git config --global credential.helper store
 echo "https://${GH_TOKEN}@github.com" > ~/.git-credentials
 
-
 echo "Getting configuration file..."
 config="${GITHUB_WORKSPACE}/tests/fixtures/home/test-configuration.yml"
 projects=("wp" "wpms")
@@ -53,30 +52,34 @@ for project in "${projects[@]}"; do
 	fi
 	echo "Checking out ${branch} branch..."
 	git checkout "${branch}"
-
-	if [ "${project}" == "wpms" ]; then
-		echo "Done with ${project}. ✅"
-		exit 0
-	fi
-
-	# Parse the JSON file.
-	echo "Parsing JSON file..."
-	updates_json="updates.json"
-	testRun=$(jq -r .testRun "${updates_json}")
-	if [ "$testRun" == "null" ]; then
-		echo "JSON file does not contain 'testRun' key or it's null."
-		exit 1
-	fi
-
-	# Increment run counter.
-	echo "Incrementing testRun counter..."
-	testRun=$((testRun + 1))
-	jq ".testRun = ${testRun}" "${updates_json}" > "${updates_json}.tmp" && mv "${updates_json}.tmp" "${updates_json}"
-
-	echo "Committing changes..."
-	git add "${updates_json}"
-	git commit -m "Increment testRun counter to ${testRun} for ${project} project."
-	git push origin ${branch}
+	echo "Checked out ${project}."
 done
 
+function update_json() {
+	diff=$(diff "${working_copy_paty}/wp" "${working_copy_path}/wpms")
+	if [ $diff > /dev/null ]; then
+		echo "wp fixture is already ahead of wpms fixture. Skipping update."
+	else
+		# Parse the JSON file.
+		echo "Parsing JSON file..."
+		updates_json="updates.json"
+		testRun=$(jq -r .testRun "${updates_json}")
+		if [ "$testRun" == "null" ]; then
+			echo "JSON file does not contain 'testRun' key or it's null."
+			exit 1
+		fi
+
+		# Increment run counter.
+		echo "Incrementing testRun counter..."
+		testRun=$((testRun + 1))
+		jq ".testRun = ${testRun}" "${updates_json}" > "${updates_json}.tmp" && mv "${updates_json}.tmp" "${updates_json}"
+
+		echo "Committing changes..."
+		git add "${updates_json}"
+		git commit -m "Increment testRun counter to ${testRun} for ${project} project."
+		git push origin ${branch}
+	fi
+}
+
+update_json
 echo "Done. ✅"
