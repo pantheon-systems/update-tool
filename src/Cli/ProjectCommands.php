@@ -560,6 +560,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $update_parameters['meta']['commit-update'] = false;
         $source_commits = $upstream_repo->commits();
         $existing_commits = $remote_repo->commits();
+        $latest_commit = $source_commits;
 
         // Exit with no action and no error if already up-to-date
         if ($source_commits == $existing_commits) {
@@ -570,15 +571,15 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Source commits are not equal to existing commits, compare the releases.
         if ($current === $latest) {
             // Set $latest to the last commit hash in the $soucre_commits string from git if $current and $latest are the same version.
-            if (is_array($source_commits)) {
-                $latest_commit = end($source_commits);
+            if (is_array($latest_commit)) {
+                $latest_commit = end($latest_commit);
             } else {
-                $latest_commit = $source_commits;
+                $latest_commit = $latest_commit;
             }
             // Strip out everything after the first string of characters representing the git hash and trim to a 7 character short hash.
-            $latest_commit = substr(preg_replace('/^([a-z0-9]+).*/', '$1', $latest), 0, 7);
+            $latest_commit = substr(preg_replace('/^([a-z0-9]+).*/', '$1', $latest_commit), 0, 7);
             $update_parameters['meta']['commit-update'] = true;
-            $update_parameters['meta']['latest-commit'] = $latest;
+            $update_parameters['meta']['latest-commit'] = $latest_commit;
         }
 
         if (!$update_parameters['meta']['commit-update']) {
