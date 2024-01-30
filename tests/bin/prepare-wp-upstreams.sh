@@ -66,7 +66,7 @@ function update_json() {
 	fi
 
 	echo "Checking diff between '${wp_dir}' and '${wpms_dir}'..."
-	diff=$(diff "${wp_dir}/updates.json" "${wpms_dir}/updates.json")
+	diff=$(diff "${wp_dir}" "${wpms_dir}")
 	echo "${diff}"
 	if [ -n $diff ]; then
 		echo "wp fixture is already ahead of wpms fixture. Skipping update."
