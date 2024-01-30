@@ -561,6 +561,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $source_commits = $upstream_repo->commits();
         $existing_commits = $remote_repo->commits();
         $latest_commit = $source_commits;
+        $this->logger->notice("latest commit: {latest}", ['latest' => $latest_commit]);
 
         // Exit with no action and no error if already up-to-date
         if ($source_commits == $existing_commits) {
