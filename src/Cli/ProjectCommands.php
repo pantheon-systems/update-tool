@@ -570,6 +570,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Source commits are not equal to existing commits, compare the releases.
         if ($current === $latest) {
+            $this->logger->notice("{current} and {latest} tags match. Since the commit history differs, we need to do a commit-based update.", ['current' => $current, 'latest' => $latest]);
             // Set $latest to the last commit hash in the $soucre_commits string from git if $current and $latest are the same version.
             if (is_array($source_commits)) {
                 $latest_commit = end($source_commits);
@@ -580,6 +581,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $latest_commit = preg_replace('/^([a-z0-9]+).*/', '$1', $latest_commit);
             $update_parameters['meta']['commit-update'] = true;
             $update_parameters['meta']['latest-commit'] = $latest_commit;
+            $this->logger->notice("Latest commit is {latest}",['latest' => $latest_commit]);
         }
 
         if (!$update_parameters['meta']['commit-update']) {
