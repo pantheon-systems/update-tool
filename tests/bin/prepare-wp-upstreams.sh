@@ -43,13 +43,7 @@ for project in "${projects[@]}"; do
 	echo "Cloning ${project} from ${repo_url}..."
 	git clone "${repo_url}" "${working_copy_path}/${project}"
 	cd "${project}" || { echo "Failed to change directory to ${project}"; exit 1; }
-
-	# Check out the right branch.
-	if [ "${project}" == "wpms" ]; then
-		branch="main"
-	else
-		branch="master"
-	fi
+	branch="master"
 	echo "Checking out ${branch} branch..."
 	git checkout "${branch}"
 	echo "Checked out ${project}."
