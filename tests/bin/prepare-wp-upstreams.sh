@@ -58,7 +58,7 @@ done
 function update_json() {
 	echo "Checking diff between '${working_copy_path}/wp' and '${working_copy_path}/wpms'..."
 	diff=$(diff "${working_copy_path}/wp" "${working_copy_path}/wpms")
-	if [ $diff > /dev/null ]; then
+	if [ -n $diff ]; then
 		echo "wp fixture is already ahead of wpms fixture. Skipping update."
 	else
 		# Parse the JSON file.
