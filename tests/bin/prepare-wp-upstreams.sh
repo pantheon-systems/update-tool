@@ -65,11 +65,12 @@ function update_json() {
 		exit 1
 	fi
 
-	echo "Checking diff between '${wp_dir}' and '${wpms_dir}'..."
-	diff=$(diff "${wp_dir}" "${wpms_dir}")
-	echo "${diff}"
-	if [ -n $diff ]; then
-		echo "wp fixture is already ahead of wpms fixture. Skipping update."
+	git -C "${wp_dir}" remote add wpms-fixture "${wpms_dir}"
+	git -C "${wp_dir}" fetch wpms-fixture
+
+	echo "Checking if wp is ahead of wpms..."
+	if git -C "${wp_dir}" log --oneline wpms-fixture/main..origin/master; then
+		echo "wp fixture is already ahead of wpms fixture. Skipping json update."
 	else
 		# Parse the JSON file.
 		echo "Parsing JSON file..."
