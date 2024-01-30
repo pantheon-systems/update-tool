@@ -66,9 +66,10 @@ function update_json() {
 	if git -C "${wp_dir}" log --oneline wpms-fixture/master..origin/master; then
 		echo "wp fixture is already ahead of wpms fixture. Skipping json update."
 	else
+		cd "${wp_dir}"
 		# Parse the JSON file.
 		echo "Parsing JSON file..."
-		updates_json="updates.json"
+		updates_json="${wp_dir}/updates.json"
 		testRun=$(jq -r .testRun "${updates_json}")
 		if [ "$testRun" == "null" ]; then
 			echo "JSON file does not contain 'testRun' key or it's null."
