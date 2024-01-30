@@ -26,7 +26,7 @@ projects:
   wpms:
     repo: git@github.com:pantheon-fixtures/pantheon-wpms-fixture.git
     path: ${working-copy-path}/WordPressNetwork
-    main-branch: main
+    main-branch: default
     force-db-drop: true
     upstream:
       project: wordpress-network
@@ -36,7 +36,7 @@ projects:
   wpms-commit:
     repo: git@github.com:pantheon-fixtures/pantheon-wpms-fixture.git
     path: ${working-copy-path}/WordPressNetwork-commit
-    main-branch: main
+    main-branch: default
     force-db-drop: true
     upstream:
       project: wordpress-network-commit
