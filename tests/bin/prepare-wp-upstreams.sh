@@ -41,7 +41,7 @@ for project in "${projects[@]}"; do
 
 	# Clone the project.
 	echo "Cloning ${project} from ${repo_url}..."
-	git clone "${repo_url}" ./"${project}"
+	git clone "${repo_url}" "${working_copy_path}/${project}"
 	cd "${project}" || { echo "Failed to change directory to ${project}"; exit 1; }
 
 	# Check out the right branch.
