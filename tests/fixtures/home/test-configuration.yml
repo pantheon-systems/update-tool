@@ -42,7 +42,7 @@ projects:
       project: wordpress-network-commit
       major: '[4-9]'
       version-pattern: '#.#.#'
-      update-method: DiffPatch
+      update-method: SingleCommit
   drops-8:
     repo: git@github.com:pantheon-fixtures/drops-8-fixture.git
     path: ${working-copy-path}/drops-8
