@@ -63,7 +63,7 @@ function update_json() {
 	git -C "${wp_dir}" fetch wpms-fixture
 
 	echo "Checking if wp is ahead of wpms..."
-	if git -C "${wp_dir}" log --oneline wpms-fixture/main..origin/master; then
+	if git -C "${wp_dir}" log --oneline wpms-fixture/master..origin/master; then
 		echo "wp fixture is already ahead of wpms fixture. Skipping json update."
 	else
 		# Parse the JSON file.
