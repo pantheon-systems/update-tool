@@ -56,8 +56,18 @@ for project in "${projects[@]}"; do
 done
 
 function update_json() {
-	echo "Checking diff between '${working_copy_path}/wp' and '${working_copy_path}/wpms'..."
-	diff=$(diff "${working_copy_path}/wp" "${working_copy_path}/wpms")
+	wp_dir="${working_copy_path}wp"
+	wpms_dir="${working_copy_path}wpms"
+	if [ -d "${wp_dir}" ] && [ -d "${wpms_dir}" ]; then
+		echo "Local working copies validated."
+	else
+		echo "One or both wp/wpms directories do not exist."
+		exit 1
+	fi
+
+	echo "Checking diff between '${wp_dir}' and '${wpms_dir}'..."
+	diff=$(diff "${wp_dir}/updates.json" "${wpms_dir}/updates.json")
+	echo "${diff}"
 	if [ -n $diff ]; then
 		echo "wp fixture is already ahead of wpms fixture. Skipping update."
 	else
