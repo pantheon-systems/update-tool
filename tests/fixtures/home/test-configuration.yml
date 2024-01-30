@@ -32,7 +32,7 @@ projects:
       project: wordpress-network
       major: '[4-9]'
       version-pattern: '#.#.#'
-      update-method: WpCliUpdate
+      # update-method: WpCliUpdate
   wpms-commit:
     repo: git@github.com:pantheon-fixtures/pantheon-wpms-fixture.git
     path: ${working-copy-path}/WordPressNetwork-commit
