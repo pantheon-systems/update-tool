@@ -592,9 +592,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_label = ucfirst($upstream);
         if ($update_parameters['meta']['commit-update']) {
             $upstream_project = $this->getConfig()->get("projects.$remote.upstream.project");
-            $upstream_dir = $this->getConfig()->get("projects.$upstream_project.path");
-            // This will fail locally because of a bad substitution pattern.
-            $message = $this->getConfig()->get("projects.$remote.upstream.update-message", $upstream_repo->message($latest_commit, $upstream_dir) );
+            $dir = $this->getConfig()->get("projects.$upstream_project.path");
+            $message = $upstream_repo->getCommitMessageByHash($update_parameters['meta']['latest-commit'], $dir);
         } else {
             $message = $this->getConfig()->get("projects.$remote.upstream.update-message", 'Update to ' . $upstream_label . ' ' . $latest . '.');
         }
