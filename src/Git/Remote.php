@@ -212,10 +212,18 @@ class Remote implements LoggerAwareInterface
     }
 
     /**
-     * Return the commit message for the sprecified ref
+     * Get the latest commit message from a given repository based on a hash.
+     *
+     * @param string $hash The commit hash for the commit message.
+     * @param string $dir The directory to shallow clone the repository to.
      */
-    public function message($ref = 'HEAD', $dir = '')
+    public function getCommitMessageByHash($hash, $dir = '/tmp')
     {
-        return trim(implode("\n", $this->git('{dir} log --format=%B -n 1 {ref}', ['dir' => !empty($dir) ? "-C $dir" : $dir, 'ref' => $ref])));
+        var_dump($this->remote);
+        $upstream_working_copy = WorkingCopy::shallowClone($repo, $dir, 'master', 1);
+        $upstream_working_copy->fetch('origin', 'master');
+        $upstream_working_copy->checkout($hash);
+        $message = $upstream_working_copy->message($hash);
+        return $message;
     }
 }
