@@ -570,11 +570,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Source commits are not equal to existing commits, compare the releases.
         if ($current === $latest || is_null($latest)) {
             // Set $latest to the last commit hash in the $soucre_commits string from git if $current and $latest are the same version.
-            if (is_array($source_commits)) {
-                $latest_commit = end($source_commits);
-            } else {
-                $latest_commit = $source_commits;
-            }
+            $latest_commit = is_array($source_commits) ? end($source_commits) : $source_commits;
             // Strip out everything after the first string of characters representing the git hash.
             $latest_commit = preg_replace('/^([a-z0-9]+).*/', '$1', $latest_commit);
             $update_parameters['meta']['commit-update'] = true;
