@@ -622,7 +622,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $prs = $api->matchingPRs($remote_repo->projectWithOrg(), $preamble, '');
         }
 
-        $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
+        $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest_commit ?? $latest]);
 
         $branch = "update-$latest";
 
