@@ -219,8 +219,7 @@ class Remote implements LoggerAwareInterface
      */
     public function getCommitMessageByHash($hash, $dir = '/tmp')
     {
-        var_dump($this->remote);
-        $upstream_working_copy = WorkingCopy::shallowClone($repo, $dir, 'master', 1);
+        $upstream_working_copy = WorkingCopy::shallowClone($this->remote, $dir, 'master', 1);
         $upstream_working_copy->fetch('origin', 'master');
         $upstream_working_copy->checkout($hash);
         $message = $upstream_working_copy->message($hash);
