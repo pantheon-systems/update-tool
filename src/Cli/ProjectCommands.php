@@ -560,6 +560,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $update_parameters['meta']['commit-update'] = false;
         $source_commits = $upstream_repo->commits();
         $existing_commits = $remote_repo->commits();
+        $latest_commit = false;
 
         // Exit with no action and no error if already up-to-date
         if ($source_commits == $existing_commits) {
