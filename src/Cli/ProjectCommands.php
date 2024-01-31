@@ -603,7 +603,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $releaseNode = new ReleaseNode($api);
         list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
-        if (!empty($release_url)) {
+        if (!empty($release_url) && !$update_parameters['meta']['commit-update']) {
             $message .= " For more information, see $release_url";
         }
 
