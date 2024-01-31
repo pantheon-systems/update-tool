@@ -210,4 +210,12 @@ class Remote implements LoggerAwareInterface
     {
         return $this->execWithRedaction('git ' . $cmd, $replacements, $redacted);
     }
+
+    /**
+     * Return the commit message for the sprecified ref
+     */
+    public function message($ref = 'HEAD', $dir = '')
+    {
+        return trim(implode("\n", $this->git('{dir} log --format=%B -n 1 {ref}', ['dir' => !empty($dir) ? "-C $dir" : $dir, 'ref' => $ref])));
+    }
 }
