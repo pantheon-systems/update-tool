@@ -58,6 +58,9 @@ class SingleCommit implements UpdateMethodInterface, LoggerAwareInterface
         $this->originalProject = $originalProject;
         $this->updatedProject = $this->fetchUpstream($parameters);
 
+        // Apply configured filters.
+        $this->filters->apply($this->originalProject->dir(), $this->updatedProject->dir(), $parameters);
+
         // $this->updatedProject retains its working contents, and takes over
         // the .git directory of $this->originalProject.
         $this->updatedProject->take($this->originalProject);
