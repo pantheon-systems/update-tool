@@ -299,7 +299,7 @@ class FrameworkCommands extends \Robo\Tasks implements ConfigAwareInterface, Log
 
         // If our versions do not match, check that the latest version exists before continuing.
         // Greater than comparision to ensure that we don't get older versions. See https://github.com/pantheon-systems/cos-framework-clis/pull/76#issuecomment-1118650316
-        if (version_compare($latest_version, $current_version)) {
+        if (version_compare($latest_version, $current_version, '>')) {
             $try_version = $this->wpVersionExists($latest_version);
 
             if (!empty($try_version)) {
