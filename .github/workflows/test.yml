@@ -74,3 +74,4 @@ jobs:
           token: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           repository: pantheon-systems/update-tool
           event-type: tests-passed
+          client-payload: '{"tag_name": "${{ github.ref_name }}"}'
