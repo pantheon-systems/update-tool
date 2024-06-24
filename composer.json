@@ -72,6 +72,9 @@
         "sort-packages": true,
         "platform": {
             "php": "7.1.13"
+        },
+        "allow-plugins": {
+            "php-http/discovery": true
         }
     },
     "extra": {
