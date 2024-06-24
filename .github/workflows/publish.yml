@@ -25,6 +25,7 @@ jobs:
       - name: Publish Release
         uses: ncipollo/release-action@v1
         with:
+          tag: ${{ env.tag_name }}
           artifacts: 'update-tool.phar'
           artifactErrorsFailBuild: true
           body: Version ${{ env.tag_name }}
