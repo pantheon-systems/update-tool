@@ -146,7 +146,7 @@ class ReleaseNode
 
     protected function matchesVersion($title, $version)
     {
-        return empty($version) || (strstr($title, " $version ") !== false);
+        return empty($version) || (strstr($title, " $version") !== false);
     }
 
     protected function getProjectAttribute($config, $remote, $name)
