@@ -82,6 +82,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'only-public' => false,
         'include-archived' => false,
         'forks' => true,
+        'support-level' => true,
+        'circleci' => true,
     ])
     {
         $api = $this->api($options['as']);
@@ -133,33 +135,38 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             }
 
             // Fetch metadata related to contents of README file
-            try {
-                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
-                if (!empty($data['content'])) {
-                    $content = base64_decode($data['content']);
-                    $support_level = SupportLevel::getSupportLevelsFromContent($content);
-                    $repo['support_level'] = count($support_level) ? reset($support_level) : 'EMPTY';
+            $repo['support_level'] = '-';
+            if ($options['support-level']) {
+                try {
+                    $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
+                    if (!empty($data['content'])) {
+                        $content = base64_decode($data['content']);
+                        $support_level = SupportLevel::getSupportLevelsFromContent($content);
+                        $repo['support_level'] = count($support_level) ? reset($support_level) : 'EMPTY';
+                    }
+                } catch (\Exception $e) {
+                    $repo['support_level'] = 'EMPTY';
                 }
-            } catch (\Exception $e) {
-                $repo['support_level'] = 'EMPTY';
             }
 
             // Fetch metadata related to CircleCI
             $repo['circle_ci'] = false;
             $repo['circle_vars'] = [];
             $repo['circle_contexts'] = [];
-            try {
-                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], '.circleci/config.yml');
-                $repo['circle_ci'] = true;
-                if (!empty($data['content'])) {
-                    $content = base64_decode($data['content']);
-                    $circleConfig = Yaml::parse($content);
-                    $repo['circle_contexts'] = $this->findCircleContexts($circleConfig);
+            if ($options['circleci']) {
+                try {
+                    $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], '.circleci/config.yml');
+                    $repo['circle_ci'] = true;
+                    if (!empty($data['content'])) {
+                        $content = base64_decode($data['content']);
+                        $circleConfig = Yaml::parse($content);
+                        $repo['circle_contexts'] = $this->findCircleContexts($circleConfig);
+                    }
+                    $circleVars = [];
+                    list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
+                    $repo['circle_vars'] = $circleVars;
+                } catch (\Exception $e) {
                 }
-                $circleVars = [];
-                list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
-                $repo['circle_vars'] = $circleVars;
-            } catch (\Exception $e) {
             }
 
             $reposResult[$resultKey] = $repo;
