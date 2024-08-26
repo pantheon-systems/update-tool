@@ -71,7 +71,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      *   owners_src: Owners Source
      *   ownerTeam: Owning Team
      *   support_level: Support Level
-     * @default-fields full_name,codeowners,owners_src,circle_vars,circle_contexts,support_level
+     * @default-fields full_name,codeowners,owners_src,support_level,default_branch
      * @default-string-field full_name
      *
      * @return Consolidation\OutputFormatters\StructuredData\RowsOfFields
@@ -281,10 +281,10 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $prBody = $options['pr-body'];
                 // Get column indexes if header row.
                 if ($row_id == 0) {
-                    $projectFullNameIndex = $this->getColumnNumber('full_name', $row);
-                    $projectOrgIndex = $this->getColumnNumber('owner/login', $row);
+                    $projectFullNameIndex = $this->getColumnNumber('Name', $row);
+                    $codeOwnersIndex = $this->getColumnNumber('Code Owners', $row);
                     $projectSupportLevelIndex = $this->getColumnNumber('Support Level', $row);
-                    $projectDefaultBranchIndex = $this->getColumnNumber('default_branch', $row);
+                    $projectDefaultBranchIndex = $this->getColumnNumber('Default Branch', $row);
                     continue;
                 }
                 if (empty($row[0])) {
@@ -294,12 +294,11 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $projectUpdateSupportLevel = $updateSupportLevelBadge;
                 $projectUpdateCodeowners = $updateCodeowners;
                 $projectFullName = $row[$projectFullNameIndex];
-                $projectOrg = $row[$projectOrgIndex];
                 $projectSupportLevel = $row[$projectSupportLevelIndex];
                 $projectDefaultBranch = $row[$projectDefaultBranchIndex];
-                $codeowners = '';
+                $codeowners = $row[$codeOwnersIndex];
                 $ownerSource = '';
-                if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch) && !empty($projectOrg)) {
+                if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch)) {
                     // If empty or invalid support level, we won't update it here.
                     if ($projectUpdateSupportLevel && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
                         $projectUpdateSupportLevel = false;
@@ -311,16 +310,20 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                         $prBody = $options['pr-body-unsupported'] ?? $prBody;
                     }
                     if ($projectUpdateCodeowners) {
-                        list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
-                        if (empty($codeowners) || $ownerSource === 'file') {
-                            $projectUpdateCodeowners = false;
-                        } else {
-                            if ($codeownersOnlyApi && $ownerSource !== 'api') {
-                                $projectUpdateCodeowners = false;
-                            } elseif ($codeownersOnlyGuess && $ownerSource !== 'guess') {
+                        // If the csv file does not list a code owner to use, infer from api / guess
+                        if (empty($codeowners)) {
+                            list($projectShortName, $projectOrg) = $this->projectNameAndOrgFromFullName($projectFullName);
+                            list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
+                            if (empty($codeowners) || $ownerSource === 'file') {
                                 $projectUpdateCodeowners = false;
                             } else {
-                                $codeowners = implode('\n', $codeowners);
+                                if ($codeownersOnlyApi && $ownerSource !== 'api') {
+                                    $projectUpdateCodeowners = false;
+                                } elseif ($codeownersOnlyGuess && $ownerSource !== 'guess') {
+                                    $projectUpdateCodeowners = false;
+                                } else {
+                                    $codeowners = implode('\n', $codeowners);
+                                }
                             }
                         }
                         if ($options['codeowners-only-owner'] && $codeowners !== $options['codeowners-only-owner']) {
@@ -424,22 +427,31 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     }
 
     /**
-     * Validate project full name. Throw exception if invalid.
+     * Validate project full name.
      */
     protected function validateProjectFullName($projectFullName)
     {
-        if (empty($projectFullName)) {
-            return false;
-        }
-        $parts = explode('/', $projectFullName);
-        if (count($parts) != 2) {
-            return false;
-        }
-        return true;
+        $parts = $this->projectNameAndOrgFromFullName($projectFullName);
+        return !empty($parts);
     }
 
     /**
-     * Validate project support level. Throw exception if invalid.
+     * Separate project name and org from a full name ("project-name/org").
+     */
+    protected function projectNameAndOrgFromFullName($projectFullName)
+    {
+        if (empty($projectFullName)) {
+            return [];
+        }
+        $parts = explode('/', $projectFullName);
+        if (count($parts) != 2) {
+            return [];
+        }
+        return $parts;
+    }
+
+    /**
+     * Validate project support level.
      */
     protected function validateProjectSupportLevel($projectSupportLevel)
     {
