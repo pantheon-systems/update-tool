@@ -136,15 +136,6 @@ projects:
       project: wp
       version-pattern: '^5||^6'
       branch: master
-  drops-7-composer:
-    repo: git@github.com:pantheon-systems/drops-7-composer.git
-    path: ${working-copy-path}/drops-7-composer
-    source:
-      project: drops-7
-      version-pattern: '^7'
-      update-filters:
-        - RsyncFromSource
-        - CopyTemplateAdditions
   drops-8-scaffolding:
     repo: git@github.com:pantheon-systems/drops-8-scaffolding.git
     path: ${working-copy-path}/drops-8-scaffolding
