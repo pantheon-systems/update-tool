@@ -63,14 +63,14 @@ class ProjectUpdate implements LoggerAwareInterface
         $readme_changed = false;
 
         if (!empty($codeowners)) {
-            // Append given CODEOWNERS line.
+            // Replace CODEOWNERS with specified new value
             $string_to_add = '* ' . $codeowners . "\n";
             $codeowners_content = '';
             if (file_exists("$dir/CODEOWNERS")) {
                 $codeowners_content = file_get_contents("$dir/CODEOWNERS");
             }
             if (strpos($codeowners_content, $string_to_add) === false) {
-                file_put_contents("$dir/CODEOWNERS", $string_to_add, FILE_APPEND);
+                file_put_contents("$dir/CODEOWNERS", $string_to_add);
                 $workingCopy->add("$dir/CODEOWNERS");
                 $codeowners_changed = true;
             }
@@ -110,6 +110,14 @@ class ProjectUpdate implements LoggerAwareInterface
             $workingCopy->commit($commitMessage);
             $workingCopy->push('fork', $branchName);
             if (!$existingPrFound) {
+                // TODO: We cannot do this too quickly, or we will get intermittent
+                // failures (thrown exceptions):
+                // Validation Failed: Field "head" is invalid, for resource "PullRequest"
+                // Sleeping for five seconds clears up almost all of these occurances.
+                // Maybe we can retry, or better yet, figure out how to detect if
+                // GitHub has finished processing the push and is ready for the PR to
+                // be created.
+                sleep(5);
                 $workingCopy->pr($prTitle, $prBody, $baseBranch, $branchName);
             }
         }

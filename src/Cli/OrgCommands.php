@@ -71,7 +71,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
      *   owners_src: Owners Source
      *   ownerTeam: Owning Team
      *   support_level: Support Level
-     * @default-fields full_name,codeowners,owners_src,circle_vars,circle_contexts,support_level
+     * @default-fields full_name,codeowners,owners_src,support_level,default_branch
      * @default-string-field full_name
      *
      * @return Consolidation\OutputFormatters\StructuredData\RowsOfFields
@@ -82,6 +82,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         'only-public' => false,
         'include-archived' => false,
         'forks' => true,
+        'support-level' => true,
+        'circleci' => true,
     ])
     {
         $api = $this->api($options['as']);
@@ -133,33 +135,38 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             }
 
             // Fetch metadata related to contents of README file
-            try {
-                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
-                if (!empty($data['content'])) {
-                    $content = base64_decode($data['content']);
-                    $support_level = SupportLevel::getSupportLevelsFromContent($content);
-                    $repo['support_level'] = count($support_level) ? reset($support_level) : 'EMPTY';
+            $repo['support_level'] = '-';
+            if ($options['support-level']) {
+                try {
+                    $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
+                    if (!empty($data['content'])) {
+                        $content = base64_decode($data['content']);
+                        $support_level = SupportLevel::getSupportLevelsFromContent($content);
+                        $repo['support_level'] = count($support_level) ? reset($support_level) : 'EMPTY';
+                    }
+                } catch (\Exception $e) {
+                    $repo['support_level'] = 'EMPTY';
                 }
-            } catch (\Exception $e) {
-                $repo['support_level'] = 'EMPTY';
             }
 
             // Fetch metadata related to CircleCI
             $repo['circle_ci'] = false;
             $repo['circle_vars'] = [];
             $repo['circle_contexts'] = [];
-            try {
-                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], '.circleci/config.yml');
-                $repo['circle_ci'] = true;
-                if (!empty($data['content'])) {
-                    $content = base64_decode($data['content']);
-                    $circleConfig = Yaml::parse($content);
-                    $repo['circle_contexts'] = $this->findCircleContexts($circleConfig);
+            if ($options['circleci']) {
+                try {
+                    $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], '.circleci/config.yml');
+                    $repo['circle_ci'] = true;
+                    if (!empty($data['content'])) {
+                        $content = base64_decode($data['content']);
+                        $circleConfig = Yaml::parse($content);
+                        $repo['circle_contexts'] = $this->findCircleContexts($circleConfig);
+                    }
+                    $circleVars = [];
+                    list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
+                    $repo['circle_vars'] = $circleVars;
+                } catch (\Exception $e) {
                 }
-                $circleVars = [];
-                list($status, $circleVars) = $circleApi->envVars($org, $repo['name']);
-                $repo['circle_vars'] = $circleVars;
-            } catch (\Exception $e) {
             }
 
             $reposResult[$resultKey] = $repo;
@@ -274,10 +281,10 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $prBody = $options['pr-body'];
                 // Get column indexes if header row.
                 if ($row_id == 0) {
-                    $projectFullNameIndex = $this->getColumnNumber('full_name', $row);
-                    $projectOrgIndex = $this->getColumnNumber('owner/login', $row);
+                    $projectFullNameIndex = $this->getColumnNumber('Name', $row);
+                    $codeOwnersIndex = $this->getColumnNumber('Code Owners', $row);
                     $projectSupportLevelIndex = $this->getColumnNumber('Support Level', $row);
-                    $projectDefaultBranchIndex = $this->getColumnNumber('default_branch', $row);
+                    $projectDefaultBranchIndex = $this->getColumnNumber('Default Branch', $row);
                     continue;
                 }
                 if (empty($row[0])) {
@@ -287,12 +294,11 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 $projectUpdateSupportLevel = $updateSupportLevelBadge;
                 $projectUpdateCodeowners = $updateCodeowners;
                 $projectFullName = $row[$projectFullNameIndex];
-                $projectOrg = $row[$projectOrgIndex];
                 $projectSupportLevel = $row[$projectSupportLevelIndex];
                 $projectDefaultBranch = $row[$projectDefaultBranchIndex];
-                $codeowners = '';
+                $codeowners = $row[$codeOwnersIndex];
                 $ownerSource = '';
-                if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch) && !empty($projectOrg)) {
+                if ($this->validateProjectFullName($projectFullName) && !empty($projectDefaultBranch)) {
                     // If empty or invalid support level, we won't update it here.
                     if ($projectUpdateSupportLevel && (empty($projectSupportLevel) || !$this->validateProjectSupportLevel($projectSupportLevel))) {
                         $projectUpdateSupportLevel = false;
@@ -304,16 +310,20 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                         $prBody = $options['pr-body-unsupported'] ?? $prBody;
                     }
                     if ($projectUpdateCodeowners) {
-                        list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
-                        if (empty($codeowners) || $ownerSource === 'file') {
-                            $projectUpdateCodeowners = false;
-                        } else {
-                            if ($codeownersOnlyApi && $ownerSource !== 'api') {
-                                $projectUpdateCodeowners = false;
-                            } elseif ($codeownersOnlyGuess && $ownerSource !== 'guess') {
+                        // If the csv file does not list a code owner to use, infer from api / guess
+                        if (empty($codeowners)) {
+                            list($projectShortName, $projectOrg) = $this->projectNameAndOrgFromFullName($projectFullName);
+                            list($codeowners, $ownerSource) = $this->guessCodeowners($api, $projectOrg, $projectFullName);
+                            if (empty($codeowners) || $ownerSource === 'file') {
                                 $projectUpdateCodeowners = false;
                             } else {
-                                $codeowners = implode('\n', $codeowners);
+                                if ($codeownersOnlyApi && $ownerSource !== 'api') {
+                                    $projectUpdateCodeowners = false;
+                                } elseif ($codeownersOnlyGuess && $ownerSource !== 'guess') {
+                                    $projectUpdateCodeowners = false;
+                                } else {
+                                    $codeowners = implode('\n', $codeowners);
+                                }
                             }
                         }
                         if ($options['codeowners-only-owner'] && $codeowners !== $options['codeowners-only-owner']) {
@@ -417,22 +427,31 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     }
 
     /**
-     * Validate project full name. Throw exception if invalid.
+     * Validate project full name.
      */
     protected function validateProjectFullName($projectFullName)
     {
-        if (empty($projectFullName)) {
-            return false;
-        }
-        $parts = explode('/', $projectFullName);
-        if (count($parts) != 2) {
-            return false;
-        }
-        return true;
+        $parts = $this->projectNameAndOrgFromFullName($projectFullName);
+        return !empty($parts);
     }
 
     /**
-     * Validate project support level. Throw exception if invalid.
+     * Separate project name and org from a full name ("project-name/org").
+     */
+    protected function projectNameAndOrgFromFullName($projectFullName)
+    {
+        if (empty($projectFullName)) {
+            return [];
+        }
+        $parts = explode('/', $projectFullName);
+        if (count($parts) != 2) {
+            return [];
+        }
+        return $parts;
+    }
+
+    /**
+     * Validate project support level.
      */
     protected function validateProjectSupportLevel($projectSupportLevel)
     {
