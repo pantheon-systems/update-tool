@@ -423,9 +423,7 @@ projects:
   tag1-drupal:
     repo: git@gitlab.com:tag1consulting/drupal.git
     path: ${working-copy-path}/tag1-drupal
-    main-branch: 7.x
-    release-node:
-      template: 'https://gitlab.com/tag1consulting/drupal/-/tags/{version}'
+    main-branch: 7.x-d7es
 
   WordPress:
     repo: git@github.com:WordPress/WordPress.git
