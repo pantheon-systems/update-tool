@@ -309,7 +309,7 @@ projects:
 
         This is experimental. Do not merge.
   drops-7:
-    repo: git@github.com:pantheon-systems/drops-7.git
+    repo: "https://github.com/pantheon-systems/drops-7-automation-test-workspace.git"
     path: ${working-copy-path}/drops-7
     main-branch: default
     tag-branch: master
