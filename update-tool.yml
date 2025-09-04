@@ -314,60 +314,14 @@ projects:
     main-branch: default
     tag-branch: master
     upstream:
-      project: drupal
+      project: tag1-drupal
       major: 7
       version-pattern: '#.#'
       update-message: Update to Drupal {version}.
       update-method: DiffPatch
     pr:
       instructions: |
-        Update from Drupal {{original-version}} to Drupal {{update-version}}.
-
-        Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-7), and then visit the test site and confirm that the correct version of Drupal was, in fact, installed and tested.
-
-        Optionally, you may also create your own test site:
-
-          - Create a new Drupal 7 site on Pantheon.
-          - When site creation is finished, visit dashboard.
-          - Switch to "git" mode.
-          - Clone your site locally.
-          - Apply the files from this PR on top of your local checkout.
-            - git remote add {{project}} {{project-url}}
-            - git fetch {{project}}
-            - git merge {{project}}/{{branch}}
-          - Push your files back up to Pantheon.
-          - Switch back to sftp mode.
-          - Visit your site and step through the installation process.
-  drops-7-from-pressflow:
-    repo: git@github.com:pantheon-systems/drops-7.git
-    path: ${working-copy-path}/drops-7
-    main-branch: default
-    tag-branch: master
-    upstream:
-      project: pressflow7
-      major: 7
-      version-pattern: '#.#'
-      tag-prefix: 'pressflow-'
-      update-message: Update to Drupal {version}.
-      update-method: SingleCommit
-      update-parameters:
-        platform-additions:
-          - .circleci
-          - .drush-lock-update
-          - .gitignore
-          - pantheon.upstream.yml
-          - misc/healthchecks/
-          - profiles/pantheon/
-          - modules/pantheon/
-        platform-patches:
-          - https://raw.githubusercontent.com/pantheon-systems/drops-7/patches/drops-7-pantheon.patch
-      update-filters:
-        - CopyPlatformAdditions
-        - ApplyPlatformPatches
-        - RemoveDrupalOrgPackagingInfo
-    pr:
-      instructions: |
-        Update from Drupal {{original-version}} to Drupal {{update-version}}.
+        Update from Drupal {{original-version}} to Drupal {{update-version}} (Tag1 Extended Support).
 
         Before merging this PR, check the [build results on CircleCI](https://circleci.com/gh/pantheon-systems/drops-7), and then visit the test site and confirm that the correct version of Drupal was, in fact, installed and tested.
 
@@ -465,6 +419,13 @@ projects:
       template: 'https://www.drupal.org/project/drupal/releases/{version}'
     download:
       url: 'https://ftp.drupal.org/files/projects/drupal-{version}.tar.gz'
+
+  tag1-drupal:
+    repo: git@gitlab.com:tag1consulting/drupal.git
+    path: ${working-copy-path}/tag1-drupal
+    main-branch: 7.x
+    release-node:
+      template: 'https://gitlab.com/tag1consulting/drupal/-/tags/{version}'
 
   WordPress:
     repo: git@github.com:WordPress/WordPress.git
