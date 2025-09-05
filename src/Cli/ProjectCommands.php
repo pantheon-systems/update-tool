@@ -625,6 +625,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         try {
             $this->logger->notice("Starting WorkingCopy::cloneBranch with dir={dir}, branch={branch}", ['dir' => $project_dir, 'branch' => $main_branch]);
             $project_working_copy = WorkingCopy::cloneBranch($authenticated_url, $project_dir, $main_branch, $api);
+            // Set logger on the Remote object inside WorkingCopy so we can see authentication logs
+            $project_working_copy->remote()->setLogger($this->logger);
             $this->logger->notice("Successfully created WorkingCopy");
         } catch (\Exception $e) {
             $this->logger->error("Failed to create WorkingCopy: {error}", ['error' => $e->getMessage()]);

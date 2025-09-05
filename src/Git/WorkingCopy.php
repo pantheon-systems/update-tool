@@ -28,7 +28,21 @@ class WorkingCopy implements LoggerAwareInterface
     protected function __construct($url, $dir, $branch = false, $api = null)
     {
         $this->remote = new Remote($url);
+        
+        // Add basic logging to see what's happening with authentication
+        if ($api) {
+            error_log("WorkingCopy: About to call addAuthentication with URL: " . $url);
+            $originalUrl = $this->remote->url();
+        }
+        
         $this->remote->addAuthentication($api);
+        
+        if ($api) {
+            $finalUrl = $this->remote->url();
+            $changed = ($originalUrl !== $finalUrl) ? 'yes' : 'no';
+            error_log("WorkingCopy: Authentication complete. URL changed: " . $changed . ", Final URL: " . preg_replace('#://[^@]*@#', '://***:***@', $finalUrl));
+        }
+        
         $this->dir = $dir;
         $this->api = $api;
 
