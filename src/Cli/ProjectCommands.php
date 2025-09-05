@@ -615,8 +615,12 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
         $this->logger->notice("Project URL: {url}, Directory: {dir}, Branch: {branch}", ['url' => $project_url, 'dir' => $project_dir, 'branch' => $main_branch]);
+        
+        // Use the authenticated URL from the remote repo object
+        $authenticated_url = $remote_repo->url();
+        $this->logger->notice("Using authenticated URL for cloning: {url}", ['url' => preg_replace('#://[^@]*@#', '://***:***@', $authenticated_url)]);
 
-        $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
+        $project_working_copy = WorkingCopy::cloneBranch($authenticated_url, $project_dir, $main_branch, $api);
         $project_working_copy
             ->addFork($project_fork)
             ->setLogger($this->logger);
