@@ -544,6 +544,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Determine the latest version in the same major series in the upstream
         $latest = $updater->findLatestVersion($major, $tag_prefix, $update_parameters);
+        if (empty($latest)) {
+            $this->logger->notice("No releases found for {upstream}.", ['upstream' => $upstream]);
+            return;
+        }
+        $this->logger->notice("Found latest version {version}.", ['version' => $latest]);
 
         // Convert $latest to a version number matching $version_pattern,
         // and put the actual tag name in $latestTag.

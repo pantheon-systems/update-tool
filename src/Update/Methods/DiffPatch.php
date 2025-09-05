@@ -26,6 +26,7 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
 
     protected $upstream_repo;
     protected $download_url;
+    protected $latest;
 
     /**
      * @inheritdoc
