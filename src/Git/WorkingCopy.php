@@ -25,24 +25,14 @@ class WorkingCopy implements LoggerAwareInterface
      * @param $url Remote origin for the GitHub repository
      * @param $dir Checkout location for the project
      */
-    protected function __construct($url, $dir, $branch = false, $api = null)
+    protected function __construct($url, $dir, $branch = false, $api = null, $logger = null)
     {
         $this->remote = new Remote($url);
-        
-        // Add basic logging to see what's happening with authentication
-        if ($api) {
-            error_log("WorkingCopy: About to call addAuthentication with URL: " . $url);
-            $originalUrl = $this->remote->url();
+        if ($logger) {
+            $this->remote->setLogger($logger);
+            $this->setLogger($logger);
         }
-        
         $this->remote->addAuthentication($api);
-        
-        if ($api) {
-            $finalUrl = $this->remote->url();
-            $changed = ($originalUrl !== $finalUrl) ? 'yes' : 'no';
-            error_log("WorkingCopy: Authentication complete. URL changed: " . $changed . ", Final URL: " . preg_replace('#://[^@]*@#', '://***:***@', $finalUrl));
-        }
-        
         $this->dir = $dir;
         $this->api = $api;
 
@@ -183,9 +173,9 @@ class WorkingCopy implements LoggerAwareInterface
      * @param HubphAPI|null $api
      * @return WorkingCopy
      */
-    public static function cloneBranch($url, $dir, $branch, $api, $depth = false)
+    public static function cloneBranch($url, $dir, $branch, $api, $depth = false, $logger = null)
     {
-        $workingCopy = new self($url, $dir, $branch, $api);
+        $workingCopy = new self($url, $dir, $branch, $api, $logger);
         $workingCopy->cloneIfNecessary($branch, $depth);
         return $workingCopy;
     }
