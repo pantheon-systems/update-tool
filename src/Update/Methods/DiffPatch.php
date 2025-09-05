@@ -65,6 +65,14 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
 
         // Create the diff file
         $diffContents = $this->updatedProject->diffRefs($parameters['meta']['current-version'], $this->latest);
+        
+        // Debug: Log diff info
+        $diffSize = strlen($diffContents);
+        $diffLines = substr_count($diffContents, "\n");
+        $this->logger->notice("Diff generated: {size} bytes, {lines} lines", ['size' => $diffSize, 'lines' => $diffLines]);
+        if ($diffSize < 100) {
+            $this->logger->notice("Diff content preview: {preview}", ['preview' => substr($diffContents, 0, 200)]);
+        }
 
         // Apply the diff as a patch
         $tmpfname = tempnam(sys_get_temp_dir(), "diff-patch-" . $parameters['meta']['current-version'] . '-' . $this->latest . '.tmp');
@@ -72,7 +80,7 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         $this->logger->notice('patch -d {file} --no-backup-if-mismatch --ignore-whitespace -Nutp1 < {tmpfile}', ['file' => $this->originalProject->dir(), 'tmpfile' => $tmpfname]);
         passthru('patch -d ' .  $this->originalProject->dir() . ' --no-backup-if-mismatch --ignore-whitespace -Nutp1 < ' . $tmpfname, $exitCode);
         if ($exitCode !== 0) {
-            throw new \Exception("Failed to apply diff as patch");
+            throw new \Exception("Failed to apply diff as patch. Diff size: $diffSize bytes, Lines: $diffLines");
         }
         unlink($tmpfname);
 
