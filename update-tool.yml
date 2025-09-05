@@ -5,6 +5,9 @@ log:
 github:
   default-user: update-tool
   personal-auth-token:
+    gha:
+      # For GitHub Actions - will look for GHA_TOKEN env var
+      path: /dev/null
     # This is a read-only token for pantheon-upstream
     pantheon-upstream:
       path: ${cache-path}/github-token
