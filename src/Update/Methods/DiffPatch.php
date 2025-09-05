@@ -123,7 +123,10 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
             throw new \Exception("Could not identify the type of application at " . $upstream_working_copy->dir());
         }
         $upstream_version = $info->version();
-        if ($upstream_version != $this->latest) {
+        // Strip -dev suffix for comparison to handle test versions
+        $normalized_upstream = preg_replace('/-dev$/', '', $upstream_version);
+        $normalized_latest = preg_replace('/-dev$/', '', $this->latest);
+        if ($normalized_upstream != $normalized_latest) {
             throw new \Exception("Update failed. We expected that the local working copy of the upstream project should be {$this->latest}, but instead it is $upstream_version.");
         }
 
