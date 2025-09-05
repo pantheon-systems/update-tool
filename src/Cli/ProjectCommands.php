@@ -604,6 +604,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
 
         $branch = "update-$latest";
+        
+        $this->logger->notice("About to get project configuration for {remote}", ['remote' => $remote]);
 
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
@@ -620,7 +622,14 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $authenticated_url = $remote_repo->url();
         $this->logger->notice("Using authenticated URL for cloning: {url}", ['url' => preg_replace('#://[^@]*@#', '://***:***@', $authenticated_url)]);
 
-        $project_working_copy = WorkingCopy::cloneBranch($authenticated_url, $project_dir, $main_branch, $api);
+        try {
+            $this->logger->notice("Starting WorkingCopy::cloneBranch with dir={dir}, branch={branch}", ['dir' => $project_dir, 'branch' => $main_branch]);
+            $project_working_copy = WorkingCopy::cloneBranch($authenticated_url, $project_dir, $main_branch, $api);
+            $this->logger->notice("Successfully created WorkingCopy");
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to create WorkingCopy: {error}", ['error' => $e->getMessage()]);
+            throw $e;
+        }
         $project_working_copy
             ->addFork($project_fork)
             ->setLogger($this->logger);
