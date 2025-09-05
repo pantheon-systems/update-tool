@@ -37,13 +37,33 @@ class Remote implements LoggerAwareInterface
     {
         if ($api) {
             $originalRemote = $this->remote;
+            $token = $api->gitHubToken();
+            
+            // Try the hubph method first
             $this->remote = $api->addTokenAuthentication($this->remote);
+            
+            // If hubph didn't modify the URL and we have a token, do it ourselves
+            if ($originalRemote === $this->remote && $token && preg_match('#github\.com[/:]#', $originalRemote)) {
+                $projectAndOrg = $this->projectWithOrg();
+                $this->remote = "https://{$token}:x-oauth-basic@github.com/{$projectAndOrg}.git";
+                if ($this->logger) {
+                    $this->logger->notice("Applied manual token authentication to URL");
+                }
+            }
             
             // Log authentication setup (without exposing token)
             if ($this->logger) {
-                $hasToken = $api->gitHubToken() ? 'yes' : 'no';
+                $hasToken = $token ? 'yes' : 'no';
                 $urlChanged = ($originalRemote !== $this->remote) ? 'yes' : 'no';
                 $logUrl = preg_replace('#://[^@]*@#', '://***:***@', $this->remote);
+                $tokenPrefix = $token ? substr($token, 0, 8) . '...' : 'none';
+                $githubMatch = preg_match('#github\.com[/:]#', $originalRemote) ? 'yes' : 'no';
+                $this->logger->notice("Authentication debug: token={tokenPrefix}, github_match={githubMatch}, original={originalUrl}, final={finalUrl}", [
+                    'tokenPrefix' => $tokenPrefix,
+                    'githubMatch' => $githubMatch,
+                    'originalUrl' => $originalRemote,
+                    'finalUrl' => $logUrl
+                ]);
                 $this->logger->notice("Authentication setup: token available={hasToken}, URL modified={urlChanged}, final URL={url}", [
                     'hasToken' => $hasToken,
                     'urlChanged' => $urlChanged,
