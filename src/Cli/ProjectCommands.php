@@ -656,24 +656,36 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
                 return;
             }
             if ($main_branch_version != $latest) {
-                $this->logger->notice("The latest version is {latest}, which is different than {current}, so I don't know what to do. Aborting.", ['latest' => $latest, 'current' => $current]);
+                // Check if this is a valid version upgrade (e.g., 7.103.5 -> 7.104)
+                $isValidUpgrade = version_compare($latest, $current, '>');
+                if ($isValidUpgrade) {
+                    $this->logger->notice("Valid version upgrade detected: {current} -> {latest}. Skipping tagging logic and proceeding with normal update.", ['current' => $current, 'latest' => $latest]);
+                    // Skip the tagging logic and go to the normal update process
+                } else {
+                    $this->logger->notice("The latest version is {latest}, which is different than {current}, so I don't know what to do. Aborting.", ['latest' => $latest, 'current' => $current]);
+                    return;
+                }
             }
-            $project_working_copy->fetch('origin', $tag_branch);
-            $project_working_copy->switchBranch($tag_branch);
-            $existing_commit_message = $project_working_copy->message($tag_branch);
+            
+            // Only do tagging logic if we're not doing a version upgrade
+            if (!isset($isValidUpgrade) || !$isValidUpgrade) {
+                $project_working_copy->fetch('origin', $tag_branch);
+                $project_working_copy->switchBranch($tag_branch);
+                $existing_commit_message = $project_working_copy->message($tag_branch);
             if (!$allow_msg_mismatch && strpos($existing_commit_message, $message) === false) {
                 throw new \Exception("The commit message at the top of the {main} branch does not match the commit message we expect.\n\nExpected: $message\n\nActual: $existing_commit_message");
             }
 
-            // Tag it up.
-            $project_working_copy
-                ->tag($latest, $tag_branch)
-                ->push('origin', $latest);
+                // Tag it up.
+                $project_working_copy
+                    ->tag($latest, $tag_branch)
+                    ->push('origin', $latest);
 
-            $this->logger->notice("Tagged version {latest}.", ['latest' => $latest]);
-            $project_working_copy->switchBranch($main_branch);
+                $this->logger->notice("Tagged version {latest}.", ['latest' => $latest]);
+                $project_working_copy->switchBranch($main_branch);
 
-            return;
+                return;
+            }
         }
 
         // Do the actual update
