@@ -903,6 +903,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     protected function createRemote($remote_name, $api)
     {
         $remote_url = $this->getConfig()->get("projects.$remote_name.repo");
-        return Remote::create($remote_url, $api);
+        $remote = Remote::create($remote_url, $api);
+        $remote->setLogger($this->logger);
+        return $remote;
     }
 }

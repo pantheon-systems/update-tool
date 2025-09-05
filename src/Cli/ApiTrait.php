@@ -17,6 +17,18 @@ trait ApiTrait
         $api = new HubphAPI($this->getConfig());
         $api->setAs($as);
 
+        // Log API authentication setup
+        if (isset($this->logger)) {
+            $token = $api->gitHubToken();
+            $hasToken = $token ? 'yes' : 'no';
+            $tokenLength = $token ? strlen($token) : 0;
+            $this->logger->notice("API setup: using profile '{as}', token available={hasToken}, token length={tokenLength}", [
+                'as' => $as,
+                'hasToken' => $hasToken, 
+                'tokenLength' => $tokenLength
+            ]);
+        }
+
         // Turn on PR request logging if the log path is set.
         $log_path = $this->getConfig()->get('log.path');
         if ($log_path) {
