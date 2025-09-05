@@ -36,7 +36,20 @@ class Remote implements LoggerAwareInterface
     public function addAuthentication($api = null)
     {
         if ($api) {
+            $originalRemote = $this->remote;
             $this->remote = $api->addTokenAuthentication($this->remote);
+            
+            // Log authentication setup (without exposing token)
+            if ($this->logger) {
+                $hasToken = $api->gitHubToken() ? 'yes' : 'no';
+                $urlChanged = ($originalRemote !== $this->remote) ? 'yes' : 'no';
+                $logUrl = preg_replace('#://[^@]*@#', '://***:***@', $this->remote);
+                $this->logger->notice("Authentication setup: token available={hasToken}, URL modified={urlChanged}, final URL={url}", [
+                    'hasToken' => $hasToken,
+                    'urlChanged' => $urlChanged,
+                    'url' => $logUrl
+                ]);
+            }
         }
     }
 

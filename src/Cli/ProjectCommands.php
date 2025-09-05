@@ -246,6 +246,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
 
         $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
+        $this->logger->notice("Project URL: {url}, Directory: {dir}, Branch: {branch}", ['url' => $project_url, 'dir' => $project_dir, 'branch' => $main_branch]);
 
         $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
 
@@ -613,6 +614,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
 
         $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
+        $this->logger->notice("Project URL: {url}, Directory: {dir}, Branch: {branch}", ['url' => $project_url, 'dir' => $project_dir, 'branch' => $main_branch]);
 
         $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
         $project_working_copy

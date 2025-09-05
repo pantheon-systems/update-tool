@@ -590,12 +590,23 @@ class WorkingCopy implements LoggerAwareInterface
 
         $branchTerm = $branch ? "--branch=$branch " : '';
         $depthTerm = $depth ? "--depth=$depth " : '';
-        exec("git clone '{$this->url()}' $branchTerm$depthTerm'{$this->dir}' 2>/dev/null", $output, $result);
+        
+        // Log the URL being used for cloning (without exposing token)
+        $url = $this->url();
+        $logUrl = preg_replace('#://[^@]*@#', '://***:***@', $url);
+        if ($this->logger) {
+            $this->logger->notice("Cloning repository from {url} to {dir}", ['url' => $logUrl, 'dir' => $this->dir]);
+        }
+        
+        exec("git clone '{$url}' $branchTerm$depthTerm'{$this->dir}' 2>&1", $output, $result);
 
         // Fail if we could not clone.
         if ($result) {
             $project = $this->projectWithOrg();
-            throw new \Exception("Could not clone $project: git failed with exit code $result");
+            if ($this->logger) {
+                $this->logger->error("Git clone failed with exit code {code}. Output: {output}", ['code' => $result, 'output' => implode("\n", $output)]);
+            }
+            throw new \Exception("Could not clone $project: git failed with exit code $result. Output: " . implode("\n", $output));
         }
     }
 
