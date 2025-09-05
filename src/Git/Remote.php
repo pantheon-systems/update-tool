@@ -45,7 +45,14 @@ class Remote implements LoggerAwareInterface
             // If hubph didn't modify the URL and we have a token, do it ourselves
             if ($originalRemote === $this->remote && $token && preg_match('#github\.com[/:]#', $originalRemote)) {
                 $projectAndOrg = $this->projectWithOrg();
-                $this->remote = "https://{$token}:x-oauth-basic@github.com/{$projectAndOrg}.git";
+                $newUrl = "https://{$token}:x-oauth-basic@github.com/{$projectAndOrg}.git";
+                if ($this->logger) {
+                    $this->logger->notice("Manual auth debug: projectAndOrg={project}, newUrl={url}", [
+                        'project' => $projectAndOrg,
+                        'url' => preg_replace('#://[^@]*@#', '://***:***@', $newUrl)
+                    ]);
+                }
+                $this->remote = $newUrl;
                 if ($this->logger) {
                     $this->logger->notice("Applied manual token authentication to URL");
                 }
