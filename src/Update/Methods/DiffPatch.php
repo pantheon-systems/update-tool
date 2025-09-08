@@ -59,13 +59,9 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         $this->originalProject = $originalProject;
         $this->updatedProject = $this->fetchUpstream($parameters);
 
-        // Add the original project as a remote so we can fetch both tags
-        $this->updatedProject->addRemote($this->originalProject->url(), 'downstream');
-
-        // Fetch the sources for the 'latest' tag from upstream (origin)
+        // Fetch the sources for the 'latest' tag
         $this->updatedProject->fetch('origin', 'refs/tags/' . $this->latest);
-        // Fetch the current version tag from the downstream project
-        $this->updatedProject->fetch('downstream', 'refs/tags/' . $parameters['meta']['current-version'] . ':refs/tags/' . $parameters['meta']['current-version']);
+        $this->updatedProject->fetch('origin', 'refs/tags/' . $parameters['meta']['current-version'] . ':refs/tags/' . $parameters['meta']['current-version']);
 
         // Create the diff file
         $diffContents = $this->updatedProject->diffRefs($parameters['meta']['current-version'], $this->latest);
