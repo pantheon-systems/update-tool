@@ -62,7 +62,9 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         // Fetch the sources for the 'latest' tag
         $this->updatedProject->fetch('origin', 'refs/tags/' . $this->latest);
         
-        // For tag1-drupal, map patch versions to base version for diff
+        // For tag1-drupal, map patch versions to base version for diff.
+        // Drops-7 can and will add patch versions with additional releases (i.e. modules) 
+        // for our upstream, so check the correct minor version for the diff base.
         $upstream_base_version = $parameters['meta']['current-version'];
         if (strpos($this->upstream_url, 'tag1consulting/drupal-partner-mirror-test') !== false) {
             // Convert 7.103.5 -> 7.103 for upstream comparison
