@@ -61,10 +61,23 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
 
         // Fetch the sources for the 'latest' tag
         $this->updatedProject->fetch('origin', 'refs/tags/' . $this->latest);
-        $this->updatedProject->fetch('origin', 'refs/tags/' . $parameters['meta']['current-version'] . ':refs/tags/' . $parameters['meta']['current-version']);
+        
+        // For tag1-drupal, map patch versions to base version for diff
+        $upstream_base_version = $parameters['meta']['current-version'];
+        if (strpos($this->upstream_url, 'tag1consulting/drupal-partner-mirror-test') !== false) {
+            // Convert 7.103.5 -> 7.103 for upstream comparison
+            $version_parts = explode('.', $parameters['meta']['current-version']);
+            if (count($version_parts) >= 3) {
+                $upstream_base_version = $version_parts[0] . '.' . $version_parts[1];
+                $this->logger->notice("Mapping current version {current} to upstream base version {base}", 
+                    ['current' => $parameters['meta']['current-version'], 'base' => $upstream_base_version]);
+            }
+        }
+        
+        $this->updatedProject->fetch('origin', 'refs/tags/' . $upstream_base_version . ':refs/tags/' . $upstream_base_version);
 
         // Create the diff file
-        $diffContents = $this->updatedProject->diffRefs($parameters['meta']['current-version'], $this->latest);
+        $diffContents = $this->updatedProject->diffRefs($upstream_base_version, $this->latest);
         
         // Debug: Log diff info
         $diffSize = strlen($diffContents);
@@ -123,6 +136,15 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         $upstream_working_copy = WorkingCopy::shallowClone($this->upstream_url, $this->upstream_dir, $latestTag, 1, $this->api);
         $upstream_working_copy
             ->setLogger($this->logger);
+
+        // Bootstrap: Add missing 7.103 tag for tag1-drupal if it doesn't exist
+        if (strpos($this->upstream_url, 'tag1consulting/drupal-partner-mirror-test') !== false) {
+            $has_tag = $upstream_working_copy->exec('git tag -l "7.103"', [], false);
+            if (empty(trim($has_tag))) {
+                $this->logger->notice("Adding bootstrap tag 7.103 to tag1-drupal upstream");
+                $upstream_working_copy->exec('git tag 7.103 e7242e52bb13286c67d27fad57915f868f50b0a9');
+            }
+        }
 
         // Confirm that the local working copy of the upstream has checked out $latest
         $version_info = new VersionTool();
