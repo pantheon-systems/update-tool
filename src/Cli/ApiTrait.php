@@ -25,7 +25,7 @@ trait ApiTrait
                 $tokenLength = $token ? strlen($token) : 0;
                 $this->logger->notice("API setup: using profile '{as}', token available={hasToken}, token length={tokenLength}", [
                     'as' => $as,
-                    'hasToken' => $hasToken, 
+                    'hasToken' => $hasToken,
                     'tokenLength' => $tokenLength
                 ]);
             } catch (\Exception $e) {

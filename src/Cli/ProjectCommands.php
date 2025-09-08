@@ -664,9 +664,9 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
                 $project_working_copy->fetch('origin', $tag_branch);
                 $project_working_copy->switchBranch($tag_branch);
                 $existing_commit_message = $project_working_copy->message($tag_branch);
-            if (!$allow_msg_mismatch && strpos($existing_commit_message, $message) === false) {
-                throw new \Exception("The commit message at the top of the {main} branch does not match the commit message we expect.\n\nExpected: $message\n\nActual: $existing_commit_message");
-            }
+                if (!$allow_msg_mismatch && strpos($existing_commit_message, $message) === false) {
+                    throw new \Exception("The commit message at the top of the {main} branch does not match the commit message we expect.\n\nExpected: $message\n\nActual: $existing_commit_message");
+                }
 
                 // Tag it up.
                 $project_working_copy

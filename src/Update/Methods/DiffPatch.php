@@ -69,8 +69,10 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
             $version_parts = explode('.', $parameters['meta']['current-version']);
             if (count($version_parts) >= 3) {
                 $upstream_base_version = $version_parts[0] . '.' . $version_parts[1];
-                $this->logger->notice("Mapping current version {current} to upstream base version {base}", 
-                    ['current' => $parameters['meta']['current-version'], 'base' => $upstream_base_version]);
+                $this->logger->notice(
+                    "Mapping current version {current} to upstream base version {base}",
+                    ['current' => $parameters['meta']['current-version'], 'base' => $upstream_base_version]
+                );
             }
         }
         
