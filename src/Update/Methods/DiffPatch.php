@@ -76,8 +76,9 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         
         $this->updatedProject->fetch('origin', 'refs/tags/' . $upstream_base_version . ':refs/tags/' . $upstream_base_version);
 
-        // Create the diff file
-        $diffContents = $this->updatedProject->diffRefs($upstream_base_version, $this->latest);
+        // Create the diff file with exclusions
+        $diffExcludes = $parameters['diff-excludes'] ?? [];
+        $diffContents = $this->generateFilteredDiff($upstream_base_version, $this->latest, $diffExcludes);
         
         // Debug: Log diff info
         $diffSize = strlen($diffContents);
@@ -152,5 +153,39 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         }
 
         return $upstream_working_copy;
+    }
+
+    /**
+     * Generate a filtered diff that excludes specified files/directories
+     */
+    protected function generateFilteredDiff($fromRef, $toRef, $excludes)
+    {
+        if (empty($excludes)) {
+            return $this->updatedProject->diffRefs($fromRef, $toRef);
+        }
+
+        $old_dir = getcwd();
+        chdir($this->updatedProject->dir());
+        
+        // Build git diff command with exclusions
+        $excludeArgs = '';
+        foreach ($excludes as $exclude) {
+            $excludeArgs .= " ':!{$exclude}'";
+        }
+        
+        $diffCommand = "git diff {$fromRef} {$toRef} -- .{$excludeArgs}";
+        $this->logger->notice('Executing {command}', ['command' => $diffCommand]);
+        
+        ob_start();
+        passthru($diffCommand, $exitCode);
+        $diffContents = ob_get_clean();
+        
+        chdir($old_dir);
+        
+        if ($exitCode !== 0) {
+            throw new \Exception("Failed to generate filtered diff. Command: {$diffCommand}");
+        }
+        
+        return $diffContents;
     }
 }

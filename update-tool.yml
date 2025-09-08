@@ -318,6 +318,12 @@ projects:
       version-pattern: '#.#'
       update-message: Update to Drupal {version}.
       update-method: DiffPatch
+      update-parameters:
+        diff-excludes:
+          - .gitignore
+          - .gitlab-ci.yml
+          - .gitlab-ci/
+          - .gitlab/
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}} (Tag1 Extended Support).
