@@ -324,6 +324,10 @@ projects:
           - .gitlab-ci.yml
           - .gitlab-ci/
           - .gitlab/
+          - phpstan.neon
+          - phpstan-baseline.neon
+          - composer.json
+          - composer.lock
     pr:
       instructions: |
         Update from Drupal {{original-version}} to Drupal {{update-version}} (Tag1 Extended Support).
