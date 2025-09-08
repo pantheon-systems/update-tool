@@ -137,23 +137,6 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         $upstream_working_copy
             ->setLogger($this->logger);
 
-        // Bootstrap: Add missing 7.103 tag for tag1-drupal if it doesn't exist
-        if (strpos($this->upstream_url, 'tag1consulting/drupal-partner-mirror-test') !== false) {
-            $old_dir = getcwd();
-            chdir($upstream_working_copy->dir());
-            
-            $has_tag = exec('git tag -l "7.103"', $output, $result);
-            if (empty(trim($has_tag))) {
-                $this->logger->notice("Adding bootstrap tag 7.103 to tag1-drupal upstream");
-                exec('git tag 7.103 e7242e52bb13286c67d27fad57915f868f50b0a9', $tag_output, $tag_result);
-                if ($tag_result !== 0) {
-                    $this->logger->warning("Failed to create bootstrap tag 7.103");
-                }
-            }
-            
-            chdir($old_dir);
-        }
-
         // Confirm that the local working copy of the upstream has checked out $latest
         $version_info = new VersionTool();
         $info = $version_info->info($upstream_working_copy->dir());
