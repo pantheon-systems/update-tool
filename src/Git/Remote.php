@@ -46,36 +46,7 @@ class Remote implements LoggerAwareInterface
             if ($originalRemote === $this->remote && $token && preg_match('#github\.com[/:]#', $originalRemote)) {
                 $projectAndOrg = $this->projectWithOrg();
                 $newUrl = "https://x-access-token:{$token}@github.com/{$projectAndOrg}.git";
-                if ($this->logger) {
-                    $this->logger->notice("Manual auth debug: projectAndOrg={project}, newUrl={url}", [
-                        'project' => $projectAndOrg,
-                        'url' => preg_replace('#://[^@]*@#', '://***:***@', $newUrl)
-                    ]);
-                }
                 $this->remote = $newUrl;
-                if ($this->logger) {
-                    $this->logger->notice("Applied manual token authentication to URL using x-access-token format");
-                }
-            }
-            
-            // Log authentication setup (without exposing token)
-            if ($this->logger) {
-                $hasToken = $token ? 'yes' : 'no';
-                $urlChanged = ($originalRemote !== $this->remote) ? 'yes' : 'no';
-                $logUrl = preg_replace('#://[^@]*@#', '://***:***@', $this->remote);
-                $tokenPrefix = $token ? substr($token, 0, 8) . '...' : 'none';
-                $githubMatch = preg_match('#github\.com[/:]#', $originalRemote) ? 'yes' : 'no';
-                $this->logger->notice("Authentication debug: token={tokenPrefix}, github_match={githubMatch}, original={originalUrl}, final={finalUrl}", [
-                    'tokenPrefix' => $tokenPrefix,
-                    'githubMatch' => $githubMatch,
-                    'originalUrl' => $originalRemote,
-                    'finalUrl' => $logUrl
-                ]);
-                $this->logger->notice("Authentication setup: token available={hasToken}, URL modified={urlChanged}, final URL={url}", [
-                    'hasToken' => $hasToken,
-                    'urlChanged' => $urlChanged,
-                    'url' => $logUrl
-                ]);
             }
         }
     }

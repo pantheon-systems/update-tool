@@ -608,8 +608,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $branch = "update-$latest";
         
-        $this->logger->notice("About to get project configuration for {remote}", ['remote' => $remote]);
-
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
         $project_fork = $this->getConfig()->get("projects.$remote.fork");
@@ -619,20 +617,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
 
         $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
-        $this->logger->notice("Project URL: {url}, Directory: {dir}, Branch: {branch}", ['url' => $project_url, 'dir' => $project_dir, 'branch' => $main_branch]);
         
         // Use the authenticated URL from the remote repo object
         $authenticated_url = $remote_repo->url();
-        $this->logger->notice("Using authenticated URL for cloning: {url}", ['url' => preg_replace('#://[^@]*@#', '://***:***@', $authenticated_url)]);
 
-        try {
-            $this->logger->notice("Starting WorkingCopy::cloneBranch with dir={dir}, branch={branch}", ['dir' => $project_dir, 'branch' => $main_branch]);
-            $project_working_copy = WorkingCopy::cloneBranch($authenticated_url, $project_dir, $main_branch, $api, false, $this->logger);
-            $this->logger->notice("Successfully created WorkingCopy");
-        } catch (\Exception $e) {
-            $this->logger->error("Failed to create WorkingCopy: {error}", ['error' => $e->getMessage()]);
-            throw $e;
-        }
+        $project_working_copy = WorkingCopy::cloneBranch($authenticated_url, $project_dir, $main_branch, $api, false, $this->logger);
         $project_working_copy
             ->addFork($project_fork)
             ->setLogger($this->logger);

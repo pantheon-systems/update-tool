@@ -80,13 +80,10 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         $diffExcludes = $parameters['diff-excludes'] ?? [];
         $diffContents = $this->generateFilteredDiff($upstream_base_version, $this->latest, $diffExcludes);
         
-        // Debug: Log diff info
+        // Log diff info
         $diffSize = strlen($diffContents);
         $diffLines = substr_count($diffContents, "\n");
         $this->logger->notice("Diff generated: {size} bytes, {lines} lines", ['size' => $diffSize, 'lines' => $diffLines]);
-        if ($diffSize < 100) {
-            $this->logger->notice("Diff content preview: {preview}", ['preview' => substr($diffContents, 0, 200)]);
-        }
 
         // Apply the diff as a patch
         $tmpfname = tempnam(sys_get_temp_dir(), "diff-patch-" . $parameters['meta']['current-version'] . '-' . $this->latest . '.tmp');
