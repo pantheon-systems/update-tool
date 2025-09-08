@@ -36,7 +36,18 @@ class Remote implements LoggerAwareInterface
     public function addAuthentication($api = null)
     {
         if ($api) {
+            $originalRemote = $this->remote;
+            $token = $api->gitHubToken();
+            
+            // Try the hubph method first
             $this->remote = $api->addTokenAuthentication($this->remote);
+            
+            // If hubph didn't modify the URL and we have a token, do it ourselves
+            if ($originalRemote === $this->remote && $token && preg_match('#github\.com[/:]#', $originalRemote)) {
+                $projectAndOrg = $this->projectWithOrg();
+                $newUrl = "https://x-access-token:{$token}@github.com/{$projectAndOrg}.git";
+                $this->remote = $newUrl;
+            }
         }
     }
 
