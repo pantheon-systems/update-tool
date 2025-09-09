@@ -55,9 +55,6 @@ trait CommandTesterTrait
         // Define a global output object to capture the test results
         $output = new BufferedOutput();
         array_unshift($argv, $this->appName);
-
-        // Disable logging during tests to prevent contaminating output
-        // putenv('TEST_OVERRIDE_LOG_LEVEL=ERROR');
         
         // We can only call `Runner::execute()` once; then we need to tear down.
         $runner = new \Robo\Runner($commandClasses ?: $this->commandClasses);

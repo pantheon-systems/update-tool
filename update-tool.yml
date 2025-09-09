@@ -308,7 +308,7 @@ projects:
 
         This is experimental. Do not merge.
   drops-7:
-    repo: "https://github.com/pantheon-systems/drops-7-automation-test-workspace.git"
+    repo: "https://github.com/pantheon-systems/drops-7.git"
     path: ${working-copy-path}/drops-7
     main-branch: default
     tag-branch: master
@@ -430,7 +430,7 @@ projects:
       url: 'https://ftp.drupal.org/files/projects/drupal-{version}.tar.gz'
 
   tag1-drupal:
-    repo: git@gitlab.com:tag1consulting/drupal-partner-mirror-test.git
+    repo: git@gitlab.com:tag1consulting/drupal-partner-mirror.git
     path: ${working-copy-path}/tag1-drupal
     main-branch: 7.x-d7es
 
