@@ -33,6 +33,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     protected $admin;
     protected $adminPw;
     protected $adminEmail;
+    protected $forceDbDrop;
+    protected $upstream_repo;
+    protected $upstream_dir;
 
     /**
      * @inheritdoc
@@ -51,6 +54,9 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $this->admin = $config->get("fixtures.wp.admin", 'admin');
         $this->adminPw = $config->get("fixtures.wp.admin-pw", 'manticore');
         $this->adminEmail = $config->get("fixtures.wp.admin-email", 'bot@pantheon.io');
+        $this->forceDbDrop = $config->get("projects.$project.force-db-drop", false);
+        $this->upstream_repo = $config->get("projects.$upstream.repo");
+        $this->upstream_dir = $config->get("projects.$upstream.path");
     }
 
     /**
@@ -83,9 +89,12 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
      */
     public function update(WorkingCopy $originalProject, array $parameters)
     {
-        $forceDbDrop = !empty($parameters['force-db-drop']) ?? false;
-        $path = $originalProject->dir();
+        $forceDbDrop = false;
+        if (!empty($parameters['force-db-drop']) || $this->forceDbDrop) {
+            $forceDbDrop = true;
+        }
 
+        $path = $originalProject->dir();
         $wpConfigPath = "$path/wp-config.php";
         $wpConfigData = file_get_contents($wpConfigPath);
         unlink($wpConfigPath);

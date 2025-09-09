@@ -2,6 +2,7 @@
 
 namespace UpdateTool;
 
+use UpdateTool\Update\Methods;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class ProjectCommandsTest extends CommandsTestBase
@@ -114,6 +115,8 @@ class ProjectCommandsTest extends CommandsTestBase
     /**
      * Test to see if we can update Pantheon's WordPress from 4.9.8 to 5.0.1
      * using a snapshot.
+     *
+     * @group WordPressTests
      */
     public function testWordPressUpdate()
     {
@@ -124,9 +127,9 @@ class ProjectCommandsTest extends CommandsTestBase
         sleep(5);
 
         // Create a fork
-//        $wp_repo = $this->fixtures()->forkTestRepo('wp');
+        // $wp_repo = $this->fixtures()->forkTestRepo('wp');
 
-        // Verify the latest releast in our drops-8 and drupal fixtures.
+        // Verify the latest release in our wp fixture.
         $output = $this->executeExpectOK(['project:latest', 'wp']);
         $this->assertEquals('4.9.8', $output);
 
@@ -138,7 +141,7 @@ class ProjectCommandsTest extends CommandsTestBase
         $output = $this->executeExpectOK(['project:release-node', 'wp', '--format=string']);
         $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
 
-        // Try to create an upstream update PR for our drops-8 fixture
+        // Try to create an upstream update PR for our wp fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
         $this->assertContains('Updating wp from 4.9.8 to 5.0.1', $output);
 
@@ -151,5 +154,42 @@ class ProjectCommandsTest extends CommandsTestBase
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
         $this->assertContains('[notice] Pull request already exists for available update 5.0.1; nothing more to do.', $output);
+    }
+
+    /**
+     * Test to see if we can update Pantheon's WordPress Multisite from a
+     *  commit.
+     *
+     * @group WordPressTests
+     */
+    public function testWordPressMultisiteUpdateWithCommit()
+    {
+        // Closes any leftover PRs in the fixture repository.
+        $this->fixtures()->closeAllOpenPullRequests('wpms-commit');
+
+        // Make sure github API has enough time to realize the PR has been closed
+        sleep(5);
+
+        // Verify the latest release in our wpms fixture.
+        $output = $this->executeExpectOK(['project:latest', 'wpms-commit']);
+        $this->assertEquals('4.9.8', $output);
+
+        // Check to see if an update is expected in our fixture. (It always is.)
+        $output = $this->executeExpectOK(['project:upstream:check', 'wpms-commit']);
+        $this->assertContains('wpms-commit 4.9.8 has an available update:', $output);
+
+        // Try to create an upstream update PR for our wpms fixture
+        $output = $this->executeExpectOK(['project:upstream:update', 'wpms-commit']);
+        $this->assertContains('Updating wpms-commit from 4.9.8 to', $output);
+
+        // Ensure that the PR that was created is logged
+        $this->assertFileExists($this->fixtures()->activityLogPath());
+
+        // Make sure github API has enough time to realize the PR has been created
+        sleep(5);
+
+        // Try to make another update; confirm that nothing is done
+        $output = $this->executeExpectOK(['project:upstream:update', 'wpms-commit']);
+        $this->assertContains('[notice] Pull request already exists for available update 4.9.8; nothing more to do.', $output);
     }
 }

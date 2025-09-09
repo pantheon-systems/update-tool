@@ -122,6 +122,31 @@ class Remote implements LoggerAwareInterface
     }
 
     /**
+     * Returns an array of the last X commit hashes.
+     *
+     * @return string
+     */
+    public function commits($branch = null)
+    {
+        // If branch wasn't manually specified, retrieve the default branch from the repo.
+        if (empty($branch)) {
+            $branch = $this->git('remote show {remote}', ['remote' => $this->remote]);
+            $branch = trim($branch[3]);
+            // The response always begins with "HEAD branch: ", trim.
+            $branch = substr($branch, 13);
+        }
+
+
+        $commit_hash = $this->git('ls-remote {remote} {branch}', ['remote' => $this->remote, 'branch' => $branch]);
+
+        if (!empty($commit_hash)) {
+            return $commit_hash;
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Delete a tag from the remote
      */
     public function delete($tag)
@@ -195,5 +220,20 @@ class Remote implements LoggerAwareInterface
     public function git($cmd, $replacements = [], $redacted = [])
     {
         return $this->execWithRedaction('git ' . $cmd, $replacements, $redacted);
+    }
+
+    /**
+     * Get the latest commit message from a given repository based on a hash.
+     *
+     * @param string $hash The commit hash for the commit message.
+     * @param string $dir The directory to shallow clone the repository to.
+     */
+    public function getCommitMessageByHash($hash, $dir = '/tmp')
+    {
+        $upstream_working_copy = WorkingCopy::shallowClone($this->remote, $dir, 'master', 1);
+        $upstream_working_copy->fetch('origin', 'master');
+        $upstream_working_copy->checkout($hash);
+        $message = $upstream_working_copy->message($hash);
+        return $message;
     }
 }
