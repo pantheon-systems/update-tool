@@ -57,7 +57,7 @@ trait CommandTesterTrait
         array_unshift($argv, $this->appName);
 
         // Disable logging during tests to prevent contaminating output
-        putenv('TEST_OVERRIDE_LOG_LEVEL=ERROR');
+        // putenv('TEST_OVERRIDE_LOG_LEVEL=ERROR');
         
         // We can only call `Runner::execute()` once; then we need to tear down.
         $runner = new \Robo\Runner($commandClasses ?: $this->commandClasses);
@@ -102,9 +102,9 @@ trait CommandTesterTrait
         $filteredLines = [];
         
         foreach ($lines as $line) {
-            // Skip notice messages from API setup and command execution
-            if (preg_match('/^Notice:.*API setup:/', $line) ||
-                preg_match('/^Notice:.*Executing git/', $line)) {
+            // Skip specific logging notice messages that contaminate test output
+            if (preg_match('/\[notice\].*API setup:/', $line) ||
+                preg_match('/\[notice\].*Executing git/', $line)) {
                 continue;
             }
             $filteredLines[] = $line;
