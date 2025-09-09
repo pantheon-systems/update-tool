@@ -66,7 +66,7 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         // Drops-7 can and will add patch versions with additional releases (i.e. modules)
         // for our upstream, so check the correct minor version for the diff base.
         $upstream_base_version = $parameters['meta']['current-version'];
-        if (strpos($this->upstream_url, 'tag1consulting/drupal-partner-mirror-test') !== false) {
+        if (strpos($this->upstream_url, 'tag1consulting') !== false) {
             // Convert 7.103.5 -> 7.103 for upstream comparison
             $version_parts = explode('.', $parameters['meta']['current-version']);
             if (count($version_parts) >= 3) {
