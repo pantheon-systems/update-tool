@@ -55,7 +55,7 @@ trait CommandTesterTrait
         // Define a global output object to capture the test results
         $output = new BufferedOutput();
         array_unshift($argv, $this->appName);
-
+        
         // We can only call `Runner::execute()` once; then we need to tear down.
         $runner = new \Robo\Runner($commandClasses ?: $this->commandClasses);
         $runner->setEnvConfigPrefix('TEST_OVERRIDE');
@@ -68,8 +68,12 @@ trait CommandTesterTrait
         // Destroy our container so that we can call $runner->execute() again for the next test.
         \Robo\Robo::unsetContainer();
 
+        // Clean output by removing notice messages
+        $rawOutput = $output->fetch();
+        $cleanOutput = $this->filterLogMessages($rawOutput);
+        
         // Return the output and status code.
-        return [trim($output->fetch()), $statusCode];
+        return [trim($cleanOutput), $statusCode];
     }
 
     protected function executeExpectOK($argv, $commandClasses = null, $configurationFile = false)
@@ -84,5 +88,25 @@ trait CommandTesterTrait
         list($output, $status) = $this->execute($argv, $commandClasses, $configurationFile);
         $this->assertNotEquals(0, $status);
         return $output;
+    }
+
+    /**
+     * Filter out notice messages from command output
+     */
+    private function filterLogMessages($output)
+    {
+        $lines = explode("\n", $output);
+        $filteredLines = [];
+        
+        foreach ($lines as $line) {
+            // Skip specific logging notice messages that contaminate test output
+            if (preg_match('/\[notice\].*API setup:/', $line) ||
+                preg_match('/\[notice\].*Executing git/', $line)) {
+                continue;
+            }
+            $filteredLines[] = $line;
+        }
+        
+        return implode("\n", $filteredLines);
     }
 }

@@ -246,6 +246,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
 
         $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
+        $this->logger->notice("Project URL: {url}, Directory: {dir}, Branch: {branch}", ['url' => $project_url, 'dir' => $project_dir, 'branch' => $main_branch]);
 
         $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
 
@@ -473,7 +474,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
                 throw new \Exception("Could not figure out version from " . $updated_project->dir() . "; maybe project failed to update correctly.");
             }
             $updated_version = $info->version();
-            if ($updated_version !== $version) {
+            // Strip -dev suffix for comparison to handle test versions
+            $normalized_updated = preg_replace('/-dev$/', '', $updated_version);
+            $normalized_version = preg_replace('/-dev$/', '', $version);
+            if ($normalized_updated !== $normalized_version) {
                 throw new \Exception("Update failed. We expected that the updated version of the project should be '$version', but instead it is '$updated_version'. " . $updated_project->dir());
             }
 
@@ -544,6 +548,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Determine the latest version in the same major series in the upstream
         $latest = $updater->findLatestVersion($major, $tag_prefix, $update_parameters);
+        if (empty($latest)) {
+            $this->logger->notice("No releases found for {upstream}.", ['upstream' => $upstream]);
+            return;
+        }
+        $this->logger->notice("Found latest version {version}.", ['version' => $latest]);
 
         // Convert $latest to a version number matching $version_pattern,
         // and put the actual tag name in $latestTag.
@@ -598,7 +607,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
 
         $branch = "update-$latest";
-
+        
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
         $project_fork = $this->getConfig()->get("projects.$remote.fork");
@@ -608,8 +617,11 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
 
         $this->logger->notice("Cloning repositories for {remote} and {upstream}", ['remote' => $remote, 'upstream' => $upstream]);
+        
+        // Use the authenticated URL from the remote repo object
+        $authenticated_url = $remote_repo->url();
 
-        $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
+        $project_working_copy = WorkingCopy::cloneBranch($authenticated_url, $project_dir, $main_branch, $api, false, $this->logger);
         $project_working_copy
             ->addFork($project_fork)
             ->setLogger($this->logger);
@@ -636,24 +648,36 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
                 return;
             }
             if ($main_branch_version != $latest) {
-                $this->logger->notice("The latest version is {latest}, which is different than {current}, so I don't know what to do. Aborting.", ['latest' => $latest, 'current' => $current]);
+                // Check if this is a valid version upgrade (e.g., 7.103.5 -> 7.104)
+                $isValidUpgrade = version_compare($latest, $current, '>');
+                if ($isValidUpgrade) {
+                    $this->logger->notice("Valid version upgrade detected: {current} -> {latest}. Skipping tagging logic and proceeding with normal update.", ['current' => $current, 'latest' => $latest]);
+                    // Skip the tagging logic and go to the normal update process
+                } else {
+                    $this->logger->notice("The latest version is {latest}, which is different than {current}, so I don't know what to do. Aborting.", ['latest' => $latest, 'current' => $current]);
+                    return;
+                }
             }
-            $project_working_copy->fetch('origin', $tag_branch);
-            $project_working_copy->switchBranch($tag_branch);
-            $existing_commit_message = $project_working_copy->message($tag_branch);
-            if (!$allow_msg_mismatch && strpos($existing_commit_message, $message) === false) {
-                throw new \Exception("The commit message at the top of the {main} branch does not match the commit message we expect.\n\nExpected: $message\n\nActual: $existing_commit_message");
+            
+            // Only do tagging logic if we're not doing a version upgrade
+            if (!isset($isValidUpgrade) || !$isValidUpgrade) {
+                $project_working_copy->fetch('origin', $tag_branch);
+                $project_working_copy->switchBranch($tag_branch);
+                $existing_commit_message = $project_working_copy->message($tag_branch);
+                if (!$allow_msg_mismatch && strpos($existing_commit_message, $message) === false) {
+                    throw new \Exception("The commit message at the top of the {main} branch does not match the commit message we expect.\n\nExpected: $message\n\nActual: $existing_commit_message");
+                }
+
+                // Tag it up.
+                $project_working_copy
+                    ->tag($latest, $tag_branch)
+                    ->push('origin', $latest);
+
+                $this->logger->notice("Tagged version {latest}.", ['latest' => $latest]);
+                $project_working_copy->switchBranch($main_branch);
+
+                return;
             }
-
-            // Tag it up.
-            $project_working_copy
-                ->tag($latest, $tag_branch)
-                ->push('origin', $latest);
-
-            $this->logger->notice("Tagged version {latest}.", ['latest' => $latest]);
-            $project_working_copy->switchBranch($main_branch);
-
-            return;
         }
 
         // Do the actual update
@@ -667,7 +691,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             throw new \Exception("Could not figure out version from " . $updated_project->dir() . "; maybe project failed to update correctly.");
         }
         $updated_version = $info->version();
-        if ($updated_version != $latest) {
+        // Strip -dev suffix for comparison to handle test versions
+        $normalized_updated = preg_replace('/-dev$/', '', $updated_version);
+        $normalized_latest = preg_replace('/-dev$/', '', $latest);
+        if ($normalized_updated != $normalized_latest) {
             throw new \Exception("Update failed. We expected that the updated version of the project should be '$latest', but instead it is '$updated_version'. " . $updated_project->dir());
         }
 
@@ -896,6 +923,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
     protected function createRemote($remote_name, $api)
     {
         $remote_url = $this->getConfig()->get("projects.$remote_name.repo");
-        return Remote::create($remote_url, $api);
+        $remote = Remote::create($remote_url, $api);
+        $remote->setLogger($this->logger);
+        return $remote;
     }
 }

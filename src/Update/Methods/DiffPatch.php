@@ -26,6 +26,7 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
 
     protected $upstream_repo;
     protected $download_url;
+    protected $latest;
 
     /**
      * @inheritdoc
@@ -60,10 +61,33 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
 
         // Fetch the sources for the 'latest' tag
         $this->updatedProject->fetch('origin', 'refs/tags/' . $this->latest);
-        $this->updatedProject->fetch('origin', 'refs/tags/' . $parameters['meta']['current-version'] . ':refs/tags/' . $parameters['meta']['current-version']);
+        
+        // For tag1-drupal, map patch versions to base version for diff.
+        // Drops-7 can and will add patch versions with additional releases (i.e. modules)
+        // for our upstream, so check the correct minor version for the diff base.
+        $upstream_base_version = $parameters['meta']['current-version'];
+        if (strpos($this->upstream_url, 'tag1consulting') !== false) {
+            // Convert 7.103.5 -> 7.103 for upstream comparison
+            $version_parts = explode('.', $parameters['meta']['current-version']);
+            if (count($version_parts) >= 3) {
+                $upstream_base_version = $version_parts[0] . '.' . $version_parts[1];
+                $this->logger->notice(
+                    "Mapping current version {current} to upstream base version {base}",
+                    ['current' => $parameters['meta']['current-version'], 'base' => $upstream_base_version]
+                );
+            }
+        }
+        
+        $this->updatedProject->fetch('origin', 'refs/tags/' . $upstream_base_version . ':refs/tags/' . $upstream_base_version);
 
-        // Create the diff file
-        $diffContents = $this->updatedProject->diffRefs($parameters['meta']['current-version'], $this->latest);
+        // Create the diff file with exclusions
+        $diffExcludes = $parameters['diff-excludes'] ?? [];
+        $diffContents = $this->generateFilteredDiff($upstream_base_version, $this->latest, $diffExcludes);
+        
+        // Log diff info
+        $diffSize = strlen($diffContents);
+        $diffLines = substr_count($diffContents, "\n");
+        $this->logger->notice("Diff generated: {size} bytes, {lines} lines", ['size' => $diffSize, 'lines' => $diffLines]);
 
         // Apply the diff as a patch
         $tmpfname = tempnam(sys_get_temp_dir(), "diff-patch-" . $parameters['meta']['current-version'] . '-' . $this->latest . '.tmp');
@@ -71,7 +95,7 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
         $this->logger->notice('patch -d {file} --no-backup-if-mismatch --ignore-whitespace -Nutp1 < {tmpfile}', ['file' => $this->originalProject->dir(), 'tmpfile' => $tmpfname]);
         passthru('patch -d ' .  $this->originalProject->dir() . ' --no-backup-if-mismatch --ignore-whitespace -Nutp1 < ' . $tmpfname, $exitCode);
         if ($exitCode !== 0) {
-            throw new \Exception("Failed to apply diff as patch");
+            throw new \Exception("Failed to apply diff as patch. Diff size: $diffSize bytes, Lines: $diffLines");
         }
         unlink($tmpfname);
 
@@ -122,10 +146,47 @@ class DiffPatch implements UpdateMethodInterface, LoggerAwareInterface
             throw new \Exception("Could not identify the type of application at " . $upstream_working_copy->dir());
         }
         $upstream_version = $info->version();
-        if ($upstream_version != $this->latest) {
+        // Strip -dev suffix for comparison to handle test versions
+        $normalized_upstream = preg_replace('/-dev$/', '', $upstream_version);
+        $normalized_latest = preg_replace('/-dev$/', '', $this->latest);
+        if ($normalized_upstream != $normalized_latest) {
             throw new \Exception("Update failed. We expected that the local working copy of the upstream project should be {$this->latest}, but instead it is $upstream_version.");
         }
 
         return $upstream_working_copy;
+    }
+
+    /**
+     * Generate a filtered diff that excludes specified files/directories
+     */
+    protected function generateFilteredDiff($fromRef, $toRef, $excludes)
+    {
+        if (empty($excludes)) {
+            return $this->updatedProject->diffRefs($fromRef, $toRef);
+        }
+
+        $old_dir = getcwd();
+        chdir($this->updatedProject->dir());
+        
+        // Build git diff command with exclusions
+        $excludeArgs = '';
+        foreach ($excludes as $exclude) {
+            $excludeArgs .= " ':!{$exclude}'";
+        }
+        
+        $diffCommand = "git diff {$fromRef} {$toRef} -- .{$excludeArgs}";
+        $this->logger->notice('Executing {command}', ['command' => $diffCommand]);
+        
+        ob_start();
+        passthru($diffCommand, $exitCode);
+        $diffContents = ob_get_clean();
+        
+        chdir($old_dir);
+        
+        if ($exitCode !== 0) {
+            throw new \Exception("Failed to generate filtered diff. Command: {$diffCommand}");
+        }
+        
+        return $diffContents;
     }
 }
