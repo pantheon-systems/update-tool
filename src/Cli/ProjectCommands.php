@@ -409,6 +409,8 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
             // Make sure our working directory is cleaned up. An "untracked working tree files" error will fail checkout silently.
             $project_working_copy->clean();
+            // Also reset any modified tracked files from previous failed attempts
+            $project_working_copy->git('reset --hard HEAD');
             // Checkout previous tag.
             $project_working_copy->checkout($previous);
 
