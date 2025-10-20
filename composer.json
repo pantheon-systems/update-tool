@@ -46,6 +46,9 @@
         "cs": "phpcs --standard=PSR2 -n src",
         "cbf": "phpcbf --standard=PSR2 -n src",
         "unit": "phpunit --colors=always",
+        "install-tools": [
+            "if [ ! -f /usr/bin/yq ]; then wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq; fi"
+        ],
         "lint": [
             "find src -name '*.php' -print0 | xargs -0 -n1 php -l",
             "find tests/src -name '*.php' -print0 | xargs -0 -n1 php -l"
@@ -54,6 +57,9 @@
             "@lint",
             "@unit",
             "@cs"
+        ],
+        "test-wp": [
+            "phpunit --colors=always --group WordPressTests"
         ],
         "release": [
             "release VERSION"

@@ -41,7 +41,10 @@ The [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinat
 
 ## Local Development
 
-Clone the GitHub repository and run `composer install` to get started.
+1. Clone the GitHub repository and run `composer install` to get started. Note that the unit test commands require your local PHP Version to be 7.x.
+2. Generate a GitHub token which has write access to the pantheon-fixtures org, or at least the Drupal/WordPress repos in it.
+3. In your terminal window where you intend to run the tests, run `export GITHUB_TOKEN="{TOKEN}"`
+
 
 ### Running the tests
 

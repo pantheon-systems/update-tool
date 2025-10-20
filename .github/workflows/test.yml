@@ -47,8 +47,6 @@ jobs:
           echo "Set git config"
           git config --global user.email "bot@getpantheon.com"
           git config --global user.name "Pantheon Automation"
-          echo "Login with gh auth"
-          # gh auth login
           gh auth status
           ./update-tool whoami
       - name: Install WP-CLI
@@ -57,6 +55,15 @@ jobs:
           chmod +x wp-cli.phar
           sudo mv wp-cli.phar /usr/local/bin/wp
           wp --info
+      - name: Setup tools
+        run: |
+          composer install-tools
+      - name: Prepare WP upstreams
+        env:
+          GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
+        run: ./tests/bin/prepare-wp-upstreams.sh
+        shell: bash
       - name: Run tests
         env:
           GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}

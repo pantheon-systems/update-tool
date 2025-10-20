@@ -518,6 +518,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         }
 
         $remote_repo = $this->createRemote($remote, $api);
+        $upstream_repo = $this->createRemote($upstream, $api);
         $update_parameters = $this->getConfig()->get("projects.$remote.upstream.update-parameters", []);
         $update_parameters['meta']['name'] = $remote_repo->projectWithOrg();
 
@@ -565,13 +566,34 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         list($latest, $latestTag) = $this->versionAndTagFromLatest($latest, $tag_prefix, $version_pattern);
         $update_parameters['latest-tag'] = $latestTag;
 
+        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
+
+        $update_parameters['meta']['commit-update'] = false;
+        $source_commits = $upstream_repo->commits();
+        $existing_commits = $remote_repo->commits();
+        $latest_commit = false;
+
         // Exit with no action and no error if already up-to-date
-        if ($remote_repo->has($latest)) {
+        if ($source_commits == $existing_commits) {
             $this->logger->notice("{remote} is at the most recent available version, {latest}", ['remote' => $remote, 'latest' => $latest]);
             return;
         }
 
-        $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
+        // Source commits are not equal to existing commits, compare the releases.
+        if ($current === $latest || is_null($latest)) {
+            // Set $latest to the last commit hash in the $soucre_commits string from git if $current and $latest are the same version.
+            $latest_commit = is_array($source_commits) ? end($source_commits) : $source_commits;
+            // Strip out everything after the first string of characters representing the git hash.
+            $latest_commit = preg_replace('/^([a-z0-9]+).*/', '$1', $latest_commit);
+            $update_parameters['meta']['commit-update'] = true;
+            $update_parameters['meta']['latest-commit'] = $latest_commit;
+        }
+
+        if (!$update_parameters['meta']['commit-update']) {
+            $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
+        } else {
+            $this->logger->notice("{remote} {current} has an available update: {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest_commit]);
+        }
 
         // If we are running in check-only mode, exit now, before we do anything.
         if ($options['check']) {
@@ -580,14 +602,19 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // Create a commit message.
         $upstream_label = ucfirst($upstream);
-        $message = $this->getConfig()->get("projects.$remote.upstream.update-message", 'Update to ' . $upstream_label . ' ' . $latest . '.');
+        if ($update_parameters['meta']['commit-update']) {
+            $upstream_project = $this->getConfig()->get("projects.$remote.upstream.project");
+            $dir = $this->getConfig()->get("projects.$upstream_project.path");
+            $message = $upstream_repo->getCommitMessageByHash($update_parameters['meta']['latest-commit'], $dir);
+        } else {
+            $message = $this->getConfig()->get("projects.$remote.upstream.update-message", 'Update to ' . $upstream_label . ' ' . $latest . '.');
+        }
         $message = str_replace('{version}', $latest, $message);
         $preamble = $this->getConfig()->get("projects.$remote.upstream.update-preamble", '');
 
-        // If we can find a release node, then add the "more information" blerb.
         $releaseNode = new ReleaseNode($api);
         list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
-        if (!empty($release_url)) {
+        if (!empty($release_url) && !$update_parameters['meta']['commit-update']) {
             $message .= " For more information, see $release_url";
         }
 
@@ -606,14 +633,13 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             $prs = $api->matchingPRs($remote_repo->projectWithOrg(), $preamble, '');
         }
 
-        $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest]);
+        $this->logger->notice("Updating {remote} from {current} to {latest}", ['remote' => $remote, 'current' => $current, 'latest' => $latest_commit ?? $latest]);
 
         $branch = "update-$latest";
         
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
         $project_fork = $this->getConfig()->get("projects.$remote.fork");
-        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
 
         $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
