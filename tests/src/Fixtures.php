@@ -172,6 +172,70 @@ class Fixtures
         return $workingCopy;
     }
 
+    /**
+     * Create a new repo in pantheon-fixtures to act as a derivative fixture.
+     * Pushes the given tags and branch (as master) from the source project into it.
+     *
+     * @param string $remote_name Key in test-configuration.yml for the new repo
+     * @param string $source_name Key in test-configuration.yml for the source repo
+     * @param string $source_branch Branch to push from source into the new repo as master
+     * @param array  $tags Tags to push from source into the new repo
+     * @param string $as Auth alias
+     */
+    public function createDerivativeFixture($remote_name, $source_name, $source_branch, array $tags, $as = 'default')
+    {
+        $api = $this->api($as);
+        $config = $this->getConfig();
+
+        $repo_url = $config->get("projects.$remote_name.repo");
+        $source_url = $config->get("projects.$source_name.repo");
+
+        if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
+            throw new \Exception("Cannot parse repo URL: $repo_url");
+        }
+        $org = $m[1];
+        $repo_name = $m[2];
+
+        $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org);
+
+        // Give GitHub a moment to finish initializing.
+        sleep(3);
+
+        // Clone the source, add the new repo as a remote, and push the desired
+        // tags and branch into it.
+        $source_path = $this->mktmpdir();
+        $source = WorkingCopy::clone($source_url, $source_path, $api);
+        $source->addRemote($repo_url, 'derivative');
+        $source->fetchTags('origin');
+
+        foreach ($tags as $tag) {
+            $source->push('derivative', $tag);
+        }
+        $source->push('derivative', "$source_branch:master");
+    }
+
+    /**
+     * Delete a dynamically created derivative fixture repo from GitHub.
+     *
+     * @param string $remote_name Key in test-configuration.yml for the repo to delete
+     * @param string $as Auth alias
+     */
+    public function deleteDerivativeFixture($remote_name, $as = 'default')
+    {
+        $api = $this->api($as);
+        $repo_url = $this->getConfig()->get("projects.$remote_name.repo");
+
+        if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
+            throw new \Exception("Cannot parse repo URL: $repo_url");
+        }
+
+        try {
+            $api->gitHubAPI()->api('repo')->remove($m[1], $m[2]);
+        } catch (\Exception $e) {
+            // Ignore if the repo never existed (e.g. test failed before creation).
+        }
+    }
+
     public function forkTestRepo($remote_name, $as = 'default')
     {
         $api = $this->api($as);
