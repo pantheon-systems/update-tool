@@ -74,8 +74,8 @@ class ProjectCommandsTest extends CommandsTestBase
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
 
-        // Make sure github API has enough time to realize the PR has been created
-        sleep(5);
+        // GitHub's search API can take up to ~30s to index new PRs.
+        sleep(30);
 
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'drops-8']);
@@ -140,8 +140,8 @@ class ProjectCommandsTest extends CommandsTestBase
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
 
-        // Make sure github API has enough time to realize the PR has been created
-        sleep(5);
+        // GitHub's search API can take up to ~30s to index new PRs.
+        sleep(30);
 
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
