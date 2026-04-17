@@ -157,13 +157,12 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     }
 
     /**
-     * Call 'db drop', but only if not running on a CI server
+     * Drop the database if it exists. The $force parameter is kept for
+     * backwards compatibility but is no longer used.
      */
     protected function wpDbDropIfNotCI($path, $force = false)
     {
-        if (!getenv('CI') || $force) {
-            $this->wpDbDrop($path);
-        }
+        $this->wpcliReturnStatus($path, 'db drop', ['--yes']);
     }
 
     /**
