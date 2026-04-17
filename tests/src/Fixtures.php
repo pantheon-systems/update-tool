@@ -237,7 +237,9 @@ class Fixtures
 
         // Push the branch first — an empty repo has no commits, so tags (which
         // point to commits) must come after the branch push that seeds them.
-        $source->push('derivative', "$source_branch:master");
+        // Use full refspecs: the source branch is only a remote tracking ref
+        // after a plain clone, so shorthand refspecs are rejected by git.
+        $source->push('derivative', "refs/remotes/origin/$source_branch:refs/heads/master");
 
         foreach ($tags as $tag) {
             $source->push('derivative', $tag);
