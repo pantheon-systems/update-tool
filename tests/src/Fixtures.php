@@ -122,25 +122,24 @@ class Fixtures
 
         $remote_url = $this->getConfig()->get("projects.$remote_name.repo");
         $remote_repo = Remote::create($remote_url, $api);
-        $projectWithOrg = $remote_repo->org() . '/' . $remote_repo->project();
+        $org = $remote_repo->org();
+        $project = $remote_repo->project();
 
-        $allPRs = $api->allPRs($projectWithOrg);
-        $api->prClose($remote_repo->org(), $remote_repo->project(), $allPRs);
+        // Use the REST pulls endpoint (not the search API, which has indexing
+        // lag) to get a consistent view of open PRs.
+        $openPRs = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
+        foreach ($openPRs as $pr) {
+            $api->gitHubAPI()->api('pull_request')->update($org, $project, $pr['number'], ['state' => 'closed']);
+        }
 
-        // Poll the REST pulls endpoint (not the search API, which has indexing
-        // lag) until no open PRs remain, so the next command invocation doesn't
-        // find stale open PRs and exit early.
+        // Poll until the REST list confirms all PRs are closed.
         $maxWait = 60;
         $waited = 0;
         while ($waited < $maxWait) {
             sleep(5);
             $waited += 5;
-            $openPRs = $api->gitHubAPI()->api('pull_request')->all(
-                $remote_repo->org(),
-                $remote_repo->project(),
-                ['state' => 'open']
-            );
-            if (empty($openPRs)) {
+            $remaining = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
+            if (empty($remaining)) {
                 return;
             }
         }
@@ -227,20 +226,22 @@ class Fixtures
         // Create empty (no auto_init) so we control the default branch name.
         $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org, false, false, false, null, false);
 
-        // Clone the source, add the new repo as a remote, and push the desired
-        // tags and branch into it. mktmpdir() creates the directory, but
-        // WorkingCopy::clone() requires it to not yet exist, so remove it first.
+        // Clone the source, add the new repo as a remote, and push into it.
+        // mktmpdir() creates the directory but WorkingCopy::clone() requires it
+        // to not yet exist, so remove it first.
         $source_path = $this->mktmpdir();
         rmdir($source_path);
         $source = WorkingCopy::clone($source_url, $source_path, $api);
         $source->addRemote($repo_url, 'derivative');
         $source->fetchTags('origin');
 
+        // Push the branch first — an empty repo has no commits, so tags (which
+        // point to commits) must come after the branch push that seeds them.
+        $source->push('derivative', "$source_branch:master");
+
         foreach ($tags as $tag) {
             $source->push('derivative', $tag);
         }
-        // Push the source branch as master — this also initializes the empty repo.
-        $source->push('derivative', "$source_branch:master");
     }
 
     /**
