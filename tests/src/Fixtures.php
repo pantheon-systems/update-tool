@@ -124,6 +124,7 @@ class Fixtures
         $remote_repo = Remote::create($remote_url, $api);
         $org = $remote_repo->org();
         $project = $remote_repo->project();
+        $projectWithOrg = "$org/$project";
 
         // Use the REST pulls endpoint (not the search API, which has indexing
         // lag) to get a consistent view of open PRs.
@@ -132,7 +133,7 @@ class Fixtures
             $api->gitHubAPI()->api('pull_request')->update($org, $project, $pr['number'], ['state' => 'closed']);
         }
 
-        // Poll until the REST list confirms all PRs are closed.
+        // Poll REST until all PRs are confirmed closed.
         $maxWait = 60;
         $waited = 0;
         while ($waited < $maxWait) {
@@ -140,6 +141,21 @@ class Fixtures
             $waited += 5;
             $remaining = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
             if (empty($remaining)) {
+                break;
+            }
+        }
+
+        // Also poll the search API (used by matchingPRs) until it stops
+        // returning open PRs for this repo. Search indexing can lag 60-90s
+        // behind REST, causing false "PR already exists" results.
+        $maxWait = 120;
+        $waited = 0;
+        while ($waited < $maxWait) {
+            sleep(10);
+            $waited += 10;
+            $q = "repo:$projectWithOrg is:pr state:open";
+            $searchResults = $api->gitHubAPI()->api('search')->issues($q);
+            if (empty($searchResults['items'])) {
                 return;
             }
         }
