@@ -47,7 +47,7 @@ projects:
     release-node:
       atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture/releases.atom'
   wordpress-network-fixture:
-    repo: git@github.com:pantheon-fixtures/wordpress-network-fixture-${nonce}.git
+    repo: git@github.com:pantheon-fixtures/wordpress-network-fixture.git
     path: ${working-copy-path}/wordpress-network-fixture
     main-branch: master
     source:

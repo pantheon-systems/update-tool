@@ -20,6 +20,7 @@ class Fixtures
     protected $config;
     protected $logOutput;
     protected $logger;
+    protected $derivativeFixtureUrls = [];
 
     // Our test fixtures' idea of what the current php releases are, frozen in time.
     const PHP_53_CURRENT = '5.3.29';
@@ -187,14 +188,22 @@ class Fixtures
         $api = $this->api($as);
         $config = $this->getConfig();
 
-        $repo_url = $config->get("projects.$remote_name.repo");
+        $base_url = $config->get("projects.$remote_name.repo");
         $source_url = $config->get("projects.$source_name.repo");
+
+        // Append the seed to make the repo name unique per test run, since
+        // ${nonce} interpolation does not work with plain config->get().
+        $repo_url = preg_replace('#(\.git)?$#', '-' . $this->seed() . '$1', $base_url, 1);
 
         if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
             throw new \Exception("Cannot parse repo URL: $repo_url");
         }
         $org = $m[1];
         $repo_name = $m[2];
+
+        // Store the resolved URL so deleteDerivativeFixture and
+        // derivativeConfigurationFile() can reference the same seeded name.
+        $this->derivativeFixtureUrls[$remote_name] = $repo_url;
 
         $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org);
 
@@ -217,6 +226,34 @@ class Fixtures
     }
 
     /**
+     * Return a path to a full test config file where the placeholder repo URL
+     * for $remote_name has been replaced with the actual seeded URL.
+     * Pass this to executeExpectOK() so the command uses the correct repo.
+     *
+     * @param string $remote_name Key in test-configuration.yml
+     * @return string Path to the seeded config file
+     */
+    public function seededConfigurationFile($remote_name)
+    {
+        $seeded_url = isset($this->derivativeFixtureUrls[$remote_name])
+            ? $this->derivativeFixtureUrls[$remote_name]
+            : null;
+
+        if (!$seeded_url) {
+            throw new \Exception("No seeded URL for $remote_name; call createDerivativeFixture first.");
+        }
+
+        $base = file_get_contents($this->configurationFile());
+        $placeholder_url = $this->getConfig()->get("projects.$remote_name.repo");
+        $seeded = str_replace($placeholder_url, $seeded_url, $base);
+
+        $dir = $this->mktmpdir();
+        $file = $dir . '/' . basename($this->configurationFile());
+        file_put_contents($file, $seeded);
+        return $file;
+    }
+
+    /**
      * Delete a dynamically created derivative fixture repo from GitHub.
      *
      * @param string $remote_name Key in test-configuration.yml for the repo to delete
@@ -225,7 +262,14 @@ class Fixtures
     public function deleteDerivativeFixture($remote_name, $as = 'default')
     {
         $api = $this->api($as);
-        $repo_url = $this->getConfig()->get("projects.$remote_name.repo");
+
+        $repo_url = isset($this->derivativeFixtureUrls[$remote_name])
+            ? $this->derivativeFixtureUrls[$remote_name]
+            : null;
+
+        if (!$repo_url) {
+            return;
+        }
 
         if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
             throw new \Exception("Cannot parse repo URL: $repo_url");

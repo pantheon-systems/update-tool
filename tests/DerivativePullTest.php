@@ -57,7 +57,8 @@ class DerivativePullTest extends CommandsTestBase
         // Give GitHub a moment to settle.
         sleep(3);
 
-        $output = $this->executeExpectOK(['project:derivative:pull', self::DERIVATIVE_PROJECT]);
+        $configFile = $this->fixtures()->seededConfigurationFile(self::DERIVATIVE_PROJECT);
+        $output = $this->executeExpectOK(['project:derivative:pull', self::DERIVATIVE_PROJECT], null, $configFile);
 
         $this->assertContains('No new version tags to sync.', $output);
         $this->assertContains('Push branch master to', $output);
@@ -81,7 +82,8 @@ class DerivativePullTest extends CommandsTestBase
         // Give GitHub a moment to settle.
         sleep(3);
 
-        $output = $this->executeExpectOK(['project:derivative:pull', self::DERIVATIVE_PROJECT]);
+        $configFile = $this->fixtures()->seededConfigurationFile(self::DERIVATIVE_PROJECT);
+        $output = $this->executeExpectOK(['project:derivative:pull', self::DERIVATIVE_PROJECT], null, $configFile);
 
         $this->assertContains('Push tag ' . self::SOURCE_TAG . ' to', $output);
         $this->assertContains('Push branch master to', $output);
