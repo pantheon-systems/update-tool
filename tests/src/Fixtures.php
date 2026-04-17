@@ -127,15 +127,20 @@ class Fixtures
         $allPRs = $api->allPRs($projectWithOrg);
         $api->prClose($remote_repo->org(), $remote_repo->project(), $allPRs);
 
-        // Poll until GitHub's search index reflects the closures, so the next
-        // command invocation doesn't find stale open PRs and exit early.
+        // Poll the REST pulls endpoint (not the search API, which has indexing
+        // lag) until no open PRs remain, so the next command invocation doesn't
+        // find stale open PRs and exit early.
         $maxWait = 60;
         $waited = 0;
         while ($waited < $maxWait) {
             sleep(5);
             $waited += 5;
-            $remaining = $api->allPRs($projectWithOrg);
-            if ($remaining->isEmpty()) {
+            $openPRs = $api->gitHubAPI()->api('pull_request')->all(
+                $remote_repo->org(),
+                $remote_repo->project(),
+                ['state' => 'open']
+            );
+            if (empty($openPRs)) {
                 return;
             }
         }
@@ -219,10 +224,8 @@ class Fixtures
         // derivativeConfigurationFile() can reference the same seeded name.
         $this->derivativeFixtureUrls[$remote_name] = $repo_url;
 
-        $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org);
-
-        // Give GitHub a moment to finish initializing.
-        sleep(3);
+        // Create empty (no auto_init) so we control the default branch name.
+        $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org, false, false, false, null, false);
 
         // Clone the source, add the new repo as a remote, and push the desired
         // tags and branch into it. mktmpdir() creates the directory, but
@@ -236,6 +239,7 @@ class Fixtures
         foreach ($tags as $tag) {
             $source->push('derivative', $tag);
         }
+        // Push the source branch as master — this also initializes the empty repo.
         $source->push('derivative', "$source_branch:master");
     }
 
