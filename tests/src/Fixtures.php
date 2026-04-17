@@ -202,8 +202,10 @@ class Fixtures
         sleep(3);
 
         // Clone the source, add the new repo as a remote, and push the desired
-        // tags and branch into it.
+        // tags and branch into it. mktmpdir() creates the directory, but
+        // WorkingCopy::clone() requires it to not yet exist, so remove it first.
         $source_path = $this->mktmpdir();
+        rmdir($source_path);
         $source = WorkingCopy::clone($source_url, $source_path, $api);
         $source->addRemote($repo_url, 'derivative');
         $source->fetchTags('origin');
