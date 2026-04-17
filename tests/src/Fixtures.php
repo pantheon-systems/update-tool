@@ -122,9 +122,23 @@ class Fixtures
 
         $remote_url = $this->getConfig()->get("projects.$remote_name.repo");
         $remote_repo = Remote::create($remote_url, $api);
+        $projectWithOrg = $remote_repo->org() . '/' . $remote_repo->project();
 
-        $allPRs = $api->allPRs($remote_repo->org() . '/' . $remote_repo->project());
+        $allPRs = $api->allPRs($projectWithOrg);
         $api->prClose($remote_repo->org(), $remote_repo->project(), $allPRs);
+
+        // Poll until GitHub's search index reflects the closures, so the next
+        // command invocation doesn't find stale open PRs and exit early.
+        $maxWait = 60;
+        $waited = 0;
+        while ($waited < $maxWait) {
+            sleep(5);
+            $waited += 5;
+            $remaining = $api->allPRs($projectWithOrg);
+            if ($remaining->isEmpty()) {
+                return;
+            }
+        }
     }
 
     public function mergeAllOpenPullRequests($remote_name, $as = 'default')

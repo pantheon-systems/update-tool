@@ -46,10 +46,8 @@ class ProjectCommandsTest extends CommandsTestBase
         // For some reason, this is ineffective.
         // $this->fixtures()->forceReinitializeDrops8Fixture();
 
-        // Close the open pull requests.
+        // Close the open pull requests and wait until GitHub reflects the closure.
         $this->fixtures()->closeAllOpenPullRequests('drops-8');
-        // Make sure github API has enough time to realize the PR has been closed
-        sleep(5);
 
         // Verify the latest release in our drops-8 and drupal fixtures.
         $output = $this->executeExpectOK(['project:latest', 'drops-8']);
@@ -117,11 +115,8 @@ class ProjectCommandsTest extends CommandsTestBase
      */
     public function testWordPressUpdate()
     {
-        // Closes any leftover PRs in the fixture repository.
+        // Closes any leftover PRs and waits until GitHub reflects the closure.
         $this->fixtures()->closeAllOpenPullRequests('wp');
-
-        // Make sure github API has enough time to realize the PR has been closed
-        sleep(5);
 
         // Create a fork
 //        $wp_repo = $this->fixtures()->forkTestRepo('wp');
