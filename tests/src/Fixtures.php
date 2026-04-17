@@ -226,23 +226,30 @@ class Fixtures
         // Create empty (no auto_init) so we control the default branch name.
         $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org, false, false, false, null, false);
 
-        // Clone the source, add the new repo as a remote, and push into it.
-        // mktmpdir() creates the directory but WorkingCopy::clone() requires it
-        // to not yet exist, so remove it first.
+        // Clone the source and push into the new empty derivative using
+        // authenticated HTTPS URLs (works in both SSH and token-auth CI envs).
         $source_path = $this->mktmpdir();
         rmdir($source_path);
-        $source = WorkingCopy::clone($source_url, $source_path, $api);
-        $source->addRemote($repo_url, 'derivative');
-        $source->fetchTags('origin');
+        $source_url_authed = $api->addTokenAuthentication($source_url);
+        exec("git clone '$source_url_authed' '$source_path' 2>&1", $out, $rc);
+        if ($rc !== 0) {
+            throw new \Exception("Failed to clone source: " . implode("\n", $out));
+        }
 
-        // Push the branch first — an empty repo has no commits, so tags (which
-        // point to commits) must come after the branch push that seeds them.
-        // Use full refspecs: the source branch is only a remote tracking ref
-        // after a plain clone, so shorthand refspecs are rejected by git.
-        $source->push('derivative', "refs/remotes/origin/$source_branch:refs/heads/master");
+        // Push the branch first (initializes the empty repo), then tags.
+        // Use refs/remotes/origin/<branch> since the branch is only a remote
+        // tracking ref after a plain clone — not checked out locally.
+        $auth_push_url = $api->addTokenAuthentication($repo_url);
+        exec("git -C '$source_path' push '$auth_push_url' 'refs/remotes/origin/$source_branch:refs/heads/master' 2>&1", $out, $rc);
+        if ($rc !== 0) {
+            throw new \Exception("Failed to push branch to derivative: " . implode("\n", $out));
+        }
 
         foreach ($tags as $tag) {
-            $source->push('derivative', $tag);
+            exec("git -C '$source_path' push '$auth_push_url' '$tag' 2>&1", $out, $rc);
+            if ($rc !== 0) {
+                throw new \Exception("Failed to push tag $tag to derivative: " . implode("\n", $out));
+            }
         }
     }
 
