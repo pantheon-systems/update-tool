@@ -83,7 +83,6 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
      */
     public function update(WorkingCopy $originalProject, array $parameters)
     {
-        $forceDbDrop = !empty($parameters['force-db-drop']) ?? false;
         $path = $originalProject->dir();
 
         $wpConfigPath = "$path/wp-config.php";
@@ -100,7 +99,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         try {
             // Set up a local WordPress site
             $this->wpCoreConfig($path, $this->dbhost, $this->dbname, $this->dbuser, $this->dbpw);
-            $this->wpDbDropIfNotCI($path, $forceDbDrop);
+            $this->wpDbDrop($path);
             $this->wpDbCreate($path);
             $this->wpCoreInstall($path, $this->url, $this->title, $this->admin, $this->adminPw, $this->adminEmail);
 
@@ -110,7 +109,7 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         } catch (\Exception $e) {
             throw $e;
         } finally {
-            $this->wpDbDropIfNotCI($path, $forceDbDrop);
+            $this->wpDbDrop($path);
             file_put_contents($wpConfigPath, $wpConfigData);
         }
         return $originalProject;
@@ -157,22 +156,11 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
     }
 
     /**
-     * Call 'db drop', but only if not running on a CI server
-     */
-    protected function wpDbDropIfNotCI($path, $force = false)
-    {
-        if (!getenv('CI') || $force) {
-            $this->wpDbDrop($path);
-        }
-    }
-
-    /**
-     * Drop any existing database to clean up after previous aborted
-     * runs / at the end of the current run.
+     * Drop the database if it exists.
      */
     protected function wpDbDrop($path)
     {
-        return $this->wpcliReturnStatus($path, 'db drop', ['--yes']);
+        $this->wpcliReturnStatus($path, 'db drop', ['--yes']);
     }
 
     /**

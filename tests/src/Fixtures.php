@@ -20,6 +20,7 @@ class Fixtures
     protected $config;
     protected $logOutput;
     protected $logger;
+    protected $derivativeFixtureUrls = [];
 
     // Our test fixtures' idea of what the current php releases are, frozen in time.
     const PHP_53_CURRENT = '5.3.29';
@@ -121,9 +122,43 @@ class Fixtures
 
         $remote_url = $this->getConfig()->get("projects.$remote_name.repo");
         $remote_repo = Remote::create($remote_url, $api);
+        $org = $remote_repo->org();
+        $project = $remote_repo->project();
+        $projectWithOrg = "$org/$project";
 
-        $allPRs = $api->allPRs($remote_repo->org() . '/' . $remote_repo->project());
-        $api->prClose($remote_repo->org(), $remote_repo->project(), $allPRs);
+        // Use the REST pulls endpoint (not the search API, which has indexing
+        // lag) to get a consistent view of open PRs.
+        $openPRs = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
+        foreach ($openPRs as $pr) {
+            $api->gitHubAPI()->api('pull_request')->update($org, $project, $pr['number'], ['state' => 'closed']);
+        }
+
+        // Poll REST until all PRs are confirmed closed.
+        $maxWait = 60;
+        $waited = 0;
+        while ($waited < $maxWait) {
+            sleep(5);
+            $waited += 5;
+            $remaining = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
+            if (empty($remaining)) {
+                break;
+            }
+        }
+
+        // Also poll the search API (used by matchingPRs) until it stops
+        // returning open PRs for this repo. Search indexing can lag 60-90s
+        // behind REST, causing false "PR already exists" results.
+        $maxWait = 120;
+        $waited = 0;
+        while ($waited < $maxWait) {
+            sleep(10);
+            $waited += 10;
+            $q = "repo:$projectWithOrg is:pr state:open";
+            $searchResults = $api->gitHubAPI()->api('search')->issues($q);
+            if (empty($searchResults['items'])) {
+                return;
+            }
+        }
     }
 
     public function mergeAllOpenPullRequests($remote_name, $as = 'default')
@@ -170,6 +205,125 @@ class Fixtures
         $api->prClose($workingCopy->org(), $workingCopy->project(), $allPRs);
 
         return $workingCopy;
+    }
+
+    /**
+     * Create a new repo in pantheon-fixtures to act as a derivative fixture.
+     * Pushes the given tags and branch (as master) from the source project into it.
+     *
+     * @param string $remote_name Key in test-configuration.yml for the new repo
+     * @param string $source_name Key in test-configuration.yml for the source repo
+     * @param string $source_branch Branch to push from source into the new repo as master
+     * @param array  $tags Tags to push from source into the new repo
+     * @param string $as Auth alias
+     */
+    public function createDerivativeFixture($remote_name, $source_name, $source_branch, array $tags, $as = 'default')
+    {
+        $api = $this->api($as);
+        $config = $this->getConfig();
+
+        $base_url = $config->get("projects.$remote_name.repo");
+        $source_url = $config->get("projects.$source_name.repo");
+
+        // Append the seed to make the repo name unique per test run, since
+        // ${nonce} interpolation does not work with plain config->get().
+        $repo_url = preg_replace('#(\.git)?$#', '-' . $this->seed() . '$1', $base_url, 1);
+
+        if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
+            throw new \Exception("Cannot parse repo URL: $repo_url");
+        }
+        $org = $m[1];
+        $repo_name = $m[2];
+
+        // Store the resolved URL so deleteDerivativeFixture and
+        // derivativeConfigurationFile() can reference the same seeded name.
+        $this->derivativeFixtureUrls[$remote_name] = $repo_url;
+
+        // Create empty (no auto_init) so we control the default branch name.
+        $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org, false, false, false, null, false);
+
+        // Clone the source and push into the new empty derivative using
+        // authenticated HTTPS URLs (works in both SSH and token-auth CI envs).
+        $source_path = $this->mktmpdir();
+        rmdir($source_path);
+        $source_url_authed = $api->addTokenAuthentication($source_url);
+        exec("git clone '$source_url_authed' '$source_path' 2>&1", $out, $rc);
+        if ($rc !== 0) {
+            throw new \Exception("Failed to clone source: " . implode("\n", $out));
+        }
+
+        // Push the branch first (initializes the empty repo), then tags.
+        // Use refs/remotes/origin/<branch> since the branch is only a remote
+        // tracking ref after a plain clone — not checked out locally.
+        $auth_push_url = $api->addTokenAuthentication($repo_url);
+        exec("git -C '$source_path' push '$auth_push_url' 'refs/remotes/origin/$source_branch:refs/heads/master' 2>&1", $out, $rc);
+        if ($rc !== 0) {
+            throw new \Exception("Failed to push branch to derivative: " . implode("\n", $out));
+        }
+
+        foreach ($tags as $tag) {
+            exec("git -C '$source_path' push '$auth_push_url' '$tag' 2>&1", $out, $rc);
+            if ($rc !== 0) {
+                throw new \Exception("Failed to push tag $tag to derivative: " . implode("\n", $out));
+            }
+        }
+    }
+
+    /**
+     * Return a path to a full test config file where the placeholder repo URL
+     * for $remote_name has been replaced with the actual seeded URL.
+     * Pass this to executeExpectOK() so the command uses the correct repo.
+     *
+     * @param string $remote_name Key in test-configuration.yml
+     * @return string Path to the seeded config file
+     */
+    public function seededConfigurationFile($remote_name)
+    {
+        $seeded_url = isset($this->derivativeFixtureUrls[$remote_name])
+            ? $this->derivativeFixtureUrls[$remote_name]
+            : null;
+
+        if (!$seeded_url) {
+            throw new \Exception("No seeded URL for $remote_name; call createDerivativeFixture first.");
+        }
+
+        $base = file_get_contents($this->configurationFile());
+        $placeholder_url = $this->getConfig()->get("projects.$remote_name.repo");
+        $seeded = str_replace($placeholder_url, $seeded_url, $base);
+
+        $dir = $this->mktmpdir();
+        $file = $dir . '/' . basename($this->configurationFile());
+        file_put_contents($file, $seeded);
+        return $file;
+    }
+
+    /**
+     * Delete a dynamically created derivative fixture repo from GitHub.
+     *
+     * @param string $remote_name Key in test-configuration.yml for the repo to delete
+     * @param string $as Auth alias
+     */
+    public function deleteDerivativeFixture($remote_name, $as = 'default')
+    {
+        $api = $this->api($as);
+
+        $repo_url = isset($this->derivativeFixtureUrls[$remote_name])
+            ? $this->derivativeFixtureUrls[$remote_name]
+            : null;
+
+        if (!$repo_url) {
+            return;
+        }
+
+        if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
+            throw new \Exception("Cannot parse repo URL: $repo_url");
+        }
+
+        try {
+            $api->gitHubAPI()->api('repo')->remove($m[1], $m[2]);
+        } catch (\Exception $e) {
+            // Ignore if the repo never existed (e.g. test failed before creation).
+        }
     }
 
     public function forkTestRepo($remote_name, $as = 'default')
