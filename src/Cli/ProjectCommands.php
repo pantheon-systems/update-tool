@@ -152,11 +152,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Find versions in the source that have not been created in the target.
         $versions_to_process = $this->compareTagsSets($source_releases, $existing_releases, $previous_version);
 
-        if (empty($versions_to_process)) {
-            $this->logger->notice("Everything is up-to-date.");
-            return;
-        }
-
         // If we are running in check-only mode, exit now, before we do anything.
         if ($options['check']) {
             return;
@@ -176,6 +171,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $project_working_copy->fetch($upstream_branch, 'upstream');
         $project_working_copy->fetchTags('upstream');
 
+        if (empty($versions_to_process)) {
+            $this->logger->notice("No new version tags to sync.");
+        }
+
         foreach ($versions_to_process as $version => $previous_version) {
             $project_working_copy->switchBranch($version);
 
@@ -185,11 +184,13 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             }
         }
 
-        // Add commits to main-branch from corresponding branch in upstream.
+        // Always sync main-branch commits from upstream, even when there are no
+        // new version tags — this ensures non-versioned commits (e.g. mu-plugin
+        // updates) are propagated to derivative projects.
         $project_working_copy->switchBranch($main_branch);
         $project_working_copy->pull('upstream', $upstream_branch);
         if (!empty($options['push'])) {
-            $this->logger->notice("Push branch {version} to {target}", ['version' => $main_branch, 'target' => $remote_repo->projectWithOrg()]);
+            $this->logger->notice("Push branch {branch} to {target}", ['branch' => $main_branch, 'target' => $remote_repo->projectWithOrg()]);
             $project_working_copy->push('origin', $main_branch);
         }
     }
