@@ -115,7 +115,16 @@ class ReleaseNode
         }
         // This only gets us the last ten releases, but that should be
         // enough for our purposes.
-        $atom_contents = file_get_contents($atom_url);
+        $context = stream_context_create([
+            'http' => [
+                'header' => 'User-Agent: pantheon-systems/update-tool',
+            ],
+        ]);
+        $atom_contents = file_get_contents($atom_url, false, $context);
+        if (empty($atom_contents)) {
+            trigger_error("Warning: Failed to fetch atom feed from $atom_url; skipping release node lookup.", E_USER_WARNING);
+            return '';
+        }
         $releases = new \SimpleXMLElement($atom_contents);
         foreach ($releases->entry as $entry) {
             $url = $entry->link['href'];

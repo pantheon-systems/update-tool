@@ -587,9 +587,13 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         // If we can find a release node, then add the "more information" blerb.
         $releaseNode = new ReleaseNode($api);
-        list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
-        if (!empty($release_url)) {
-            $message .= " For more information, see $release_url";
+        try {
+            list($failure_message, $release_url) = $releaseNode->get($this->getConfig(), $remote, $major, $latest, empty($update_parameters['allow-pre-release']));
+            if (!empty($release_url)) {
+                $message .= " For more information, see $release_url";
+            }
+        } catch (NotRecentReleaseException $e) {
+            $this->logger->notice("{version} is not a recent release so no release node link found.", ['version' => $latest]);
         }
 
         $this->logger->notice("Update message: {msg}", ['msg' => $message]);
