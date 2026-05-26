@@ -273,7 +273,7 @@ class WorkingCopy implements LoggerAwareInterface
      */
     public function fetchTags($remote = 'origin')
     {
-        $this->fetch($remote, '--tags');
+        $this->git('fetch --tags --force {remote}', ['remote' => $remote]);
         return $this;
     }
 
