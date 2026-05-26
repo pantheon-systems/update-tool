@@ -45,7 +45,7 @@ projects:
       repo: git@github.com:WordPress/WordPress.git
       major: '[4-9]'
       version-pattern: '#.#.-'
-      tags-version-pattern: '^5||^6'
+      tags-version-pattern: '^5||^6||^7'
       update-method: WpCliUpdate
       update-filters: []
     pr:
@@ -109,7 +109,7 @@ projects:
     path: ${working-copy-path}/wordpress-composer
     source:
       project: wp
-      version-pattern: '^5||^6'
+      version-pattern: '^5||^6||^7'
       update-parameters:
         rsync:
           options: '-ravz --delete'
@@ -127,7 +127,7 @@ projects:
     main-branch: master
     source:
       project: wp
-      version-pattern: '^5||^6'
+      version-pattern: '^5||^6||^7'
       branch: master
   drops-8-scaffolding:
     repo: git@github.com:pantheon-systems/drops-8-scaffolding.git

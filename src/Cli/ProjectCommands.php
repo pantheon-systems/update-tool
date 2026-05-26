@@ -216,21 +216,22 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $version_pattern = $this->getConfig()->get("projects.$remote.source.version-pattern", '#.#.#');
         $versionPatternRegex = $this->versionPatternRegex($version_pattern);
 
-
+        $this->logger->notice("Fetching tags for {upstream} and {project}", ['upstream' => $upstream_repo->projectWithOrg(), 'project' => $remote_repo->projectWithOrg()]);
 
         $source_releases = $upstream_repo->tags($versionPatternRegex, empty($update_parameters['allow-pre-release']), '');
         $existing_releases = $remote_repo->tags($versionPatternRegex, empty($update_parameters['allow-pre-release']), '');
 
+        $this->logger->notice("Found {source_count} source tags and {existing_count} existing tags", ['source_count' => count($source_releases), 'existing_count' => count($existing_releases)]);
         $this->logger->notice("Finding missing derived tags for {project}", ['project' => $remote_repo->projectWithOrg()]);
 
         // Get main-branch from config, default to master.
-        $previous_version = $this->getConfig()->get("projects.$remote.main-branch") ?? 'master';
+        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
+        $previous_version = $main_branch;
         // Find versions in the source that have not been created in the target.
         $versions_to_process = $this->compareTagsSets($source_releases, $existing_releases, $previous_version);
 
         if (empty($versions_to_process)) {
-            $this->logger->notice("Everything is up-to-date.");
-            return;
+            $this->logger->notice("No new version tags to sync.");
         }
 
         // If we are running in check-only mode, exit now, before we do anything.
@@ -241,7 +242,6 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $project_url = $this->getConfig()->get("projects.$remote.repo");
         $project_dir = $this->getConfig()->get("projects.$remote.path");
         $project_fork = $this->getConfig()->get("projects.$remote.fork");
-        $main_branch = $this->getConfig()->get("projects.$remote.main-branch", 'master');
 
         $upstream_url = $this->getConfig()->get("projects.$upstream.repo");
         $upstream_dir = $this->getConfig()->get("projects.$upstream.path");
@@ -259,7 +259,10 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Create the filters
         $filter_manager = $this->getFilters($this->getConfig()->get("projects.$remote.source.update-filters"));
 
-        $latest_version = '0.0';
+        // Determine the latest source version for main-branch sync.
+        $source_versions = array_keys($source_releases);
+        $latest_version = end($source_versions) ?: '0.0';
+
         foreach ($versions_to_process as $version => $previous_version) {
             if (Comparator::greaterThan($version, $latest_version)) {
                 $latest_version = $version;
@@ -282,13 +285,16 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
             }
         }
 
-        // Add commits to main-branch from latest processed tag.
+        // Always sync main-branch from the latest upstream version, even when
+        // there are no new version tags — this ensures non-versioned changes
+        // (e.g. composer.json updates) are propagated to derivative projects.
+        $this->logger->notice("Syncing {branch} from latest upstream version {version}", ['branch' => $main_branch, 'version' => $latest_version]);
         $project_working_copy->switchBranch($main_branch);
         $upstream_working_copy->switchBranch($latest_version);
-        $this->logger->notice("Processing files from {upstream} {version} over {target} {previous}", ['upstream' => $upstream_repo->projectWithOrg(), 'version' => $latest_version, 'target' => $remote_repo->projectWithOrg(), 'previous' => $previous_version]);
+        $this->logger->notice("Processing files from {upstream} {version} over {target} {branch}", ['upstream' => $upstream_repo->projectWithOrg(), 'version' => $latest_version, 'target' => $remote_repo->projectWithOrg(), 'branch' => $main_branch]);
         $this->applyFiltersAndCommit($filter_manager, $upstream_working_copy, $project_working_copy, $update_parameters);
         if (!empty($options['push'])) {
-            $this->logger->notice("Push branch {version} to {target}", ['version' => $main_branch, 'target' => $remote_repo->projectWithOrg()]);
+            $this->logger->notice("Push branch {branch} to {target}", ['branch' => $main_branch, 'target' => $remote_repo->projectWithOrg()]);
             $project_working_copy->push('origin', $main_branch);
         }
     }
