@@ -875,11 +875,18 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         // Apply the filters.
         $filter_manager->apply($upstream_working_copy->dir(), $project_working_copy->dir(), $update_parameters);
 
-        // Commit changes.
+        // Commit changes if there are any.
+        $project_working_copy->addAll();
+        if (empty($project_working_copy->status())) {
+            if (isset($this->logger)) {
+                $this->logger->notice("No changes to commit.");
+            }
+            return false;
+        }
         $comment = $upstream_working_copy->message();
         $commit_date = $upstream_working_copy->commitDate();
-        $project_working_copy->addAll();
         $project_working_copy->commitBy($comment, 'Pantheon Automation <bot@getpantheon.com>', $commit_date);
+        return true;
     }
 
 
