@@ -621,7 +621,7 @@ class WorkingCopy implements LoggerAwareInterface
      */
     public function git($cmd, $replacements = [], $redacted = [])
     {
-        return $this->execWithRedaction('git {dir}' . $cmd, ['dir' => "-C {$this->dir} "] + $replacements, ['dir' => ''] + $redacted);
+        return $this->execWithRedaction('git {dir}' . $cmd, ['dir' => "-C {$this->dir} "] + $replacements, $redacted);
     }
 
     /**
