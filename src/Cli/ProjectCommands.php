@@ -167,7 +167,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
         $this->logger->notice("Cloning repository for {remote} and fetching needed branch and tags", ['remote' => $remote]);
 
         $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
-        $project_working_copy->addRemote($upstream_url, 'upstream');
+        $project_working_copy->addRemote($upstream_repo->url(), 'upstream');
         $project_working_copy->fetch('upstream', $upstream_branch);
         $project_working_copy->fetchTags('upstream');
 
