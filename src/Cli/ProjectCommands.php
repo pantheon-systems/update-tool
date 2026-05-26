@@ -168,7 +168,7 @@ class ProjectCommands extends \Robo\Tasks implements ConfigAwareInterface, Logge
 
         $project_working_copy = WorkingCopy::cloneBranch($project_url, $project_dir, $main_branch, $api);
         $project_working_copy->addRemote($upstream_url, 'upstream');
-        $project_working_copy->fetch($upstream_branch, 'upstream');
+        $project_working_copy->fetch('upstream', $upstream_branch);
         $project_working_copy->fetchTags('upstream');
 
         if (empty($versions_to_process)) {
