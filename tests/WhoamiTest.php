@@ -18,7 +18,7 @@ class WhoamiTest extends TestCase implements CommandTesterInterface
             $commandClasses = [
                 \UpdateTool\Cli\PhpCommands::class,
                 \UpdateTool\Cli\TestUtilCommands::class,
-                \Hubph\Cli\HubphCommands::class,
+                \UpdateTool\Hubph\Cli\HubphCommands::class,
             ];
 
             $this->fixtures = new Fixtures();
@@ -27,12 +27,12 @@ class WhoamiTest extends TestCase implements CommandTesterInterface
         return $this->fixtures;
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->fixtures();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
     }
 
@@ -42,6 +42,6 @@ class WhoamiTest extends TestCase implements CommandTesterInterface
     public function testWhoami()
     {
         $output = $this->executeExpectOK(['whoami']);
-        $this->assertContains('Authenticated as pantheon-ci-bot', $output);
+        $this->assertStringContainsString('Authenticated as pantheon-ci-bot', $output);
     }
 }

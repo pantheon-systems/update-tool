@@ -13,11 +13,11 @@ use Psr\Log\LoggerAwareTrait;
 use Robo\Common\ConfigAwareTrait;
 use Robo\Contract\ConfigAwareInterface;
 use Consolidation\AnnotatedCommand\CommandError;
-use Hubph\HubphAPI;
-use Hubph\VersionIdentifiers;
-use Hubph\PullRequests;
-use Hubph\Git\WorkingCopy;
-use Hubph\Git\Remote;
+use UpdateTool\Hubph\HubphAPI;
+use UpdateTool\Hubph\VersionIdentifiers;
+use UpdateTool\Hubph\PullRequests;
+use UpdateTool\Git\WorkingCopy;
+use UpdateTool\Git\Remote;
 use UpdateTool\Util\SupportLevel;
 use UpdateTool\Util\ProjectUpdate;
 
@@ -85,10 +85,8 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
     ])
     {
         $api = $this->api($options['as']);
-        $pager = $api->resultPager();
 
-        $repoApi = $api->gitHubAPI()->api('organization');
-        $repos = $pager->fetchAll($repoApi, 'repositories', [$org]);
+        $repos = $api->orgRepos($org);
 
         // Remove archived repositories from consideration
         if (!$options['include-archived']) {
@@ -134,7 +132,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
             // Fetch metadata related to contents of README file
             try {
-                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], 'README.md');
+                $data = $api->repoContents($org, $repo['name'], 'README.md');
                 if (!empty($data['content'])) {
                     $content = base64_decode($data['content']);
                     $support_level = SupportLevel::getSupportLevelsFromContent($content);
@@ -149,7 +147,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
             $repo['circle_vars'] = [];
             $repo['circle_contexts'] = [];
             try {
-                $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repo['name'], '.circleci/config.yml');
+                $data = $api->repoContents($org, $repo['name'], '.circleci/config.yml');
                 $repo['circle_ci'] = true;
                 if (!empty($data['content'])) {
                     $content = base64_decode($data['content']);
@@ -200,7 +198,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
         $codeowners = [];
         $ownerSource = '';
         try {
-            $data = $api->gitHubAPI()->api('repo')->contents()->show($org, $repoName, 'CODEOWNERS');
+            $data = $api->repoContents($org, $repoName, 'CODEOWNERS');
             if (!empty($data['content'])) {
                 $content = base64_decode($data['content']);
                 $ownerSource = 'file';
@@ -407,7 +405,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
                 // This PR is ready to merge.
                 if (!$options['dry-run']) {
                     $this->logger->notice("Merging PR #$prNumber in $projectName because it is old enough.");
-                    $api->gitHubAPI()->api('pull_request')->merge($user, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectName", $prSha);
+                    $api->prMergeSingle($user, $projectName, $prNumber, "Auto merge PR #$prNumber in $projectName", $prSha);
                     break;
                 } else {
                     $this->logger->notice("PR #$prNumber in $projectName would be merged if no dry-run because it is old enough.");
@@ -468,7 +466,7 @@ class OrgCommands extends \Robo\Tasks implements ConfigAwareInterface, LoggerAwa
 
         try {
             // Use the API to look up teams that have access to the repo and might be owners
-            $teamsWithAccess = $api->gitHubAPI()->api('repo')->teams($org, $project);
+            $teamsWithAccess = $api->repoTeams($org, $project);
             $teamsWithAdmin = [];
             $teamsWithWrite = [];
             foreach ($teamsWithAccess as $team) {

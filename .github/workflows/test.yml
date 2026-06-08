@@ -5,7 +5,8 @@ on:
     tags:
       - '*'
 
-permissions: write-all
+permissions:
+  contents: read
 
 concurrency:
   group: test-fixtures
@@ -14,29 +15,14 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      mariadb:
-        image: mariadb:10.5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set PHP version
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 7.4
-      - name: Setup MySQL
-        run: |
-          sudo systemctl start mysql
-          mysqladmin -h 127.0.0.1 -u root -proot status
-          echo "Setting the root password to empty"
-          mysql -h 127.0.0.1 -u root -proot -e "USE mysql; UPDATE user SET authentication_string='' WHERE User='root'; FLUSH PRIVILEGES;"
-          echo "Testing blank password"
-          mysqladmin -h 127.0.0.1 -u root status
+          php-version: '8.1'
       - name: Install Composer Dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
-      - name: Install SSH key
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.PANTHEON_UPSTREAM_SSH_KEY }}
+        run: composer install --prefer-dist --no-progress
       - name: Unset GitHub Tokens
         shell: bash
         run: |
@@ -48,11 +34,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
         run: |
-          echo "Set git config"
           git config --global user.email "bot@getpantheon.com"
           git config --global user.name "Pantheon Automation"
-          echo "Login with gh auth"
-          # gh auth login
           gh auth status
           ./update-tool whoami
       - name: Install WP-CLI
@@ -73,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Dispatch
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           repository: pantheon-systems/update-tool

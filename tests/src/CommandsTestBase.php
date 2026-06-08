@@ -12,8 +12,9 @@ class CommandsTestBase extends TestCase implements CommandTesterInterface
     /** @var Fixtures */
     protected $fixtures;
 
-    public function __construct()
+    public function __construct(string $name = '')
     {
+        parent::__construct($name);
         $this->fixtures = new Fixtures();
     }
 
@@ -31,7 +32,7 @@ class CommandsTestBase extends TestCase implements CommandTesterInterface
             $this->assertEquals('', $actualOutput);
         } else {
             foreach ((array)$expectedOutput as $expected) {
-                $this->assertContains($expected, $actualOutput);
+                $this->assertStringContainsString($expected, $actualOutput);
             }
         }
         $this->assertEquals($expectedStatus, $statusCode);

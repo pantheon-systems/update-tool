@@ -6,9 +6,7 @@ Fast and smart. Update Tool checks for available software updates and creates pu
 [![Actively Maintained](https://img.shields.io/badge/Pantheon-Actively_Maintained-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#actively-maintained-support)
 [![License](https://img.shields.io/badge/license-MIT-408677.svg)](LICENSE)
 
-<table><tr width="25%"><td><img alt="Detinator" src="docs/images/roadrunner.png"/></td><td width="75%" valign="top">
-The Update Tool is a lightweight collection of commands that know how to create pull requests from various data sources that inform us of the most recent available version of certain software components on our platform. These commands are executed periodically via `cron`, as managed by the <a href="https://github.com/pantheon-systems/updatinator">Updatinator</a> tool.
-</td></tr></table>
+The Update Tool is a lightweight collection of commands that know how to create pull requests from various data sources that inform us of the most recent available version of certain software components on our platform. These commands are executed periodically via GitHub Actions cron schedules, as managed by the [Updatinator](https://github.com/pantheon-systems/updatinator) tool.
 
 ## Command List
 
@@ -20,24 +18,10 @@ The following commands are available:
 
 There are two ways to provide authentication credentials when using the Update Tool commands.
 
-- Environment variable: Define `GITHUB_TOKEN` with the apporpriate personal access token.
-- On-disk cache: See [update-tool.yml](update-tool.yml) for the location to store the personal access token. Use the `--as` option to select between different cache locations.
+- Environment variable: Define `GITHUB_TOKEN` with the appropriate token.
+- On-disk cache: See [update-tool.yml](update-tool.yml) for the location to store the token. Use the `--as` option to select between different cache locations.
 
-The authentication credentials you will need can be found in the production Vault: `secret/github/user__pantheon-upstream`
-
-### Rotating Credentials
-
-*Production:* In production, this tool uses the credentials defined in the [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinator) project.
-
-*Testing:* GitHub Actions needs a GitHub token for a service account that has access to the projects in the [test-configurations.yml](tests/fixtures/home/test-configuration.yml) fixtures file. Currently, the GitHub user `pantheon-ci-bot` is being used. Access it via:
-
-```
-pvault production read secret/github/access-tokens/pantheon-ci-bot
-```
-
-## Automation
-
-The [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinator) project runs the automation processes in CircleCI 2.0 scripts.
+In production, this tool uses credentials provisioned by the [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinator) project via GitHub App tokens stored in Vault.
 
 ## Local Development
 
@@ -57,10 +41,6 @@ The test suite may be run locally by way of some simple composer scripts:
 
 ### Releasing
 
-To release a new version of the Update Tool, create a new tag at the appropriate version. This will trigger the tests to run again. Assuming the tests pass, that sends a release dispatch that triggers another GitHub Action to publish the release and upload the `update-tool.phar` to the release.
+To release a new version of the Update Tool, create a new tag at the appropriate version. This triggers the test workflow; on success, a dispatch event triggers the publish workflow to create a GitHub release and upload the `update-tool.phar` artifact.
 
 Rebuild [pantheon-systems/docker-updatinator](https://github.com/pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
-
-Alternately, you can use the Composer script `composer release`.
-
-This will release a stable version of whatever is indicated in the VERSION file. e.g. if VERSION contains `1.0.3-dev`, then version `1.0.3` will be tagged and released, and the VERSION file will be updated to `1.0.4-dev`. To release version `1.1.0` instead, manually edit the VERSION file to `1.1.0-dev` and then run `composer release`. This requires maintaining the `VERSION` file which historically has not been consistently updated, and simply creating the tag and allowing automation to handle the release is a more straightforward process.

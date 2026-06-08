@@ -2,7 +2,7 @@
 
 namespace UpdateTool\Update\Methods;
 
-use Hubph\HubphAPI;
+use UpdateTool\Hubph\HubphAPI;
 use UpdateTool\Update\Filters\FilterManager;
 
 /**

@@ -8,8 +8,8 @@ use Robo\Contract\ConfigAwareInterface;
 use Robo\Common\ConfigAwareTrait;
 use UpdateTool\Git\WorkingCopy;
 use UpdateTool\Util\CIUtilsTrait;
-use Hubph\VersionIdentifiers;
-use Hubph\HubphAPI;
+use UpdateTool\Hubph\VersionIdentifiers;
+use UpdateTool\Hubph\HubphAPI;
 
 /**
  * Commands used to create pull requests to update available php versions on the platform

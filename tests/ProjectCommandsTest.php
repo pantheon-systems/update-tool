@@ -19,12 +19,12 @@ class ProjectCommandsTest extends CommandsTestBase
     /**
      * Prepare to test our commandfile
      */
-    public function setUp()
+    public function setUp(): void
     {
         $commandClasses = [
             \UpdateTool\Cli\ProjectCommands::class,
             \UpdateTool\Cli\TestUtilCommands::class,
-            \Hubph\Cli\HubphCommands::class,
+            \UpdateTool\Hubph\Cli\HubphCommands::class,
         ];
 
         $this->fixtures = new Fixtures();
@@ -33,7 +33,7 @@ class ProjectCommandsTest extends CommandsTestBase
         @unlink($this->fixtures()->activityLogPath());
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->fixtures()->cleanup();
     }
@@ -57,7 +57,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'drops-8']);
-        $this->assertContains('drops-8 8.5.6 has an available update: 8.6.0', $output);
+        $this->assertStringContainsString('drops-8 8.5.6 has an available update: 8.6.0', $output);
 
         // TODO: Is there any reasonable test we can do on project:releases?
 
@@ -69,7 +69,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to create an upstream update PR for our drops-8 fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'drops-8']);
-        $this->assertContains('Updating drops-8 from 8.5.6 to 8.6.0', $output);
+        $this->assertStringContainsString('Updating drops-8 from 8.5.6 to 8.6.0', $output);
 
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
@@ -79,7 +79,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'drops-8']);
-        $this->assertContains('[notice] Pull request already exists for available update 8.6.0; nothing more to do.', $output);
+        $this->assertStringContainsString('[notice] Pull request already exists for available update 8.6.0; nothing more to do.', $output);
 
         // Project has not been updated yet
         $output = $this->executeExpectOK(['project:latest', 'drops-8']);
@@ -98,7 +98,7 @@ class ProjectCommandsTest extends CommandsTestBase
             $this->assertEquals('8.5.6', $output);
 
             $output = $this->executeExpectOK(['project:upstream:update', 'drops-8']);
-            $this->assertContains('[notice] Tagged version 8.6.0.', $output);
+            $this->assertStringContainsString('[notice] Tagged version 8.6.0.', $output);
 
             // Now project has been updated and tagged
             $output = $this->executeExpectOK(['project:latest', 'drops-8']);
@@ -127,7 +127,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'wp']);
-        $this->assertContains('wp 4.9.8 has an available update: 5.0.1', $output);
+        $this->assertStringContainsString('wp 4.9.8 has an available update: 5.0.1', $output);
 
         // Check to see if we can compose a release node url for our fixtures
         $output = $this->executeExpectOK(['project:release-node', 'wp', '--format=string']);
@@ -135,7 +135,7 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to create an upstream update PR for our drops-8 fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
-        $this->assertContains('Updating wp from 4.9.8 to 5.0.1', $output);
+        $this->assertStringContainsString('Updating wp from 4.9.8 to 5.0.1', $output);
 
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
@@ -145,6 +145,6 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
-        $this->assertContains('[notice] Pull request already exists for available update 5.0.1; nothing more to do.', $output);
+        $this->assertStringContainsString('[notice] Pull request already exists for available update 5.0.1; nothing more to do.', $output);
     }
 }

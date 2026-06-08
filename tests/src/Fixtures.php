@@ -4,7 +4,7 @@ namespace UpdateTool;
 
 use Consolidation\Config\Util\EnvConfig;
 use Consolidation\Log\Logger;
-use Hubph\HubphAPI;
+use UpdateTool\Hubph\HubphAPI;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Filesystem\Filesystem;
 use UpdateTool\Git\Remote;
@@ -20,6 +20,7 @@ class Fixtures
     protected $config;
     protected $logOutput;
     protected $logger;
+    protected $seed;
     protected $derivativeFixtureUrls = [];
 
     // Our test fixtures' idea of what the current php releases are, frozen in time.
@@ -128,9 +129,9 @@ class Fixtures
 
         // Use the REST pulls endpoint (not the search API, which has indexing
         // lag) to get a consistent view of open PRs.
-        $openPRs = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
+        $openPRs = $api->prList($org, $project, 'open');
         foreach ($openPRs as $pr) {
-            $api->gitHubAPI()->api('pull_request')->update($org, $project, $pr['number'], ['state' => 'closed']);
+            $api->prUpdate($org, $project, $pr['number'], ['state' => 'closed']);
         }
 
         // Poll REST until all PRs are confirmed closed.
@@ -139,7 +140,7 @@ class Fixtures
         while ($waited < $maxWait) {
             sleep(5);
             $waited += 5;
-            $remaining = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
+            $remaining = $api->prList($org, $project, 'open');
             if (empty($remaining)) {
                 break;
             }
@@ -154,7 +155,7 @@ class Fixtures
             sleep(10);
             $waited += 10;
             $q = "repo:$projectWithOrg is:pr state:open";
-            $searchResults = $api->gitHubAPI()->api('search')->issues($q);
+            $searchResults = $api->searchIssues($q);
             if (empty($searchResults['items'])) {
                 return;
             }
@@ -240,7 +241,7 @@ class Fixtures
         $this->derivativeFixtureUrls[$remote_name] = $repo_url;
 
         // Create empty (no auto_init) so we control the default branch name.
-        $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org, false, false, false, null, false);
+        $api->repoCreate($org, $repo_name, true, false);
 
         // Clone the source and push into the new empty derivative using
         // authenticated HTTPS URLs (works in both SSH and token-auth CI envs).
@@ -320,7 +321,7 @@ class Fixtures
         }
 
         try {
-            $api->gitHubAPI()->api('repo')->remove($m[1], $m[2]);
+            $api->repoDelete($m[1], $m[2]);
         } catch (\Exception $e) {
             // Ignore if the repo never existed (e.g. test failed before creation).
         }

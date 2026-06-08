@@ -10,11 +10,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          php-version: '8.1'
       - name: Get tag name
         id: tag_name
         run: echo "tag_name=${{ github.event.client_payload.tag_name }}" >> $GITHUB_ENV

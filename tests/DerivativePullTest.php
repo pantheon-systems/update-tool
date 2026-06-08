@@ -22,18 +22,18 @@ class DerivativePullTest extends CommandsTestBase
         return $this->fixtures;
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         $commandClasses = [
             \UpdateTool\Cli\ProjectCommands::class,
-            \Hubph\Cli\HubphCommands::class,
+            \UpdateTool\Hubph\Cli\HubphCommands::class,
         ];
 
         $this->fixtures = new Fixtures();
         $this->setupCommandTester('TestFixtureApp', '1.0.1', $commandClasses, $this->fixtures->configurationFile());
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->fixtures()->deleteDerivativeFixture(self::DERIVATIVE_PROJECT);
         $this->fixtures()->cleanup();
@@ -60,8 +60,8 @@ class DerivativePullTest extends CommandsTestBase
         $configFile = $this->fixtures()->seededConfigurationFile(self::DERIVATIVE_PROJECT);
         $output = $this->executeExpectOK(['project:derivative:pull', self::DERIVATIVE_PROJECT], null, $configFile);
 
-        $this->assertContains('No new version tags to sync.', $output);
-        $this->assertContains('Push branch master to', $output);
+        $this->assertStringContainsString('No new version tags to sync.', $output);
+        $this->assertStringContainsString('Push branch master to', $output);
         $this->assertNotContains('Everything is up-to-date.', $output);
     }
 
@@ -85,8 +85,8 @@ class DerivativePullTest extends CommandsTestBase
         $configFile = $this->fixtures()->seededConfigurationFile(self::DERIVATIVE_PROJECT);
         $output = $this->executeExpectOK(['project:derivative:pull', self::DERIVATIVE_PROJECT], null, $configFile);
 
-        $this->assertContains('Push tag ' . self::SOURCE_TAG . ' to', $output);
-        $this->assertContains('Push branch master to', $output);
+        $this->assertStringContainsString('Push tag ' . self::SOURCE_TAG . ' to', $output);
+        $this->assertStringContainsString('Push branch master to', $output);
         $this->assertNotContains('Everything is up-to-date.', $output);
     }
 }

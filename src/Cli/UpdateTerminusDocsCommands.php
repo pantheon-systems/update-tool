@@ -6,9 +6,9 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Robo\Common\ConfigAwareTrait;
 use Robo\Contract\ConfigAwareInterface;
-use Hubph\HubphAPI;
+use UpdateTool\Hubph\HubphAPI;
 use UpdateTool\Git\WorkingCopy;
-use Hubph\Git\Remote;
+use UpdateTool\Git\Remote;
 
 /**
  * Commands used to interact with Terminus releases.
@@ -196,7 +196,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
     protected function getAllReleases($api, $repo)
     {
         [$username, $repository] = explode('/', $repo);
-        $releases = $api->gitHubAPI()->repo()->releases()->all($username, $repository);
+        $releases = $api->releasesAll($username, $repository);
         return $releases;
     }
 
@@ -206,7 +206,7 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
     protected function getLatestRelease($api, $repo)
     {
         [$username, $repository] = explode('/', $repo);
-        $release = $api->gitHubAPI()->repo()->releases()->latest($username, $repository);
+        $release = $api->releasesLatest($username, $repository);
         return $release['tag_name'];
     }
 

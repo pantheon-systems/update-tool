@@ -18,7 +18,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
             $commandClasses = [
                 \UpdateTool\Cli\PhpCommands::class,
                 \UpdateTool\Cli\TestUtilCommands::class,
-                \Hubph\Cli\HubphCommands::class,
+                \UpdateTool\Hubph\Cli\HubphCommands::class,
             ];
 
             $this->fixtures = new Fixtures();
@@ -30,12 +30,12 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
     /**
      * Prepare to test our commandfile
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->fixtures();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->fixtures()->cleanup();
     }
@@ -54,7 +54,7 @@ class PhpCommandsTest extends TestCase implements CommandTesterInterface
             $this->assertEquals('', $actualOutput);
         } else {
             foreach ((array)$expectedOutput as $expected) {
-                $this->assertContains($expected, $actualOutput);
+                $this->assertStringContainsString($expected, $actualOutput);
             }
         }
         $this->assertEquals($expectedStatus, $statusCode);

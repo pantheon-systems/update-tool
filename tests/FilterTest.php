@@ -20,12 +20,12 @@ class FilterTest extends TestCase implements CommandTesterInterface
         return $this->fixtures;
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->fixtures();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
     }
 
@@ -82,7 +82,7 @@ class FilterTest extends TestCase implements CommandTesterInterface
 
         $sut->action($source, $target, $parameters);
 
-        $this->assertFileNotExists("$target/.git");
+        $this->assertFileDoesNotExist("$target/.git");
         $this->assertFileExists("$target/index.php");
     }
 }
