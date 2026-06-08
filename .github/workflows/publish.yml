@@ -10,11 +10,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@1c8b931092191aa6384909135bb73949ac1528ce # v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
       - name: Get tag name
         id: tag_name
         run: echo "tag_name=${{ github.event.client_payload.tag_name }}" >> $GITHUB_ENV
@@ -23,7 +23,7 @@ jobs:
           composer install
           composer phar:build
       - name: Publish Release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
         with:
           tag: ${{ env.tag_name }}
           artifacts: 'update-tool.phar'

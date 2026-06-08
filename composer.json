@@ -19,7 +19,7 @@
         }
     },
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "composer/semver": "^3.0",
         "consolidation/config": "^2.0",
         "consolidation/robo": "^3.0|^4.0",
@@ -66,7 +66,9 @@
     "config": {
         "optimize-autoloader": true,
         "sort-packages": true,
-        "platform": {}
+        "platform": {
+            "php": "8.2.0"
+        }
     },
     "extra": {
         "branch-alias": {
