@@ -42,6 +42,12 @@ class RsyncFromSource implements UpdateFilterInterface, LoggerAwareInterface
             )
         );
 
-        exec("rsync $options $src/ $dest >/dev/null 2>&1");
+        if ($this->logger) {
+            $this->logger->notice("rsync from {src} to {dest}", ['src' => "$src/", 'dest' => $dest]);
+        }
+        exec("rsync $options $src/ $dest 2>&1", $output, $result);
+        if ($result !== 0) {
+            throw new \RuntimeException("rsync failed with exit code $result: " . implode("\n", $output));
+        }
     }
 }

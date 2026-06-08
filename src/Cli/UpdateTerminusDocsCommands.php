@@ -146,7 +146,8 @@ class UpdateTerminusDocsCommands extends \Robo\Tasks implements ConfigAwareInter
 
         $installMdContents = file_get_contents($dir . '/source/content/terminus/02-install.md');
         $replacement = '${1}' . $terminusRelease . '${3}';
-        $installMdContents = preg_replace('/(.*https:\/\/github\.com\/pantheon-systems\/terminus\/releases\/download\/)(\d+\.\d+\.\d+)(.*)/', $replacement, $installMdContents);
+        $majorVersion = substr($terminusRelease, 0, 1);
+        $installMdContents = preg_replace('/(.*https:\/\/github\.com\/pantheon-systems\/terminus\/releases\/download\/)(' . $majorVersion . '\.\d+\.\d+)(.*)/', $replacement, $installMdContents);
         file_put_contents($dir . '/source/content/terminus/02-install.md', $installMdContents);
 
 
