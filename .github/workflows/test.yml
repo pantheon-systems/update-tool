@@ -16,11 +16,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Set PHP version
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@1c8b931092191aa6384909135bb73949ac1528ce # v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress
       - name: Unset GitHub Tokens
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Dispatch
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3
         with:
           token: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
           repository: pantheon-systems/update-tool
