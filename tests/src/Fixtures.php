@@ -255,10 +255,10 @@ class Fixtures
                 $ready = true;
                 break;
             }
-            sleep(2);
+            sleep(10);
         }
         if (!$ready) {
-            throw new \Exception("Derivative repo $repo_url not reachable after creation (waited 20s)");
+            throw new \Exception("Derivative repo $repo_url not reachable after creation (waited 100s)");
         }
 
         // Clone the source and push into the new empty derivative using
