@@ -39,7 +39,7 @@ class HubphAPITest extends TestCase
         $api = new HubphAPI($config);
 
         $result = $api->addTokenAuthentication('git@github.com:org/repo.git');
-        $this->assertEquals('https://test-token-123:x-oauth-basic@github.com/org/repo.git', $result);
+        $this->assertEquals('https://x-access-token:test-token-123@github.com/org/repo.git', $result);
     }
 
     public function testAddTokenAuthenticationToHttpsUrl()
@@ -49,7 +49,7 @@ class HubphAPITest extends TestCase
         $api = new HubphAPI($config);
 
         $result = $api->addTokenAuthentication('https://github.com/org/repo.git');
-        $this->assertEquals('https://test-token-123:x-oauth-basic@github.com/org/repo.git', $result);
+        $this->assertEquals('https://x-access-token:test-token-123@github.com/org/repo.git', $result);
     }
 
     public function testAddTokenAuthenticationSkipsNonGitHubUrls()

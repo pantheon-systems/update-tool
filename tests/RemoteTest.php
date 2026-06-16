@@ -113,11 +113,11 @@ class RemoteTest extends TestCase
         $api = $this->createMock(\UpdateTool\Hubph\HubphAPI::class);
         $api->method('addTokenAuthentication')
             ->with('git@github.com:org/repo.git')
-            ->willReturn('https://tok:x-oauth-basic@github.com/org/repo.git');
+            ->willReturn('https://x-access-token:tok@github.com/org/repo.git');
 
         $remote = new Remote('git@github.com:org/repo.git');
         $remote->addAuthentication($api);
-        $this->assertEquals('https://tok:x-oauth-basic@github.com/org/repo.git', $remote->url());
+        $this->assertEquals('https://x-access-token:tok@github.com/org/repo.git', $remote->url());
     }
 
     public function testAddAuthenticationWithoutApiDoesNothing()
