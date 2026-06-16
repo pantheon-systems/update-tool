@@ -243,6 +243,24 @@ class Fixtures
         // Create empty (no auto_init) so we control the default branch name.
         $api->repoCreate($org, $repo_name, true, false);
 
+        // GitHub is eventually consistent: a just-created repo can 404 for a few
+        // seconds, which a fine-grained token surfaces as "Repository not found".
+        // Poll until the repo is reachable before cloning/pushing into it.
+        $repo_url_authed = $api->addTokenAuthentication($repo_url);
+        $ready = false;
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $probe = [];
+            exec("git ls-remote '$repo_url_authed' 2>/dev/null", $probe, $probe_rc);
+            if ($probe_rc === 0) {
+                $ready = true;
+                break;
+            }
+            sleep(2);
+        }
+        if (!$ready) {
+            throw new \Exception("Derivative repo $repo_url not reachable after creation (waited 20s)");
+        }
+
         // Clone the source and push into the new empty derivative using
         // authenticated HTTPS URLs (works in both SSH and token-auth CI envs).
         $source_path = $this->mktmpdir();
