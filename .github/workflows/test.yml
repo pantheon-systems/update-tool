@@ -28,7 +28,7 @@ jobs:
         run: |
           unset GITHUB_TOKEN
           unset GH_TOKEN
-      - name: Run Update Tool Whoami
+      - name: Verify GitHub auth
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.PANTHEON_UPSTREAM_AUTH_TOKEN }}
