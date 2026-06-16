@@ -35,7 +35,9 @@ class DerivativePullTest extends CommandsTestBase
 
     public function tearDown(): void
     {
-        $this->fixtures()->deleteDerivativeFixture(self::DERIVATIVE_PROJECT);
+        // TEMP debug: leave the created derivative repo in place so it can be
+        // inspected after the run. Restore before merge.
+        // $this->fixtures()->deleteDerivativeFixture(self::DERIVATIVE_PROJECT);
         $this->fixtures()->cleanup();
     }
 
