@@ -233,7 +233,8 @@ class HubphAPI
             return $url;
         }
         $projectAndOrg = $this->projectAndOrgFromUrl($url);
-        return "https://{$token}:x-oauth-basic@github.com/{$projectAndOrg}.git";
+        // x-access-token form works for PATs and GitHub App installation tokens.
+        return "https://x-access-token:{$token}@github.com/{$projectAndOrg}.git";
     }
 
     protected function projectAndOrgFromUrl($remote)
