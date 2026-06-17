@@ -223,46 +223,20 @@ class Fixtures
         $api = $this->api($as);
         $config = $this->getConfig();
 
-        $base_url = $config->get("projects.$remote_name.repo");
+        // Persistent fixture: use the configured repo URL as-is (no per-run
+        // seed). The repo pantheon-fixtures/wordpress-network-fixture already
+        // exists, so we never create or delete it -- we reset its master branch
+        // and tags to the state this test needs.
+        $repo_url = $config->get("projects.$remote_name.repo");
         $source_url = $config->get("projects.$source_name.repo");
 
-        // Append the seed to make the repo name unique per test run, since
-        // ${nonce} interpolation does not work with plain config->get().
-        $repo_url = preg_replace('#(\.git)?$#', '-' . $this->seed() . '$1', $base_url, 1);
-
-        if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
-            throw new \Exception("Cannot parse repo URL: $repo_url");
-        }
-        $org = $m[1];
-        $repo_name = $m[2];
-
-        // Store the resolved URL so deleteDerivativeFixture and
-        // derivativeConfigurationFile() can reference the same seeded name.
+        // Record the URL so seededConfigurationFile() refers to the same repo
+        // (identity with the config URL now).
         $this->derivativeFixtureUrls[$remote_name] = $repo_url;
 
-        // Create empty (no auto_init) so we control the default branch name.
-        $api->repoCreate($org, $repo_name, true, false);
+        $auth_push_url = $api->addTokenAuthentication($repo_url);
 
-        // GitHub is eventually consistent: a just-created repo can 404 for a few
-        // seconds, which a fine-grained token surfaces as "Repository not found".
-        // Poll until the repo is reachable before cloning/pushing into it.
-        $repo_url_authed = $api->addTokenAuthentication($repo_url);
-        $ready = false;
-        for ($attempt = 0; $attempt < 10; $attempt++) {
-            $probe = [];
-            exec("git ls-remote '$repo_url_authed' 2>/dev/null", $probe, $probe_rc);
-            if ($probe_rc === 0) {
-                $ready = true;
-                break;
-            }
-            sleep(10);
-        }
-        if (!$ready) {
-            throw new \Exception("Derivative repo $repo_url not reachable after creation (waited 100s)");
-        }
-
-        // Clone the source and push into the new empty derivative using
-        // authenticated HTTPS URLs (works in both SSH and token-auth CI envs).
+        // Clone the source so we have its branch and tags locally.
         $source_path = $this->mktmpdir();
         rmdir($source_path);
         $source_url_authed = $api->addTokenAuthentication($source_url);
@@ -271,15 +245,31 @@ class Fixtures
             throw new \Exception("Failed to clone source: " . implode("\n", $out));
         }
 
-        // Push the branch first (initializes the empty repo), then tags.
-        // Use refs/remotes/origin/<branch> since the branch is only a remote
-        // tracking ref after a plain clone — not checked out locally.
-        $auth_push_url = $api->addTokenAuthentication($repo_url);
-        exec("git -C '$source_path' push '$auth_push_url' 'refs/remotes/origin/$source_branch:refs/heads/master' 2>&1", $out, $rc);
+        // Reset the derivative's master to the source branch. The persistent
+        // repo already has history from prior runs, so this is force-pushed.
+        // (The fixtures org does not enforce a no-force ruleset on private repos.)
+        exec("git -C '$source_path' push --force '$auth_push_url' 'refs/remotes/origin/$source_branch:refs/heads/master' 2>&1", $out, $rc);
         if ($rc !== 0) {
             throw new \Exception("Failed to push branch to derivative: " . implode("\n", $out));
         }
 
+        // Tags are repo-global and the repo persists, so delete every existing
+        // tag before pushing the desired set -- otherwise tags from a prior run
+        // make the "no new tags" / "new tags" cases nondeterministic.
+        $existing = [];
+        exec("git ls-remote --tags --refs '$auth_push_url' 2>/dev/null", $existing, $ls_rc);
+        if ($ls_rc === 0) {
+            foreach ($existing as $line) {
+                if (preg_match('#refs/tags/(.+)$#', $line, $tm)) {
+                    exec("git -C '$source_path' push '$auth_push_url' ':refs/tags/{$tm[1]}' 2>&1", $del_out, $del_rc);
+                    if ($del_rc !== 0) {
+                        throw new \Exception("Failed to delete remote tag {$tm[1]}: " . implode("\n", $del_out));
+                    }
+                }
+            }
+        }
+
+        // Push the desired tag set (the source clone already has all source tags).
         foreach ($tags as $tag) {
             exec("git -C '$source_path' push '$auth_push_url' '$tag' 2>&1", $out, $rc);
             if ($rc !== 0) {
@@ -324,25 +314,9 @@ class Fixtures
      */
     public function deleteDerivativeFixture($remote_name, $as = 'default')
     {
-        $api = $this->api($as);
-
-        $repo_url = isset($this->derivativeFixtureUrls[$remote_name])
-            ? $this->derivativeFixtureUrls[$remote_name]
-            : null;
-
-        if (!$repo_url) {
-            return;
-        }
-
-        if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
-            throw new \Exception("Cannot parse repo URL: $repo_url");
-        }
-
-        try {
-            $api->repoDelete($m[1], $m[2]);
-        } catch (\Exception $e) {
-            // Ignore if the repo never existed (e.g. test failed before creation).
-        }
+        // No-op: the derivative fixture is now a persistent repo that is reset
+        // (branch + tags) at the start of each test rather than created and
+        // destroyed. Nothing to tear down. Kept so callers don't need to change.
     }
 
     public function forkTestRepo($remote_name, $as = 'default')
