@@ -62,7 +62,7 @@ class DerivativePullTest extends CommandsTestBase
 
         $this->assertStringContainsString('No new version tags to sync.', $output);
         $this->assertStringContainsString('Push branch master to', $output);
-        $this->assertNotContains('Everything is up-to-date.', $output);
+        $this->assertStringNotContainsString('Everything is up-to-date.', $output);
     }
 
     /**
@@ -87,6 +87,6 @@ class DerivativePullTest extends CommandsTestBase
 
         $this->assertStringContainsString('Push tag ' . self::SOURCE_TAG . ' to', $output);
         $this->assertStringContainsString('Push branch master to', $output);
-        $this->assertNotContains('Everything is up-to-date.', $output);
+        $this->assertStringNotContainsString('Everything is up-to-date.', $output);
     }
 }
