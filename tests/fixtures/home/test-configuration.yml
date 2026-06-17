@@ -17,7 +17,7 @@ projects:
   wp:
     repo: git@github.com:pantheon-fixtures/pantheon-wp-fixture.git
     path: ${working-copy-path}/WordPress
-    main-branch: site-5866/wp-6.9.3
+    main-branch: default
     upstream:
       project: WordPress
       major: '[4-9]'
@@ -43,9 +43,9 @@ projects:
     path: ${working-copy-path}/WordPressUpstream
     main-branch: master
     version-api:
-      url: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/97ec57ab0784d3076797c4dfaccaa099673e4dc4/version-check.json'
+      url: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture/version-check.json'
     release-node:
-      atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/97ec57ab0784d3076797c4dfaccaa099673e4dc4/releases.atom'
+      atom: 'https://raw.githubusercontent.com/pantheon-fixtures/pantheon-wp-fixture/api-fixture/releases.atom'
   wordpress-network-fixture:
     repo: git@github.com:pantheon-fixtures/wordpress-network-fixture.git
     path: ${working-copy-path}/wordpress-network-fixture
