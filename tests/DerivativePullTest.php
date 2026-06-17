@@ -12,7 +12,7 @@ class DerivativePullTest extends CommandsTestBase
     // The source fixture and its known tag/branch state.
     const SOURCE_PROJECT = 'wp';
     const SOURCE_BRANCH = 'default';
-    const SOURCE_TAG = '4.9.8';
+    const SOURCE_TAG = '6.9.3';
 
     // The derivative fixture project key in test-configuration.yml.
     const DERIVATIVE_PROJECT = 'wordpress-network-fixture';

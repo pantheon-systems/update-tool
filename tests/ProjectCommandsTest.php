@@ -110,7 +110,7 @@ class ProjectCommandsTest extends CommandsTestBase
     }
 
     /**
-     * Test to see if we can update Pantheon's WordPress from 4.9.8 to 5.0.1
+     * Test to see if we can update Pantheon's WordPress from 6.9.3 to 6.9.4
      * using a snapshot.
      */
     public function testWordPressUpdate()
@@ -123,19 +123,19 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Verify the latest releast in our drops-8 and drupal fixtures.
         $output = $this->executeExpectOK(['project:latest', 'wp']);
-        $this->assertEquals('4.9.8', $output);
+        $this->assertEquals('6.9.3', $output);
 
         // Check to see if an update is expected in our fixture. (It always is.)
         $output = $this->executeExpectOK(['project:upstream:check', 'wp']);
-        $this->assertStringContainsString('wp 4.9.8 has an available update: 5.0.1', $output);
+        $this->assertStringContainsString('wp 6.9.3 has an available update: 6.9.4', $output);
 
         // Check to see if we can compose a release node url for our fixtures
         $output = $this->executeExpectOK(['project:release-node', 'wp', '--format=string']);
-        $this->assertEquals('https://wordpress.org/news/2018/12/wordpress-5-0-1-security-release/', $output);
+        $this->assertEquals('https://wordpress.org/news/2026/03/wordpress-6-9-4-release/', $output);
 
         // Try to create an upstream update PR for our drops-8 fixture
         $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
-        $this->assertStringContainsString('Updating wp from 4.9.8 to 5.0.1', $output);
+        $this->assertStringContainsString('Updating wp from 6.9.3 to 6.9.4', $output);
 
         // Ensure that the PR that was created is logged
         $this->assertFileExists($this->fixtures()->activityLogPath());
@@ -145,6 +145,6 @@ class ProjectCommandsTest extends CommandsTestBase
 
         // Try to make another update; confirm that nothing is done
         $output = $this->executeExpectOK(['project:upstream:update', 'wp']);
-        $this->assertStringContainsString('[notice] Pull request already exists for available update 5.0.1; nothing more to do.', $output);
+        $this->assertStringContainsString('[notice] Pull request already exists for available update 6.9.4; nothing more to do.', $output);
     }
 }
