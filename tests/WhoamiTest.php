@@ -41,7 +41,9 @@ class WhoamiTest extends TestCase implements CommandTesterInterface
      */
     public function testWhoami()
     {
+        // Assert only that auth succeeded and produced a login, not a specific
+        // user (the CI token owner can change).
         $output = $this->executeExpectOK(['whoami']);
-        $this->assertStringContainsString('Authenticated as pantheon-ci-bot', $output);
+        $this->assertMatchesRegularExpression('/Authenticated as \S+/', $output);
     }
 }
