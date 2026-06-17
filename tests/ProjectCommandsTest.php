@@ -23,7 +23,6 @@ class ProjectCommandsTest extends CommandsTestBase
     {
         $commandClasses = [
             \UpdateTool\Cli\ProjectCommands::class,
-            \UpdateTool\Cli\TestUtilCommands::class,
             \UpdateTool\Hubph\Cli\HubphCommands::class,
         ];
 

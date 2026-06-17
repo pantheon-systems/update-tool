@@ -17,7 +17,6 @@ class WhoamiTest extends TestCase implements CommandTesterInterface
         if (!$this->fixtures) {
             $commandClasses = [
                 \UpdateTool\Cli\PhpCommands::class,
-                \UpdateTool\Cli\TestUtilCommands::class,
                 \UpdateTool\Hubph\Cli\HubphCommands::class,
             ];
 
