@@ -189,7 +189,12 @@ class HubphAPITest extends TestCase
 
         // Should not throw; logging starts and stops cleanly
         $this->assertTrue(true);
-        unlink($tmpFile);
+        // startLogging() unlinks the target to clear any stale log and only
+        // recreates it on the first logged event; none were logged here, so the
+        // file may already be gone.
+        if (file_exists($tmpFile)) {
+            unlink($tmpFile);
+        }
     }
 
     public function testStopLoggingWhenNotStarted()
