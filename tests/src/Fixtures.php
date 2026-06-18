@@ -4,7 +4,7 @@ namespace UpdateTool;
 
 use Consolidation\Config\Util\EnvConfig;
 use Consolidation\Log\Logger;
-use Hubph\HubphAPI;
+use UpdateTool\Hubph\HubphAPI;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Filesystem\Filesystem;
 use UpdateTool\Git\Remote;
@@ -20,6 +20,7 @@ class Fixtures
     protected $config;
     protected $logOutput;
     protected $logger;
+    protected $seed;
     protected $derivativeFixtureUrls = [];
 
     // Our test fixtures' idea of what the current php releases are, frozen in time.
@@ -128,9 +129,9 @@ class Fixtures
 
         // Use the REST pulls endpoint (not the search API, which has indexing
         // lag) to get a consistent view of open PRs.
-        $openPRs = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
+        $openPRs = $api->prList($org, $project, 'open');
         foreach ($openPRs as $pr) {
-            $api->gitHubAPI()->api('pull_request')->update($org, $project, $pr['number'], ['state' => 'closed']);
+            $api->prUpdate($org, $project, $pr['number'], ['state' => 'closed']);
         }
 
         // Poll REST until all PRs are confirmed closed.
@@ -139,7 +140,7 @@ class Fixtures
         while ($waited < $maxWait) {
             sleep(5);
             $waited += 5;
-            $remaining = $api->gitHubAPI()->api('pull_request')->all($org, $project, ['state' => 'open']);
+            $remaining = $api->prList($org, $project, 'open');
             if (empty($remaining)) {
                 break;
             }
@@ -154,7 +155,7 @@ class Fixtures
             sleep(10);
             $waited += 10;
             $q = "repo:$projectWithOrg is:pr state:open";
-            $searchResults = $api->gitHubAPI()->api('search')->issues($q);
+            $searchResults = $api->searchIssues($q);
             if (empty($searchResults['items'])) {
                 return;
             }
@@ -222,28 +223,20 @@ class Fixtures
         $api = $this->api($as);
         $config = $this->getConfig();
 
-        $base_url = $config->get("projects.$remote_name.repo");
+        // Persistent fixture: use the configured repo URL as-is (no per-run
+        // seed). The repo pantheon-fixtures/wordpress-network-fixture already
+        // exists, so we never create or delete it -- we reset its master branch
+        // and tags to the state this test needs.
+        $repo_url = $config->get("projects.$remote_name.repo");
         $source_url = $config->get("projects.$source_name.repo");
 
-        // Append the seed to make the repo name unique per test run, since
-        // ${nonce} interpolation does not work with plain config->get().
-        $repo_url = preg_replace('#(\.git)?$#', '-' . $this->seed() . '$1', $base_url, 1);
-
-        if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
-            throw new \Exception("Cannot parse repo URL: $repo_url");
-        }
-        $org = $m[1];
-        $repo_name = $m[2];
-
-        // Store the resolved URL so deleteDerivativeFixture and
-        // derivativeConfigurationFile() can reference the same seeded name.
+        // Record the URL so seededConfigurationFile() refers to the same repo
+        // (identity with the config URL now).
         $this->derivativeFixtureUrls[$remote_name] = $repo_url;
 
-        // Create empty (no auto_init) so we control the default branch name.
-        $api->gitHubAPI()->api('repo')->create($repo_name, '', '', true, $org, false, false, false, null, false);
+        $auth_push_url = $api->addTokenAuthentication($repo_url);
 
-        // Clone the source and push into the new empty derivative using
-        // authenticated HTTPS URLs (works in both SSH and token-auth CI envs).
+        // Clone the source so we have its branch and tags locally.
         $source_path = $this->mktmpdir();
         rmdir($source_path);
         $source_url_authed = $api->addTokenAuthentication($source_url);
@@ -252,15 +245,31 @@ class Fixtures
             throw new \Exception("Failed to clone source: " . implode("\n", $out));
         }
 
-        // Push the branch first (initializes the empty repo), then tags.
-        // Use refs/remotes/origin/<branch> since the branch is only a remote
-        // tracking ref after a plain clone — not checked out locally.
-        $auth_push_url = $api->addTokenAuthentication($repo_url);
-        exec("git -C '$source_path' push '$auth_push_url' 'refs/remotes/origin/$source_branch:refs/heads/master' 2>&1", $out, $rc);
+        // Reset the derivative's master to the source branch. The persistent
+        // repo already has history from prior runs, so this is force-pushed.
+        // (The fixtures org does not enforce a no-force ruleset on private repos.)
+        exec("git -C '$source_path' push --force '$auth_push_url' 'refs/remotes/origin/$source_branch:refs/heads/master' 2>&1", $out, $rc);
         if ($rc !== 0) {
             throw new \Exception("Failed to push branch to derivative: " . implode("\n", $out));
         }
 
+        // Tags are repo-global and the repo persists, so delete every existing
+        // tag before pushing the desired set -- otherwise tags from a prior run
+        // make the "no new tags" / "new tags" cases nondeterministic.
+        $existing = [];
+        exec("git ls-remote --tags --refs '$auth_push_url' 2>/dev/null", $existing, $ls_rc);
+        if ($ls_rc === 0) {
+            foreach ($existing as $line) {
+                if (preg_match('#refs/tags/(.+)$#', $line, $tm)) {
+                    exec("git -C '$source_path' push '$auth_push_url' ':refs/tags/{$tm[1]}' 2>&1", $del_out, $del_rc);
+                    if ($del_rc !== 0) {
+                        throw new \Exception("Failed to delete remote tag {$tm[1]}: " . implode("\n", $del_out));
+                    }
+                }
+            }
+        }
+
+        // Push the desired tag set (the source clone already has all source tags).
         foreach ($tags as $tag) {
             exec("git -C '$source_path' push '$auth_push_url' '$tag' 2>&1", $out, $rc);
             if ($rc !== 0) {
@@ -305,25 +314,9 @@ class Fixtures
      */
     public function deleteDerivativeFixture($remote_name, $as = 'default')
     {
-        $api = $this->api($as);
-
-        $repo_url = isset($this->derivativeFixtureUrls[$remote_name])
-            ? $this->derivativeFixtureUrls[$remote_name]
-            : null;
-
-        if (!$repo_url) {
-            return;
-        }
-
-        if (!preg_match('#github\.com[:/]([^/]+)/([^.]+)#', $repo_url, $m)) {
-            throw new \Exception("Cannot parse repo URL: $repo_url");
-        }
-
-        try {
-            $api->gitHubAPI()->api('repo')->remove($m[1], $m[2]);
-        } catch (\Exception $e) {
-            // Ignore if the repo never existed (e.g. test failed before creation).
-        }
+        // No-op: the derivative fixture is now a persistent repo that is reset
+        // (branch + tags) at the start of each test rather than created and
+        // destroyed. Nothing to tear down. Kept so callers don't need to change.
     }
 
     public function forkTestRepo($remote_name, $as = 'default')

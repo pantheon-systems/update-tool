@@ -10,8 +10,9 @@ class FixturesTest extends TestCase
     /** @var Fixtures */
     protected $fixtures;
 
-    public function __construct()
+    public function __construct(string $name = '')
     {
+        parent::__construct($name);
         $this->fixtures = new Fixtures();
     }
 
@@ -33,8 +34,8 @@ class FixturesTest extends TestCase
         $this->fixtures->setupPhpDotNetFixture([ Fixtures::PHP_71_CURRENT, Fixtures::PHP_72_CURRENT ]);
         $this->assertFileExists($this->fixtures->phpDotNetDir() . '/distributions/php-7.1.20.tar.gz');
         $this->assertFileExists($this->fixtures->phpDotNetDir() . '/distributions/php-7.2.8.tar.gz');
-        $this->assertFileNotExists($this->fixtures->phpDotNetDir() . '/distributions/php-5.5.38.tar.gz');
-        $this->assertFileNotExists($this->fixtures->phpDotNetDir() . '/distributions/php-5.6.37.tar.gz');
+        $this->assertFileDoesNotExist($this->fixtures->phpDotNetDir() . '/distributions/php-5.5.38.tar.gz');
+        $this->assertFileDoesNotExist($this->fixtures->phpDotNetDir() . '/distributions/php-5.6.37.tar.gz');
     }
 
 }

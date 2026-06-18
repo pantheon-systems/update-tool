@@ -39,12 +39,10 @@ class WorkingCopy implements LoggerAwareInterface
         $this->confirmCachedRepoHasCorrectRemote();
     }
 
-    public function fromDir($dir, $api = null)
+    public static function fromDir($dir, $remoteName = 'origin', $api = null)
     {
-        $this->remote = Remote::fromDir($dir);
-        $this->remote->addAuthentication($api);
-        $this->dir = $dir;
-        $this->api = $api;
+        $remote = Remote::fromDir($dir, $remoteName);
+        return new self($remote->url(), $dir, false, $api);
     }
 
     /**
@@ -76,15 +74,14 @@ class WorkingCopy implements LoggerAwareInterface
     public function createFork($forked_project_name, $forked_org = null, $branch = '')
     {
         [$org, $project_name] = explode('/', $this->remote->projectWithOrg());
-        $result = $this->api->gitHubAPI()->api('repo')->forks()->create(
-            $org,
-            $project_name,
-            [
-                'owner' => $this->api->whoami()['login'],
-                'repo' => $forked_project_name,
-                'org' => $forked_org,
-            ]
-        );
+        $params = [];
+        if ($forked_org) {
+            $params['organization'] = $forked_org;
+        }
+        if ($forked_project_name) {
+            $params['name'] = $forked_project_name;
+        }
+        $result = $this->api->forkCreate($org, $project_name, $params);
 
         // 'git_url' => 'git://github.com/org/project.git',
         // 'ssh_url' => 'git@github.com:org/project.git',
@@ -103,7 +100,7 @@ class WorkingCopy implements LoggerAwareInterface
             return;
         }
 
-        $this->api->gitHubAPI()->api('repo')->remove($this->fork->org(), $this->fork->project());
+        $this->api->repoDelete($this->fork->org(), $this->fork->project());
     }
 
     /**
@@ -116,6 +113,11 @@ class WorkingCopy implements LoggerAwareInterface
             return null;
         }
         return $this->fork->url();
+    }
+
+    public function remoteFork()
+    {
+        return $this->fork ?? null;
     }
 
     public function forkProjectWithOrg()
@@ -229,6 +231,11 @@ class WorkingCopy implements LoggerAwareInterface
     public function url($remote_name = '')
     {
         return $this->remote($remote_name)->url();
+    }
+
+    public function valid()
+    {
+        return $this->remote->valid();
     }
 
     public function dir()

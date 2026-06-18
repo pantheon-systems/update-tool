@@ -2,7 +2,7 @@
 
 namespace UpdateTool\Cli;
 
-use Hubph\HubphAPI;
+use UpdateTool\Hubph\HubphAPI;
 use Symfony\Component\Filesystem\Filesystem;
 
 trait ApiTrait
