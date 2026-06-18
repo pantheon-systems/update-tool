@@ -26,10 +26,24 @@ class HubphAPITest extends TestCase
         return $api;
     }
 
+    /** @var array<string,string|false> */
+    private $envBackup = [];
+
+    protected function setUp(): void
+    {
+        // Snapshot the env vars these tests mutate so tearDown can restore them.
+        // Unsetting GITHUB_TOKEN unconditionally would strip the ambient CI token
+        // from the process and 401 the integration tests that run afterwards.
+        foreach (['GITHUB_TOKEN', 'DEFAULT_TOKEN', 'MYBOT_TOKEN'] as $k) {
+            $this->envBackup[$k] = getenv($k);
+        }
+    }
+
     protected function tearDown(): void
     {
-        putenv('DEFAULT_TOKEN');
-        putenv('GITHUB_TOKEN');
+        foreach ($this->envBackup as $k => $v) {
+            $v === false ? putenv($k) : putenv("$k=$v");
+        }
     }
 
     public function testAddTokenAuthenticationToSshUrl()
