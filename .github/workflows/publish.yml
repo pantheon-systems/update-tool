@@ -21,6 +21,8 @@ jobs:
       - name: Build phar
         run: |
           composer install
+          curl -sL https://github.com/clue/phar-composer/releases/download/v1.4.0/phar-composer-1.4.0.phar -o vendor/bin/phar-composer.phar
+          chmod +x vendor/bin/phar-composer.phar
           composer phar:build
       - name: Publish Release
         uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
