@@ -96,7 +96,7 @@ The test suite may be run locally by way of some simple composer scripts:
 
 Releases are cut automatically by [pantheon-systems/action-autotag](https://github.com/pantheon-systems/action-autotag) when a pull request is merged to `master`.
 
-[autotag](https://github.com/autotag-dev/autotag) picks the version bump from a keyword in any commit merged since the last tag (its default scheme — not Conventional Commits):
+[autotag](https://github.com/autotag-dev/autotag) picks the version bump from a keyword in any commit merged since the last tag:
 
 | Commit message contains | Bump    | Example (from `0.8.4`) |
 | ----------------------- | ------- | ---------------------- |
