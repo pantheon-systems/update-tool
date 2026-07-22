@@ -94,18 +94,15 @@ The test suite may be run locally by way of some simple composer scripts:
 
 ### Releasing
 
-Releases are cut automatically by [pantheon-systems/action-autotag](https://github.com/pantheon-systems/action-autotag) when a pull request is merged to `master`. There is no manual tagging step.
+Releases are cut automatically by [pantheon-systems/action-autotag](https://github.com/pantheon-systems/action-autotag) when a pull request is merged to `master`.
 
-The version bump is derived from the [Conventional Commits](https://www.conventionalcommits.org/) in the merge:
+[autotag](https://github.com/autotag-dev/autotag) picks the version bump from a keyword in any commit merged since the last tag (its default scheme — not Conventional Commits):
 
-| Commit contains                                  | Bump    | Example (from `0.8.4`) |
-| ------------------------------------------------ | ------- | ---------------------- |
-| `feat:`                                          | minor   | `0.9.0`                |
-| `fix:`, `chore:`, `ci:`, or anything else        | patch   | `0.8.5`                |
-| `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer | major | `1.0.0`                |
+| Commit message contains | Bump    | Example (from `0.8.4`) |
+| ----------------------- | ------- | ---------------------- |
+| `[major]` or `#major`   | major   | `1.0.0`                |
+| `[minor]` or `#minor`   | minor   | `0.9.0`                |
+| `[patch]` or `#patch`   | patch   | `0.8.5`                |
+| _no keyword_            | patch   | `0.8.5`                |
 
 The `release` workflow then creates the git tag and a GitHub release with auto-generated notes. Tags use the bare, non-`v`-prefixed scheme (e.g. `0.8.5`) because downstream consumers pin to bare version tags.
-
-Consumers ([updatinator](https://github.com/pantheon-systems/updatinator), [wordpress-internal](https://github.com/pantheon-systems/wordpress-internal), [drops-7](https://github.com/pantheon-systems/drops-7)) check out this repository at a pinned tag and run it from source (`composer install`), so no build artifact is published. To adopt a new release in a consumer, bump the `ref:` it checks out.
-
-The `--version` string is read from the tag Composer records at install time (`Composer\InstalledVersions`), so it always matches the checked-out release — a tag checkout reports e.g. `0.8.5`, a branch checkout reports `dev-master`. There is no `VERSION` file to maintain.
