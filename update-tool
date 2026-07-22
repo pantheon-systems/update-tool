@@ -25,7 +25,10 @@ $classLoader = require $autoloaderPath;
 // Customization variables
 $argv = $_SERVER['argv'];
 $appName = "UpdateTool";
-$appVersion = trim(file_get_contents(__DIR__ . '/VERSION'));
+// Derive the version from the release tag Composer recorded at install time.
+// A tag checkout (how consumers install this tool) reports the tag, e.g.
+// "0.8.4"; a branch checkout reports a dev marker, e.g. "dev-master".
+$appVersion = \Composer\InstalledVersions::getPrettyVersion('pantheon-systems/update-tool') ?: 'unknown';
 $commandClasses = [
   \Hubph\Cli\HubphCommands::class,
   \UpdateTool\Cli\PhpCommands::class,

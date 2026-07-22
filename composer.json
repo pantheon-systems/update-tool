@@ -50,9 +50,6 @@
             "@unit",
             "@cs"
         ],
-        "release": [
-            "release VERSION"
-        ],
         "scenario": "scenarios/install",
         "post-update-cmd": [
             "dependency-licenses"

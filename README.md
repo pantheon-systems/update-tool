@@ -54,3 +54,5 @@ The version bump is derived from the [Conventional Commits](https://www.conventi
 The `release` workflow then creates the git tag and a GitHub release with auto-generated notes. Tags use the bare, non-`v`-prefixed scheme (e.g. `0.8.5`) because downstream consumers pin to bare version tags.
 
 Consumers ([updatinator](https://github.com/pantheon-systems/updatinator), [wordpress-internal](https://github.com/pantheon-systems/wordpress-internal), [drops-7](https://github.com/pantheon-systems/drops-7)) check out this repository at a pinned tag and run it from source (`composer install`), so no build artifact is published. To adopt a new release in a consumer, bump the `ref:` it checks out.
+
+The `--version` string is read from the tag Composer records at install time (`Composer\InstalledVersions`), so it always matches the checked-out release — a tag checkout reports e.g. `0.8.5`, a branch checkout reports `dev-master`. There is no `VERSION` file to maintain.
