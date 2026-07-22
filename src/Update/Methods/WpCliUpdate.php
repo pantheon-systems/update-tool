@@ -12,8 +12,8 @@ use UpdateTool\Util\ExecWithRedactionTrait;
 use Consolidation\Config\ConfigInterface;
 
 /**
- * WpCliUpdate will take the provided WorkingCopy of the original project
- * and use wp-cli to update it to the latest version.
+ * WpCliUpdate will take the provided WorkingCopy of the original WordPress 
+ * project and use wp-cli to update it to the latest version.
  */
 class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
 {
@@ -49,8 +49,18 @@ class WpCliUpdate implements UpdateMethodInterface, LoggerAwareInterface
         $this->url = $config->get("fixtures.wp.url", 'updatinate-site');
         $this->title = $config->get("fixtures.wp.title", 'Updatinate Site');
         $this->admin = $config->get("fixtures.wp.admin", 'admin');
-        $this->adminPw = $config->get("fixtures.wp.admin-pw", 'manticore');
+        $this->adminPw = $config->get("fixtures.wp.admin-pw", static::RandomString());
         $this->adminEmail = $config->get("fixtures.wp.admin-email", 'bot@pantheon.io');
+    }
+    
+    /**
+     * Generate a random default password
+     */
+    protected function randomString()
+    {
+        $chars = '2346789abcdefghjkmnpqrsuvwxyz';
+        
+        return str_shuffle($chars) . str_shuffle($chars) . str_shuffle($chars);
     }
 
     /**
