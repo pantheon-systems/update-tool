@@ -29,7 +29,6 @@
         "symfony/filesystem": "^5.0|^6.0|^7.0"
     },
     "require-dev": {
-        "clue/phar-composer": "^1.4",
         "g1a/composer-test-scenarios": "^2",
         "php-coveralls/php-coveralls": "^2.7",
         "phpunit/phpunit": "^9.6|^10.0",
@@ -39,11 +38,6 @@
         "update-tool"
     ],
     "scripts": {
-        "phar:build": [
-            "rm -Rf ./update-tool.phar",
-            "php -d phar.readonly=off vendor/bin/phar-composer build .",
-            "chmod +x update-tool.phar"
-        ],
         "cs": "phpcs --standard=PSR2 -n src",
         "cbf": "phpcbf --standard=PSR2 -n src",
         "unit": "phpunit --colors=always",

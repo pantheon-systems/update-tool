@@ -41,6 +41,16 @@ The test suite may be run locally by way of some simple composer scripts:
 
 ### Releasing
 
-To release a new version of the Update Tool, create a new tag at the appropriate version. This triggers the test workflow; on success, a dispatch event triggers the publish workflow to create a GitHub release and upload the `update-tool.phar` artifact.
+Releases are cut automatically by [pantheon-systems/action-autotag](https://github.com/pantheon-systems/action-autotag) when a pull request is merged to `master`. There is no manual tagging step.
 
-Rebuild [pantheon-systems/docker-updatinator](https://github.com/pantheon-systems/docker-updatinator) to deploy a new version of the tool to the automation processes.
+The version bump is derived from the [Conventional Commits](https://www.conventionalcommits.org/) in the merge:
+
+| Commit contains                                  | Bump    | Example (from `0.8.4`) |
+| ------------------------------------------------ | ------- | ---------------------- |
+| `feat:`                                          | minor   | `0.9.0`                |
+| `fix:`, `chore:`, `ci:`, or anything else        | patch   | `0.8.5`                |
+| `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer | major | `1.0.0`                |
+
+The `release` workflow then creates the git tag and a GitHub release with auto-generated notes. Tags use the bare, non-`v`-prefixed scheme (e.g. `0.8.5`) because downstream consumers pin to bare version tags.
+
+Consumers ([updatinator](https://github.com/pantheon-systems/updatinator), [wordpress-internal](https://github.com/pantheon-systems/wordpress-internal), [drops-7](https://github.com/pantheon-systems/drops-7)) check out this repository at a pinned tag and run it from source (`composer install`), so no build artifact is published. To adopt a new release in a consumer, bump the `ref:` it checks out.
