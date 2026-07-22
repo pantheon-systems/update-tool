@@ -23,6 +23,59 @@ There are two ways to provide authentication credentials when using the Update T
 
 In production, this tool uses credentials provisioned by the [pantheon-systems/updatinator](https://github.com/pantheon-systems/updatinator) project via GitHub App tokens stored in Vault.
 
+## Usage
+
+### Local
+
+Clone and install dependencies, then invoke the `update-tool` binary directly:
+
+```sh
+git clone https://github.com/pantheon-systems/update-tool.git
+cd update-tool
+composer install
+
+# Provide a token (or use the on-disk cache described above).
+export GITHUB_TOKEN=<your-token>
+
+# List the available commands.
+./update-tool list
+
+# Apply a newer upstream tag to a fork.
+./update-tool project:upstream:update <project>
+```
+
+### CI (GitHub Actions)
+
+Consumers check out this repository at a pinned release tag and run it from source. There is no published binary to download.
+
+```yaml
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout update-tool
+        uses: actions/checkout@v4
+        with:
+          repository: pantheon-systems/update-tool
+          ref: 0.8.4 # pin to a released tag; bump to adopt a new release
+          path: update-tool
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+      - name: Install update-tool
+        run: |
+          cd update-tool
+          composer install --no-dev --optimize-autoloader
+      - name: Run update-tool
+        env:
+          GITHUB_TOKEN: ${{ secrets.YOUR_APP_TOKEN }}
+        run: ./update-tool/update-tool project:upstream:update <project>
+```
+
+> Pin `ref:` to a bare version tag (e.g. `0.8.4`), not a `v`-prefixed one. See [Releasing](#releasing) for the tag scheme.
+
 ## Local Development
 
 Clone the GitHub repository and run `composer install` to get started.
